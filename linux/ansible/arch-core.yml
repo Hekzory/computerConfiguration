@@ -1,0 +1,149 @@
+---
+- name: arch-core.yml - base setup for arch
+  hosts: arch
+  become: no
+
+  vars:
+    the_user: "{{ ansible_user_id }}"
+
+  tasks:
+# PACKAGES - Upgrade
+    - name: Full system upgrade via pacman
+      become: yes
+      pacman:
+        update_cache: true
+        upgrade: true
+
+
+# PACKAGES - Setup
+
+    - name: Setup base needed packages
+      become: yes
+      pacman:
+        update_cache: yes
+        name:
+          - nano                         # editor
+          - less                         # easy view utility
+          - git                          # to clone github repos
+          - curl                         # download utility
+          - wget                         # download utility
+          - rsync                        # copy utility
+          - bat                          # prettier cat
+          - fastfetch                    # system info
+          - btop                         # better resource monitor
+          - lsd                          # better ls
+          - zsh                          # better shell
+          - zsh-autosuggestions          # self-explanatory
+          - zsh-syntax-highlighting      # self-explanatory
+          - zsh-history-substring-search # self-explanatory
+          - zsh-completions              # self-explanatory
+          - inxi                         # system info tool
+          - pigz                         # faster gzip
+          - pbzip2                       # faster bzip
+          - fwupd                        # firmware update tool
+          - amd-ucode                    # amd microcode
+          - linux-firmware               # linux firmware
+
+    - name: Setup desktop packages
+      become: yes
+      pacman:
+        update_cache: yes
+        name:
+          - ttf-roboto                   # fonts
+          - qbittorrent                  # torrent
+          - github-cli                   # better github integration
+
+
+
+
+# CONFIG - Pacman
+
+    - name: Pacman - Enable color
+      become: yes
+      lineinfile:
+        path: /etc/pacman.conf
+        regexp: '^#Color$'
+        line: 'Color'
+
+    - name: pacman - enable ParallelDownloads = 16
+      become: yes
+      lineinfile:
+        path: /etc/pacman.conf
+        regexp: 'ParallelDownloads ='
+        line: 'ParallelDownloads = 16'
+
+    - name: pacman - enable ILoveCandy
+      become: yes
+      lineinfile:
+        path: /etc/pacman.conf
+        regexp: '^#ILoveCandy$'
+        line: 'ILoveCandy'
+
+    - name: pacman - enable VerbosePkgLists
+      become: yes
+      lineinfile:
+        path: /etc/pacman.conf
+        regexp: '^#VerbosePkgLists$'
+        line: 'VerbosePkgLists'
+
+# CONFIG - makepkg
+
+    - name: makepkg - disable pkg compression
+      become: yes
+      lineinfile:
+        path: /etc/makepkg.conf
+        regexp: "PKGEXT='.pkg.tar.zst'"
+        line: "PKGEXT='.pkg.tar'"
+
+# OPTIMIZATION
+
+    - name: fstab - change relatime to noatime
+      become: yes
+      replace:
+        path: /etc/fstab
+        regexp: 'relatime'
+        replace: 'noatime'
+
+# ZSH
+
+    - name: change shell to zsh
+      become: yes
+      user:
+        shell: /bin/zsh
+        name: "{{ the_user }}"
+
+    - name: copy zsh dotfile
+      copy:
+        src: user_home/.zshrc
+        dest: /home/{{ the_user }}/.zshrc
+        force: True
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+
+    - name: copy p10k-main dotfile
+      copy:
+        src: user_home/.p10k-main.zsh
+        dest: /home/{{ the_user }}/.p10k-main.zsh
+        force: True
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+
+    - name: copy p10k-portable dotfile
+      copy:
+        src: user_home/.p10k-portable.zsh
+        dest: /home/{{ the_user }}/.p10k-portable.zsh
+        force: True
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+
+    - name: copy p10k dotfile
+      copy:
+        src: user_home/.p10k.zsh
+        dest: /home/{{ the_user }}/.p10k.zsh
+        force: True
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
