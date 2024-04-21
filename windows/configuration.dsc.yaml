@@ -1,0 +1,273 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+properties:
+  configurationVersion: 0.2.0
+  # Check for compatibility
+  assertions:
+    - resource: Microsoft.Windows.Developer/OsVersion
+      directives:
+        description: Verify that at least 23H2 is installed
+        allowPrerelease: true
+      settings:
+        MinVersion: 10.0.22631
+  resources:
+    # Settings
+    - resource: Microsoft.Windows.Developer/DeveloperMode
+      directives:
+        description: Enable Developer Mode
+        allowPrerelease: true
+      settings:
+        Ensure: Present
+    - resource: Microsoft.Windows.Developer/ShowSecondsInClock
+      directives:
+        description: Show seconds in clock
+        allowPrerelease: true
+      settings:
+        Ensure: Present
+    - resource: Microsoft.Windows.Developer/Taskbar
+      directives:
+        description: TaskbarSettings
+        allowPrerelease: true
+      settings:
+        Alignment: Middle
+        SearchboxMode: SearchBox
+        WidgetsButton: Hide
+        HideLabelsMode: Always
+    - resource: Microsoft.Windows.Developer/WindowsExplorer
+      directives:
+        description: ExplorerSettings
+        allowPrerelease: true
+      settings:
+        FileExtensions: Show
+        HiddenFiles: Show
+        ItemCheckboxes: Hide
+    - resource: Microsoft.Windows.Developer/EnableDarkMode
+      directives:
+        description: Enable dark mode
+        allowPrerelease: true
+      settings:
+        Ensure: Present
+    # Packages
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: 7zip
+      directives:
+        description: 7-Zip
+        allowPrerelease: true
+      settings:
+        id: 7zip.7zip
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: Discord
+      directives:
+        description: Discord
+        allowPrerelease: true
+      settings:
+        id: Discord.Discord
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: WhatsApp
+      directives:
+        description: WhatsApp Beta
+        allowPrerelease: true
+      settings:
+        id: 9NBDXK71NK08
+        source: msstore
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: Git
+      directives:
+        description: Git
+        allowPrerelease: true
+      settings:
+        id: Git.Git
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: Chrome
+      directives:
+        description: Google Chrome Beta
+        allowPrerelease: true
+      settings:
+        id: Google.Chrome.Beta
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: hwinfo
+      directives:
+        description: HWiNFO
+        allowPrerelease: true
+      settings:
+        id: REALiX.HWiNFO
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: jettoolbox
+      directives:
+        description: JetBrains Toolbox
+        allowPrerelease: true
+      settings:
+        id: JetBrains.Toolbox
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: windowsTerminal
+      directives:
+        description: Windows Terminal Preview
+        allowPrerelease: true
+      settings:
+        id: Microsoft.WindowsTerminal.Preview
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: notepadpp
+      directives:
+        description: Notepad++
+        allowPrerelease: true
+      settings:
+        id: Notepad++.Notepad++
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: ohmyposh
+      directives:
+        description: Oh My Posh
+        allowPrerelease: true
+      settings:
+        id: JanDeDobbeleer.OhMyPosh
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: orcaslicer
+      directives:
+        description: OrcaSlicer
+        allowPrerelease: true
+      settings:
+        id: SoftFever.OrcaSlicer
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: steam
+      directives:
+        description: Steam
+        allowPrerelease: true
+      settings:
+        id: Valve.Steam
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: obsidian
+      directives:
+        description: Obsidian
+        allowPrerelease: true
+      settings:
+        id: Obsidian.Obsidian
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: qbittorrent
+      directives:
+        description: qBittorrent
+        allowPrerelease: true
+      settings:
+        id: qBittorrent.qBittorrent.Beta
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: netruntime7
+      directives:
+        description: Microsoft .NET Runtime 7.0
+        allowPrerelease: true
+      settings:
+        id: Microsoft.DotNet.Runtime.7
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: credist201364
+      directives:
+        description: Microsoft Visual C++ 2013 Redistributable (x64)
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VCRedist.2013.x64
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: credist15plus64
+      directives:
+        description: Microsoft Visual C++ 2015-2022 Redistributable (x64)
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VCRedist.2015+.x64
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: wireguard
+      directives:
+        description: WireGuard
+        allowPrerelease: true
+      settings:
+        id: WireGuard.WireGuard
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: telegram
+      directives:
+        description: Telegram Desktop Beta
+        allowPrerelease: true
+      settings:
+        id: Telegram.TelegramDesktop.Beta
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: powershell7
+      directives:
+        description: PowerShell
+        allowPrerelease: true
+      settings:
+        id: Microsoft.PowerShell
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: credist1264
+      directives:
+        description: Microsoft Visual C++ 2012 Redistributable (x64)
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VCRedist.2012.x64
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: credist15plus86
+      directives:
+        description: Microsoft Visual C++ 2015-2022 Redistributable (x86)
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VCRedist.2015+.x86
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: credist1064
+      directives:
+        description: Microsoft Visual C++ 2010 x64 Redistributable
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VCRedist.2010.x64
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: python312
+      directives:
+        description: Python 3.12
+        allowPrerelease: true
+      settings:
+        id: Python.Python.3.12
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: xnaframework
+      directives:
+        allowPrerelease: true
+        description: Microsoft XNA Framework Redistributable Refresh
+      settings:
+        id: Microsoft.XNARedist
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: gpuz
+      directives:
+        allowPrerelease: true
+        description: TechPowerUp GPU-Z
+      settings:
+        id: TechPowerUp.GPU-Z
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: esetav
+      directives:
+        allowPrerelease: true
+        description: ESET Security
+      settings:
+        id: ESET.Security
+        source: winget
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: devhome
+      directives:
+        allowPrerelease: true
+        description: Dev Home (Preview)
+      settings:
+        id: Microsoft.DevHome
+        source: winget
