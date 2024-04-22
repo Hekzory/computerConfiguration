@@ -81,7 +81,7 @@
           - amd-ucode                    # amd microcode
           - linux-firmware               # linux firmware
           - github-cli                   # better github integration
-          - networkmanager               # se        - { line: 'include "/usr/share/nano/extra/*.nanorc"' }lf-explanatory
+          - networkmanager               # self-explanatory
           - python3                      # self-explanatory
           - reflector                    # mirror update
         state: present
