@@ -10,40 +10,17 @@
 
 # CONFIG - Pacman
 
-    - name: Pacman - Enable color
-      become: yes
+    - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, and NoExtract fix for warnings
       lineinfile:
         path: /etc/pacman.conf
-        regexp: '^#Color$'
-        line: 'Color'
-
-    - name: Pacman - enable ParallelDownloads = 16
-      become: yes
-      lineinfile:
-        path: /etc/pacman.conf
-        regexp: 'ParallelDownloads ='
-        line: 'ParallelDownloads = 16'
-
-    - name: Pacman - enable ILoveCandy
-      become: yes
-      lineinfile:
-        path: /etc/pacman.conf
-        regexp: '^#ILoveCandy$'
-        line: 'ILoveCandy'
-
-    - name: Pacman - enable VerbosePkgLists
-      become: yes
-      lineinfile:
-        path: /etc/pacman.conf
-        regexp: '^#VerbosePkgLists$'
-        line: 'VerbosePkgLists'
-
-    - name: Pacman - NoExtract for systemd home to fix a few warnings
-      become: yes
-      lineinfile:
-        path: /etc/pacman.conf
-        regexp: '^#NoExtract$'
-        line: 'NoExtract = usr/lib/security/pam_systemd_home.so'
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^#Color$', line: 'Color' }
+        - { regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16' }
+        - { regexp: '^#ILoveCandy$', line: 'ILoveCandy' }
+        - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
+        - { regexp: '^#NoExtract$', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
 
 # CONFIG - nano
 
@@ -104,12 +81,12 @@
           - amd-ucode                    # amd microcode
           - linux-firmware               # linux firmware
           - github-cli                   # better github integration
-          - networkmanager               # self-explanatory
+          - networkmanager               # se        - { line: 'include "/usr/share/nano/extra/*.nanorc"' }lf-explanatory
           - python3                      # self-explanatory
           - reflector                    # mirror update
         state: present
 
-# OPTIMIZATION
+# CONFIG - OPTIMIZATION AND COMPATIBILITY
 
     - name: fstab - change relatime to noatime
       become: yes
@@ -118,7 +95,32 @@
         regexp: 'relatime'
         replace: 'noatime'
 
-# ZSH
+    - name: Disable unnecessary services
+      become: yes
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop:
+        - ModemManager.service
+
+    - name: Blacklist unnecessary modules
+      become: yes
+      community.general.kernel_blacklist:
+        name:
+          - pcspkr        # motherboard speaker, useless
+          - snd_pcsp      # motherboard speaker, useless
+          - eeepc_wmi     # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
+          - nouveau       # does not work properly on newer videocards
+          - iTCO_wdt      # watchdog timer, small performance improvement
+          - sp5100_tco    # watchdog timer, small performance improvement
+          - floppy        # useless
+          - parport       # parallel port support, rarely used nowadays
+          - ppdev         # parallel port device support, rarely used
+        state: present
+
+
+# CONFIG - ZSH
 
     - name: change shell to zsh
       become: yes
@@ -126,41 +128,19 @@
         shell: /bin/zsh
         name: "{{ the_user }}"
 
-    - name: copy zsh dotfile
+    - name: copy zsh dotfiles
       copy:
-        src: user_home/.zshrc
-        dest: /home/{{ the_user }}/.zshrc
+        src: "user_home/{{ item }}"
+        dest: "/home/{{ the_user }}/{{ item }}"
         force: True
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
-
-    - name: copy p10k-main dotfile
-      copy:
-        src: user_home/.p10k-main.zsh
-        dest: /home/{{ the_user }}/.p10k-main.zsh
-        force: True
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-
-    - name: copy p10k-portable dotfile
-      copy:
-        src: user_home/.p10k-portable.zsh
-        dest: /home/{{ the_user }}/.p10k-portable.zsh
-        force: True
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-
-    - name: copy p10k dotfile
-      copy:
-        src: user_home/.p10k.zsh
-        dest: /home/{{ the_user }}/.p10k.zsh
-        force: True
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
+      loop:
+        - .zshrc
+        - .p10k-main.zsh
+        - .p10k-portable.zsh
+        - .p10k.zsh
 
 # User configuration - AUR preparation
 
