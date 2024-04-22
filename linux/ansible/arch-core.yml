@@ -25,6 +25,7 @@
           - nano                         # editor
           - less                         # easy view utility
           - git                          # to clone github repos
+          - base-devel                   # required packages for developer stuff
           - curl                         # download utility
           - wget                         # download utility
           - rsync                        # copy utility
@@ -43,16 +44,11 @@
           - fwupd                        # firmware update tool
           - amd-ucode                    # amd microcode
           - linux-firmware               # linux firmware
-
-    - name: Setup desktop packages
-      become: yes
-      pacman:
-        update_cache: yes
-        name:
-          - ttf-roboto                   # fonts
-          - qbittorrent                  # torrent
           - github-cli                   # better github integration
-
+          - networkmanager               # self-explanatory
+          - python3                      # self-explanatory
+          - reflector                    # mirror update
+        state: present
 
 
 
@@ -88,7 +84,7 @@
 
 # CONFIG - makepkg
 
-    - name: makepkg - disable pkg compression
+    - name: makepkg - disable pkg a Pacman compatible AUR helpercompression
       become: yes
       lineinfile:
         path: /etc/makepkg.conf
@@ -147,3 +143,40 @@
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
+
+# User configuration - AUR preparation
+
+#- name: Create the `aur_builder` user
+#  become: yes
+#  ansible.builtin.user:
+#    name: aur_builder
+#    create_home: yes
+#    group: wheel
+
+#- name: Allow the `aur_builder` user to run `sudo pacman` without a password
+#  become: yes
+#  ansible.builtin.lineinfile:
+#    path: /etc/sudoers.d/11-install-aur_builder
+#    line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+#    create: yes
+#    mode: 0644
+#    validate: 'visudo -cf %s'
+
+# AUR Setup
+
+    - name: Install yay using makepkg if it isn't installed already
+      kewlfft.aur.aur:
+        name: yay
+        use: makepkg
+        state: present
+
+# PACKAGES - AUR packages setup
+
+    - name: Install packages from AUR using yay
+      community.general.pacman:
+        update_cache: true
+        name:
+          - zsh-theme-powerlevel10k-git
+        state: present
+        executable: yay
+

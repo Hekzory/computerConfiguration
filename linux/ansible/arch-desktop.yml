@@ -1,0 +1,44 @@
+---
+- name: Include arch-core.yml
+  import_playbook: arch-core.yml
+
+- name: arch-desktop.yml - desktop setup for arch
+  hosts: arch
+  become: no
+
+  vars:
+    the_user: "{{ ansible_user_id }}"
+
+  tasks:
+
+    # PACKAGES - Official repos desktop packages setup
+    - name: Setup desktop packages
+      become: yes
+      pacman:
+        update_cache: yes
+        name:
+          - ttf-roboto                   # fonts
+          - ttf-hack                     # fonts
+          - ttf-liberation               # fonts
+          - noto-fonts                   # fonts
+          - noto-fonts-extra             # fonts
+          - noto-fonts-emoji             # fonts
+          - adobe-source-sans-fonts      # fonts
+          - qbittorrent                  # torrent
+          - mpv                          # video player
+          - yt-dlp                       # yt video player for mpv
+        state: present
+
+    # PACKAGES - AUR desktop packages setup
+
+    - name: Install packages from AUR using yay
+      community.general.pacman:
+        update_cache: true
+        name:
+          - google-chrome-beta
+          - jetbrains-toolbox
+          - prismlauncher-git
+          - ttf-meslo-nerd-font-powerlevel10k
+          - jdk21-graalvm-ee-bin
+        state: present
+        executable: yay
