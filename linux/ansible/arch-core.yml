@@ -138,6 +138,7 @@
         enabled: true
       loop:
         - reflector.timer
+        - fstrim.timer
 
 
 # CONFIG - ZSH
