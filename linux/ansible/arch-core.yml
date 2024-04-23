@@ -21,7 +21,7 @@
         - { regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16' }
         - { regexp: '^#ILoveCandy$', line: 'ILoveCandy' }
         - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
-        - { regexp: '^#NoExtract$', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
+        - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
 
 # CONFIG - nano
 
@@ -84,7 +84,7 @@
           - github-cli                   # better github integration
           - networkmanager               # self-explanatory
           - python3                      # self-explanatory
-          - reflector                    # mirror update
+          - reflector                    # mirror updater
         state: present
 
 # CONFIG - OPTIMIZATION AND COMPATIBILITY
@@ -112,13 +112,32 @@
           - pcspkr        # motherboard speaker, useless
           - snd_pcsp      # motherboard speaker, useless
           - eeepc_wmi     # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-          - nouveau       # does not work properly on newer videocards
+          - nouveau       # does not work properly on newer nvidia videocards or with worse performance
           - iTCO_wdt      # watchdog timer, small performance improvement
           - sp5100_tco    # watchdog timer, small performance improvement
           - floppy        # useless
           - parport       # parallel port support, rarely used nowadays
           - ppdev         # parallel port device support, rarely used
         state: present
+
+    - name: copy reflector config - to setup proper mirror update
+      become: yes
+      copy:
+        src: "etc/xdg/reflector/reflector.conf"
+        dest: "/etc/xdg/reflector/reflector.conf"
+        force: True
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+
+    - name: Enable necessary services
+      become: yes
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - reflector.timer
 
 
 # CONFIG - ZSH
