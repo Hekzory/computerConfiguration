@@ -12,9 +12,11 @@
   tasks:
 
     # PACKAGES - Official repos desktop packages setup
+
     - name: Setup desktop packages
       become: yes
-      pacman:
+      community.general.pacman:
+        executable: yay
         update_cache: yes
         name:
           - ttf-roboto                   # fonts
@@ -32,13 +34,19 @@
     # PACKAGES - AUR desktop packages setup
 
     - name: Install packages from AUR using yay
-      community.general.pacman:
-        update_cache: true
+      kewlfft.aur.aur:
         name:
           - google-chrome-beta
           - jetbrains-toolbox
           - prismlauncher-git
           - ttf-meslo-nerd-font-powerlevel10k
           - jdk21-graalvm-ee-bin
+        use: yay
         state: present
-        executable: yay
+
+    - name: Remove unneeded packages
+      become: yes
+      pacman:
+        name:
+          - prismlauncher-git-debug
+        state: absent

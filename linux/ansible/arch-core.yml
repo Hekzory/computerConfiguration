@@ -108,17 +108,18 @@
     - name: Blacklist unnecessary modules
       become: yes
       community.general.kernel_blacklist:
-        name:
-          - pcspkr        # motherboard speaker, useless
-          - snd_pcsp      # motherboard speaker, useless
-          - eeepc_wmi     # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-          - nouveau       # does not work properly on newer nvidia videocards or with worse performance
-          - iTCO_wdt      # watchdog timer, small performance improvement
-          - sp5100_tco    # watchdog timer, small performance improvement
-          - floppy        # useless
-          - parport       # parallel port support, rarely used nowadays
-          - ppdev         # parallel port device support, rarely used
+        name: "{{ item }}"
         state: present
+      loop:
+        - pcspkr        # motherboard speaker, useless
+        - snd_pcsp      # motherboard speaker, useless
+        - eeepc_wmi     # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
+        - nouveau       # does not work properly on newer nvidia videocards or with worse performance
+        - iTCO_wdt      # watchdog timer, small performance improvement
+        - sp5100_tco    # watchdog timer, small performance improvement
+        - floppy        # useless
+        - parport       # parallel port support, rarely used nowadays
+        - ppdev         # parallel port device support, rarely used
 
     - name: copy reflector config - to setup proper mirror update
       become: yes
@@ -192,10 +193,8 @@
 # PACKAGES - AUR packages setup
 
     - name: Install packages from AUR using yay
-      community.general.pacman:
-        update_cache: true
+      kewlfft.aur.aur:
         name:
           - zsh-theme-powerlevel10k-git
+        use: yay
         state: present
-        executable: yay
-
