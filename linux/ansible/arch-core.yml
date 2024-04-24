@@ -12,7 +12,7 @@
 
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, and NoExtract fix for warnings
       become: yes
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/pacman.conf
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
@@ -27,7 +27,7 @@
 
     - name: Nano - Enable color in config
       become: yes
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/nanorc
         line: '{{ item.line }}'
       loop:
@@ -38,7 +38,7 @@
 
     - name: makepkg - disable pkg compression
       become: yes
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/makepkg.conf
         regexp: "PKGEXT='.pkg.tar.zst'"
         line: "PKGEXT='.pkg.tar'"
@@ -47,16 +47,16 @@
 
     - name: Full system upgrade via pacman
       become: yes
-      pacman:
+      community.general.pacman:
         update_cache: true
         upgrade: true
 
 
 # PACKAGES - Setup
 
-    - name: Setup base needed packages
+    - name: Full system upgrade via pacman and setup base needed packages
       become: yes
-      pacman:
+      community.general.pacman:
         update_cache: yes
         name:
           - nano                         # editor
@@ -91,19 +91,19 @@
 
     - name: fstab - change relatime to noatime
       become: yes
-      replace:
+      ansible.builtin.replace:
         path: /etc/fstab
         regexp: 'relatime'
         replace: 'noatime'
 
     - name: Disable unnecessary services
       become: yes
-      systemd:
+      ansible.builtin.systemd_service:
         name: "{{ item }}"
         state: stopped
         enabled: no
       loop:
-        - ModemManager.service
+        - ModemManager.service  # Not needed by most people, so disable by default
 
     - name: Blacklist unnecessary modules
       become: yes
@@ -111,19 +111,22 @@
         name: "{{ item }}"
         state: present
       loop:
-        - pcspkr        # motherboard speaker, useless
-        - snd_pcsp      # motherboard speaker, useless
-        - eeepc_wmi     # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-        - nouveau       # does not work properly on newer nvidia videocards or with worse performance
-        - iTCO_wdt      # watchdog timer, small performance improvement
-        - sp5100_tco    # watchdog timer, small performance improvement
-        - floppy        # useless
-        - parport       # parallel port support, rarely used nowadays
-        - ppdev         # parallel port device support, rarely used
+        - pcspkr             # motherboard speaker, useless
+        - snd_pcsp           # motherboard speaker, useless
+        - eeepc_wmi          # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
+        - nouveau            # does not work properly on newer nvidia videocards or with worse performance
+        - iTCO_wdt           # watchdog timer, small performance improvement
+        - sp5100_tco         # watchdog timer, small performance improvement
+        - floppy             # useless
+        - parport            # parallel port support, rarely used nowadays
+        - ppdev              # parallel port device support, rarely used
+        - snd_hda_codec_hdmi # audio through hdmi, almost never used
+        - snd_hda_intel      # audio through hdmi, almost never used
+        - legion_laptop      # used by legion laptops, but wrongly loaded by every device i have
 
     - name: copy reflector config - to setup proper mirror update
       become: yes
-      copy:
+      ansible.builtin.copy:
         src: "etc/xdg/reflector/reflector.conf"
         dest: "/etc/xdg/reflector/reflector.conf"
         force: True
@@ -133,7 +136,7 @@
 
     - name: Enable necessary services
       become: yes
-      systemd:
+      ansible.builtin.systemd_service:
         name: "{{ item }}"
         state: started
         enabled: true
@@ -163,6 +166,21 @@
         - .p10k-main.zsh
         - .p10k-portable.zsh
         - .p10k.zsh
+
+# CONFIG - udev
+
+    - name: ioscheduler settings - change for better performance
+      become: yes
+      copy:
+        src: "etc/udev/rules.d/{{ item }}"
+        dest: "/etc/udev/rules.d/{{ item }}"
+        force: True
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      loop:
+        - 60-ioschedulers.rules # ioscheduler settings - change for better performance
+        - 50-sata.rules         # sata power settings - change for better performance
 
 # User configuration - AUR preparation
 

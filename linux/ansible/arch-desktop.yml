@@ -46,7 +46,7 @@
 
     - name: Remove unneeded packages
       become: yes
-      pacman:
+      community.general.pacman:
         name:
           - prismlauncher-git-debug
         state: absent
