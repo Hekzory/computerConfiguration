@@ -85,7 +85,23 @@
           - networkmanager               # self-explanatory
           - python3                      # self-explanatory
           - reflector                    # mirror updater
+          - duf                          # df but better
+          - ripgrep                      # faster grep
+          - fzf                          # fast file search
         state: present
+
+# CONFIG - GIT
+
+    - name: set gitconfig to personal preference at ~/.gitconfig
+      community.general.git_config:
+        scope: global
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+      loop:
+        - { name: 'diff.indentHeuristic', value: 'true' }
+        - { name: 'diff.algorithm', value: 'minimal' }
+
+
 
 # CONFIG - OPTIMIZATION AND COMPATIBILITY
 

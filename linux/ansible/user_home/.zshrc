@@ -20,15 +20,12 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
 #    export ELM_ENGINE=wayland_egl
 fi
 
-# Lines configured by zsh-newuser-install
+
 HISTFILE=~/.histfile
 HISTSIZE=10000
 SAVEHIST=10000
 setopt autocd extendedglob
 unsetopt beep
-
-# Path to your oh-my-zsh installation.
-# export ZSH="/usr/share/oh-my-zsh"
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 DISABLE_MAGIC_FUNCTIONS="true"
@@ -38,15 +35,6 @@ ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
-
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-# plugins=(git fzf extract)
-
-# source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
@@ -91,12 +79,9 @@ alias mirrorupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.
 
 alias please="sudo"
 
-# Get the error messages from journalctl
-alias jctl="journalctl -p 3 -xb"
-
-alias cat='bat'
-alias ls='lsd -ahlF --color auto'
-alias nano='nano -c -S -u'
+alias cat='bat --style="auto"'
+alias ls='lsd -AhlF --color auto --icon auto'
+alias nano='nano -c -S -u -l'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
@@ -111,6 +96,10 @@ alias chgrp='chgrp --preserve-root'
 alias jerr='journalctl -xb 0 -p 3'
 alias jwarn='journalctl -xb 0 -p 4'
 alias wget='wget -c'
+alias df='duf'
+alias htop='btop'
+alias top='btop'
+alias grep='rg -uuu'
 
 source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
@@ -123,6 +112,13 @@ source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring
 
 # pkgfile "command not found" handler
 # source /usr/share/doc/pkgfile/command-not-found.zsh
+
+# Completions
+zstyle ':completion:*' completer _complete _ignored _approximate
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: TAB for more, or the character to insert%s
+autoload -Uz compinit
+compinit
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 #[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
