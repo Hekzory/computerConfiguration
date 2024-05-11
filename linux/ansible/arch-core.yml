@@ -88,6 +88,10 @@
           - duf                          # df but better
           - ripgrep                      # faster grep
           - fzf                          # fast file search
+          - docker                       # containerization
+          - docker-compose               # easy container management
+          - docker-buildx                # new build system for docker
+          - neovim                       # lets try this cool editor
         state: present
 
 # CONFIG - GIT
@@ -159,18 +163,18 @@
       loop:
         - reflector.timer
         - fstrim.timer
-
+        - docker.socket
 
 # CONFIG - ZSH
 
     - name: change shell to zsh
       become: yes
-      user:
+      ansible.builtin.user:
         shell: /bin/zsh
         name: "{{ the_user }}"
 
     - name: copy zsh dotfiles
-      copy:
+      ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
         force: True
@@ -187,7 +191,7 @@
 
     - name: ioscheduler settings - change for better performance
       become: yes
-      copy:
+      ansible.builtin.copy:
         src: "etc/udev/rules.d/{{ item }}"
         dest: "/etc/udev/rules.d/{{ item }}"
         force: True
@@ -232,3 +236,23 @@
           - zsh-theme-powerlevel10k-git
         use: yay
         state: present
+
+# DOCKER
+
+    - name: adding existing user "{{ the_user }}" to group docker and wheel if not present
+      become: yes
+      ansible.builtin.user:
+        name: "{{ the_user }}"
+        groups:
+          - wheel
+          - docker
+
+        append: yes
+
+    - name: Docker cache cleanup
+      community.docker.docker_prune:
+        containers: true
+        images: true
+        networks: true
+        volumes: true
+        builder_cache: true

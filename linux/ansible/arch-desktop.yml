@@ -29,6 +29,7 @@
           - qbittorrent                  # torrent
           - mpv                          # video player
           - yt-dlp                       # yt video player for mpv
+          - realtime-privileges          # for better audio
         state: present
 
     # PACKAGES - AUR desktop packages setup
@@ -50,3 +51,14 @@
         name:
           - prismlauncher-git-debug
         state: absent
+
+    # CONFIG - Optimization and/or compatibility improvements
+
+    - name: adding existing user "{{ the_user }}" to group audio
+      become: yes
+      ansible.builtin.user:
+        name: "{{ the_user }}"
+        groups:
+          - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
+
+        append: yes
