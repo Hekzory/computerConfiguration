@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run ansible-lint
-        env:
-          INPUT_WORKING_DIRECTORY: "${{ github.workspace }}/linux/ansible"
         uses: ansible/ansible-lint@v24
+        with:
+          working_directory: "${{ github.workspace }}/linux/ansible"
