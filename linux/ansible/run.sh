@@ -27,7 +27,7 @@ check_files_exist() {
 }
 
 # Check if needed files exist
-check_files_exist "$PLAYBOOK_FILE" "requirements.yml"
+check_files_exist "$PLAYBOOK_FILE" "roles/requirements.yml"
 
 # Function to check Ansible and Ansible Galaxy
 check_ansible_tools() {
@@ -42,7 +42,7 @@ check_ansible_tools() {
 check_ansible_tools
 
 echo "Installing requirements..."
-ansible-galaxy install -r "requirements.yml"
+ansible-galaxy install -r "roles/requirements.yml"
 
 echo "Running playbook..."
 ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook -v --ask-become-pass "$PLAYBOOK_FILE"
