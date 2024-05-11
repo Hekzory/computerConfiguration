@@ -6,6 +6,9 @@ jobs:
   build:
     name: Ansible Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./linux/ansible
     steps:
       - uses: actions/checkout@v4
       - name: Run ansible-lint
