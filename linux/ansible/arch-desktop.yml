@@ -2,9 +2,9 @@
 - name: Include arch-core.yml
   import_playbook: arch-core.yml
 
-- name: arch-desktop.yml - desktop setup for arch
+- name: Arch-desktop.yml - desktop setup for arch
   hosts: arch
-  become: no
+  become: false
 
   vars:
     the_user: "{{ ansible_user_id }}"
@@ -14,10 +14,10 @@
     # PACKAGES - Official repos desktop packages setup
 
     - name: Setup desktop packages
-      become: yes
+      become: true
       community.general.pacman:
         executable: yay
-        update_cache: yes
+        update_cache: true
         name:
           - ttf-roboto                   # fonts
           - ttf-hack                     # fonts
@@ -46,7 +46,7 @@
         state: present
 
     - name: Remove unneeded packages
-      become: yes
+      become: true
       community.general.pacman:
         name:
           - prismlauncher-git-debug
@@ -54,11 +54,11 @@
 
     # CONFIG - Optimization and/or compatibility improvements
 
-    - name: adding existing user "{{ the_user }}" to group audio
-      become: yes
+    - name: Adding existing user to group audio
+      become: true
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
           - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
 
-        append: yes
+        append: true

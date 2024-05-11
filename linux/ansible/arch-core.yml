@@ -1,17 +1,17 @@
 ---
-- name: arch-core.yml - base setup for arch
+- name: Arch-core.yml - base setup for arch
   hosts: arch
-  become: no
+  become: false
 
   vars:
     the_user: "{{ ansible_user_id }}"
 
   tasks:
 
-# CONFIG - Pacman
+    # CONFIG - Pacman
 
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, and NoExtract fix for warnings
-      become: yes
+      become: true
       ansible.builtin.lineinfile:
         path: /etc/pacman.conf
         regexp: "{{ item.regexp }}"
@@ -23,10 +23,10 @@
         - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
         - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
 
-# CONFIG - nano
+    # CONFIG - nano
 
     - name: Nano - Enable color in config
-      become: yes
+      become: true
       ansible.builtin.lineinfile:
         path: /etc/nanorc
         line: '{{ item.line }}'
@@ -34,30 +34,30 @@
         - { line: 'include "/usr/share/nano/extra/*.nanorc"' }
         - { line: 'include "/usr/share/nano/*.nanorc"' }
 
-# CONFIG - makepkg
+    # CONFIG - makepkg
 
-    - name: makepkg - disable pkg compression
-      become: yes
+    - name: Makepkg - disable pkg compression
+      become: true
       ansible.builtin.lineinfile:
         path: /etc/makepkg.conf
         regexp: "PKGEXT='.pkg.tar.zst'"
         line: "PKGEXT='.pkg.tar'"
 
-# PACKAGES - Upgrade
+    # PACKAGES - Upgrade
 
     - name: Full system upgrade via pacman
-      become: yes
+      become: true
       community.general.pacman:
         update_cache: true
         upgrade: true
 
 
-# PACKAGES - Setup
+    # PACKAGES - Setup
 
     - name: Full system upgrade via pacman and setup base needed packages
-      become: yes
+      become: true
       community.general.pacman:
-        update_cache: yes
+        update_cache: true
         name:
           - nano                         # editor
           - less                         # easy view utility
@@ -94,9 +94,9 @@
           - neovim                       # lets try this cool editor
         state: present
 
-# CONFIG - GIT
+    # CONFIG - GIT
 
-    - name: set gitconfig to personal preference at ~/.gitconfig
+    - name: Set gitconfig to personal preference at ~/.gitconfig
       community.general.git_config:
         scope: global
         name: "{{ item.name }}"
@@ -106,27 +106,26 @@
         - { name: 'diff.algorithm', value: 'minimal' }
 
 
+    # CONFIG - OPTIMIZATION AND COMPATIBILITY
 
-# CONFIG - OPTIMIZATION AND COMPATIBILITY
-
-    - name: fstab - change relatime to noatime
-      become: yes
+    - name: Fstab - change relatime to noatime
+      become: true
       ansible.builtin.replace:
         path: /etc/fstab
         regexp: 'relatime'
         replace: 'noatime'
 
     - name: Disable unnecessary services
-      become: yes
+      become: true
       ansible.builtin.systemd_service:
         name: "{{ item }}"
         state: stopped
-        enabled: no
+        enabled: false
       loop:
         - ModemManager.service  # Not needed by most people, so disable by default
 
     - name: Blacklist unnecessary modules
-      become: yes
+      become: true
       community.general.kernel_blacklist:
         name: "{{ item }}"
         state: present
@@ -144,18 +143,18 @@
         - snd_hda_intel      # audio through hdmi, almost never used
         - legion_laptop      # used by legion laptops, but wrongly loaded by every device i have
 
-    - name: copy reflector config - to setup proper mirror update
-      become: yes
+    - name: Copy reflector config - to setup proper mirror update
+      become: true
       ansible.builtin.copy:
         src: "etc/xdg/reflector/reflector.conf"
         dest: "/etc/xdg/reflector/reflector.conf"
-        force: True
+        force: true
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
 
     - name: Enable necessary services
-      become: yes
+      become: true
       ansible.builtin.systemd_service:
         name: "{{ item }}"
         state: started
@@ -165,19 +164,19 @@
         - fstrim.timer
         - docker.socket
 
-# CONFIG - ZSH
+    # CONFIG - ZSH
 
-    - name: change shell to zsh
-      become: yes
+    - name: Change shell to zsh
+      become: true
       ansible.builtin.user:
         shell: /bin/zsh
         name: "{{ the_user }}"
 
-    - name: copy zsh dotfiles
+    - name: Copy zsh dotfiles
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
-        force: True
+        force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
@@ -187,14 +186,14 @@
         - .p10k-portable.zsh
         - .p10k.zsh
 
-# CONFIG - udev
+    # CONFIG - udev
 
-    - name: ioscheduler settings - change for better performance
-      become: yes
+    - name: Ioscheduler settings - change for better performance
+      become: true
       ansible.builtin.copy:
         src: "etc/udev/rules.d/{{ item }}"
         dest: "/etc/udev/rules.d/{{ item }}"
-        force: True
+        force: true
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
@@ -202,25 +201,25 @@
         - 60-ioschedulers.rules # ioscheduler settings - change for better performance
         - 50-sata.rules         # sata power settings - change for better performance
 
-# User configuration - AUR preparation
+    # User configuration - AUR preparation
 
-#- name: Create the `aur_builder` user
-#  become: yes
-#  ansible.builtin.user:
-#    name: aur_builder
-#    create_home: yes
-#    group: wheel
+    # - name: Create the `aur_builder` user
+    #  become: true
+    #  ansible.builtin.user:
+    #    name: aur_builder
+    #    create_home: true
+    #    group: wheel
 
-#- name: Allow the `aur_builder` user to run `sudo pacman` without a password
-#  become: yes
-#  ansible.builtin.lineinfile:
-#    path: /etc/sudoers.d/11-install-aur_builder
-#    line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-#    create: yes
-#    mode: 0644
-#    validate: 'visudo -cf %s'
+    # - name: Allow the `aur_builder` user to run `sudo pacman` without a password
+    #  become: true
+    #  ansible.builtin.lineinfile:
+    #    path: /etc/sudoers.d/11-install-aur_builder
+    #    line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+    #    create: true
+    #    mode: 0644
+    #    validate: 'visudo -cf %s'
 
-# AUR Setup
+    # AUR Setup
 
     - name: Install yay using makepkg if it isn't installed already
       kewlfft.aur.aur:
@@ -228,7 +227,7 @@
         use: makepkg
         state: present
 
-# PACKAGES - AUR packages setup
+    # PACKAGES - AUR packages setup
 
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
@@ -237,17 +236,16 @@
         use: yay
         state: present
 
-# DOCKER
+    # DOCKER
 
-    - name: adding existing user "{{ the_user }}" to group docker and wheel if not present
-      become: yes
+    - name: Add existing user to group docker and wheel if not present
+      become: true
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
           - wheel
           - docker
-
-        append: yes
+        append: true
 
     - name: Docker cache cleanup
       community.docker.docker_prune:
