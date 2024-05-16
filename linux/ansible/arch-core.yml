@@ -93,6 +93,7 @@
           - docker-buildx                # new build system for docker
           - neovim                       # lets try this cool editor
           - micro                        # another cool editor
+          - git-delta                    # cool diff tool
         state: present
 
     # CONFIG - GIT
