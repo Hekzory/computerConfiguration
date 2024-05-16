@@ -92,6 +92,7 @@
           - docker-compose               # easy container management
           - docker-buildx                # new build system for docker
           - neovim                       # lets try this cool editor
+          - micro                        # another cool editor
         state: present
 
     # CONFIG - GIT
