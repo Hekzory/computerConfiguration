@@ -94,6 +94,7 @@
           - neovim                       # lets try this cool editor
           - micro                        # another cool editor
           - git-delta                    # cool diff tool
+          - lld                          # faster linker
         state: present
 
     # CONFIG - GIT
