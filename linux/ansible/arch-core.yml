@@ -95,6 +95,7 @@
           - micro                        # another cool editor
           - git-delta                    # cool diff tool
           - lld                          # faster linker
+          - python-requests              # dependency for one of next tasks
         state: present
 
     # CONFIG - GIT
@@ -120,10 +121,15 @@
 
     - name: Disable unnecessary services
       become: true
-      ansible.builtin.systemd_service:
+      ansible.builtin.service:
         name: "{{ item }}"
         state: stopped
         enabled: false
+      register: service_command_output
+      failed_when: >
+        service_command_output.failed
+        and 'unrecognized service' not in service_command_output.msg
+        and 'Could not find the requested service' not in service_command_output.msg
       loop:
         - ModemManager.service  # Not needed by most people, so disable by default
 
@@ -204,24 +210,6 @@
         - 60-ioschedulers.rules # ioscheduler settings - change for better performance
         - 50-sata.rules         # sata power settings - change for better performance
 
-    # User configuration - AUR preparation
-
-    # - name: Create the `aur_builder` user
-    #  become: true
-    #  ansible.builtin.user:
-    #    name: aur_builder
-    #    create_home: true
-    #    group: wheel
-
-    # - name: Allow the `aur_builder` user to run `sudo pacman` without a password
-    #  become: true
-    #  ansible.builtin.lineinfile:
-    #    path: /etc/sudoers.d/11-install-aur_builder
-    #    line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-    #    create: true
-    #    mode: 0644
-    #    validate: 'visudo -cf %s'
-
     # AUR Setup
 
     - name: Install yay using makepkg if it isn't installed already
@@ -231,6 +219,12 @@
         state: present
 
     # PACKAGES - AUR packages setup
+
+    - name: Ensure wrong packages are absent
+      community.general.pacman:
+        name:
+          - zsh-theme-powerlevel10k
+        state: absent
 
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
