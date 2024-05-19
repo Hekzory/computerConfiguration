@@ -92,6 +92,8 @@
           - docker-compose               # easy container management
           - docker-buildx                # new build system for docker
           - neovim                       # lets try this cool editor
+          - wl-clipboard                 # wayland clipboard
+          - python-neovim                # python neovim integration
           - micro                        # another cool editor
           - git-delta                    # cool diff tool
           - lld                          # faster linker
