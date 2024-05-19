@@ -173,28 +173,6 @@
         - fstrim.timer
         - docker.socket
 
-    # CONFIG - ZSH
-
-    - name: Change shell to zsh
-      become: true
-      ansible.builtin.user:
-        shell: /bin/zsh
-        name: "{{ the_user }}"
-
-    - name: Copy zsh dotfiles
-      ansible.builtin.copy:
-        src: "user_home/{{ item }}"
-        dest: "/home/{{ the_user }}/{{ item }}"
-        force: true
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-      loop:
-        - .zshrc
-        - .p10k-main.zsh
-        - .p10k-portable.zsh
-        - .p10k.zsh
-
     # CONFIG - udev
 
     - name: Ioscheduler settings - change for better performance
@@ -230,8 +208,31 @@
       kewlfft.aur.aur:
         name:
           - zsh-theme-powerlevel10k-git
+          - zsh-fast-syntax-highlighting
         use: yay
         state: present
+
+    # CONFIG - ZSH
+
+    - name: Change shell to zsh
+      become: true
+      ansible.builtin.user:
+        shell: /bin/zsh
+        name: "{{ the_user }}"
+
+    - name: Copy zsh dotfiles
+      ansible.builtin.copy:
+        src: "user_home/{{ item }}"
+        dest: "/home/{{ the_user }}/{{ item }}"
+        force: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+      loop:
+        - .zshrc
+        - .p10k-main.zsh
+        - .p10k-portable.zsh
+        - .p10k.zsh
 
     # DOCKER
 
