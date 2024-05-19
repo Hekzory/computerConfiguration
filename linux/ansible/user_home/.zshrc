@@ -41,7 +41,7 @@ alias please="sudo"
 
 alias cat='bat --style="auto"'
 alias ls='lsd -AhlF --color auto --icon auto'
-alias nano='nano -c -S -u -l'
+alias nano='micro'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
