@@ -30,6 +30,7 @@
           - mpv                          # video player
           - yt-dlp                       # yt video player for mpv
           - realtime-privileges          # for better audio
+          - alacritty                    # cool terminal
         state: present
 
     # PACKAGES - AUR desktop packages setup
@@ -62,3 +63,16 @@
           - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
 
         append: true
+
+    # CONFIG - alacritty
+
+    - name: Copy alacritty dotfiles
+      ansible.builtin.copy:
+        src: "user_home/{{ item }}"
+        dest: "/home/{{ the_user }}/{{ item }}"
+        force: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+      loop:
+        - .alacritty.toml

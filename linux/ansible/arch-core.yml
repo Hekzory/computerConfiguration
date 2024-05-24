@@ -254,3 +254,17 @@
         networks: true
         volumes: true
         builder_cache: true
+      ignore_errors: True # Basically due to some python dependency breakage this one may break so we say it's ok sometimes
+
+    # CONFIG - neovim
+
+    - name: Copy neovim dotfiles
+      ansible.builtin.copy:
+        src: "user_home/.config/nvim/{{ item }}"
+        dest: "/home/{{ the_user }}/.config/nvim/{{ item }}"
+        force: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+      loop:
+        - init.lua
