@@ -1,4 +1,4 @@
-if [[ $LINES -gt 30 ]]; then
+if [[ $LINES -gt 30 ]] && zmodload zsh/terminfo && (( terminfo[colors] >= 256 )); then
     flashfetch
 fi
 
@@ -21,8 +21,8 @@ export HISTCONTROL=ignoreboth
 export HISTIGNORE="&:[bf]g:c:clear:history:exit:q:pwd:* --help"
 
 # Use custom `less` colors for `man` pages.
-export LESS_TERMCAP_md="$(tput bold 2> /dev/null; tput setaf 2 2> /dev/null)"
-export LESS_TERMCAP_me="$(tput sgr0 2> /dev/null)"
+# export LESS_TERMCAP_md="$(tput bold 2> /dev/null; tput setaf 2 2> /dev/null)"
+# export LESS_TERMCAP_me="$(tput sgr0 2> /dev/null)"
 
 # Make new shells get the history lines from all previous
 export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"

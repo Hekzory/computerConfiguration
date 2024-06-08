@@ -1,3 +1,8 @@
+live_config_reload = true
+
+[env]
+TERM = "alacritty"
+
 [font]
 size = 11.0
 
@@ -16,6 +21,15 @@ style = "Italic"
 [font.normal]
 family = "MesloLGS NF"
 style = "Regular"
+
+[window]
+startup_mode      = "Maximized"
+opacity           = 0.99
+dynamic_title     = true
+dynamic_padding   = true
+decorations       = "Full"
+blur              = true
+resize_increments = true
 
 # TokyoNight Alacritty Colors
 # Default colors

@@ -30,7 +30,7 @@
           - mpv                          # video player
           - yt-dlp                       # yt video player for mpv
           - realtime-privileges          # for better audio
-          - alacritty                    # cool terminal
+          - wezterm                    # cool terminal
         state: present
 
     # PACKAGES - AUR desktop packages setup
@@ -64,9 +64,9 @@
 
         append: true
 
-    # CONFIG - alacritty
+    # CONFIG - wezterm
 
-    - name: Copy alacritty dotfiles
+    - name: Copy wezterm dotfiles
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
@@ -75,4 +75,4 @@
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
       loop:
-        - .alacritty.toml
+        - .wezterm.lua
