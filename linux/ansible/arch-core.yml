@@ -72,7 +72,6 @@
           - lsd                          # better ls
           - zsh                          # better shell
           - zsh-autosuggestions          # self-explanatory
-          - zsh-syntax-highlighting      # self-explanatory
           - zsh-history-substring-search # self-explanatory
           - zsh-completions              # self-explanatory
           - inxi                         # system info tool
@@ -94,10 +93,8 @@
           - neovim                       # lets try this cool editor
           - wl-clipboard                 # wayland clipboard
           - python-neovim                # python neovim integration
-          - micro                        # another cool editor
           - git-delta                    # cool diff tool
           - lld                          # faster linker
-          - python-requests              # dependency for one of next tasks
         state: present
 
     # CONFIG - GIT
@@ -147,7 +144,7 @@
         - nouveau            # does not work properly on newer nvidia videocards or with worse performance
         - iTCO_wdt           # watchdog timer, small performance improvement
         - sp5100_tco         # watchdog timer, small performance improvement
-        - floppy             # useless
+        - floppy             # useless, also bad for security
         - parport            # parallel port support, rarely used nowadays
         - ppdev              # parallel port device support, rarely used
         - snd_hda_codec_hdmi # audio through hdmi, almost never used
@@ -201,15 +198,18 @@
     # PACKAGES - AUR packages setup
 
     - name: Ensure wrong packages are absent
+      become: true
       community.general.pacman:
         name:
-          - zsh-theme-powerlevel10k # unsupported even though present in official repos, should be replaced by git version
+          - zsh-theme-powerlevel10k     # unsupported even though present in official repos, should be replaced by git version anyway if used at all
+          - zsh-theme-powerlevel10k-git # also not supported anymore so remove it for good
+          - zsh-syntax-highlighting     # we are going to install a better alternative, this one not used anymore
         state: absent
 
     - name: Install packages from AUR using yay
+      become: true
       kewlfft.aur.aur:
         name:
-          - zsh-theme-powerlevel10k-git
           - zsh-fast-syntax-highlighting
           - oh-my-posh-git
         use: yay
@@ -233,11 +233,7 @@
         mode: u+rw,g+r,o--
       loop:
         - .zshrc
-        - .p10k-main.zsh
-        - .p10k-portable.zsh
-        - .p10k.zsh
         - tokyofine.omp.toml
-
 
     # DOCKER
 
