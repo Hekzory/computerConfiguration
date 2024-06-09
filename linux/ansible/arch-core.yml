@@ -21,8 +21,8 @@
         - { regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16' }
         - { regexp: '^#ILoveCandy$', line: 'ILoveCandy' }
         - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
-        # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' } # this one removes warnings but may break something so disabling by default, you are free to uncomment it
-
+        # this one removes warnings but may break something so disabling by default, you are free to uncomment it
+        # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
     # CONFIG - nano
 
     - name: Nano - Enable color in config
