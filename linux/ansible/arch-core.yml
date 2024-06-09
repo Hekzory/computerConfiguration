@@ -95,6 +95,7 @@
           - python-neovim                # python neovim integration
           - git-delta                    # cool diff tool
           - lld                          # faster linker
+          - python-requests              # docker requires it
         state: present
 
     # CONFIG - GIT
@@ -207,7 +208,6 @@
         state: absent
 
     - name: Install packages from AUR using yay
-      become: true
       kewlfft.aur.aur:
         name:
           - zsh-fast-syntax-highlighting
