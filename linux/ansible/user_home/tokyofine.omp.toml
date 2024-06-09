@@ -32,7 +32,7 @@ terminal_background = 'p:t-background'
 	background = 'transparent'
     folder_separator_icon = '/'
 	home_icon = '~'
-	template = '<b>{{ .Path }}</b> | '
+	template = '<b>{{ .Path }} | </b>'
 
 	[blocks.segments.properties]
 	  style = 'mixed'
@@ -63,7 +63,8 @@ terminal_background = 'p:t-background'
     style = 'plain'
     foreground = 'p:terminal-red'
 	background = 'transparent'
-    template = ' '
+	template = '{{ if .Env.LOW_COLOR_SUPPORT }} X{{ else }} {{ end }} '
+
 # right side of first line starts
 [[blocks]]
   type = 'prompt'
@@ -75,14 +76,14 @@ terminal_background = 'p:t-background'
     style = 'plain'
     foreground = 'p:terminal-yellow'
 	background = 'transparent'
-    template = ' {{ .Full }}'
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}{{ .Full }}{{ else }} {{ .Full }}{{ end }}'
 
   [[blocks.segments]]
     type = 'go'
     style = 'plain'
     foreground = 'p:light-sky-blue'
-	background = 'transparent'
-    template = 'ﳑ {{ .Full}}'
+	background = 'transparent'	
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}{{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
 
   # git status
   [[blocks.segments]]
@@ -120,7 +121,7 @@ terminal_background = 'p:t-background'
       "{{if eq .Code 0}}p:pistachio-green{{end}}",
     ]
 	background = 'transparent'
-    template = '❯'
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }}'
 
 [transient_prompt]
   foreground_templates = [
@@ -128,12 +129,12 @@ terminal_background = 'p:t-background'
       "{{if eq .Code 0}}p:pistachio-blue{{end}}",
   ]
   background = 'transparent'
-  template = '❯ '
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }} '
 
 [secondary_prompt]
   foreground = 'p:terminal-blue'
   background = 'transparent'
-  template = '❯❯ '
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }}>>{{ else }}❯❯{{ end }} '
 
 [palette]
   blue-bell = '#9aa5ce'

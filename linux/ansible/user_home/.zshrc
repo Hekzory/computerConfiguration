@@ -2,6 +2,10 @@ if [[ $LINES -gt 30 ]] && zmodload zsh/terminfo && (( terminfo[colors] >= 256 ))
     flashfetch
 fi
 
+if zmodload zsh/terminfo && (( terminfo[colors] < 256 )); then
+	export LOW_COLOR_SUPPORT=1
+fi
+
 if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
   eval "$(oh-my-posh init zsh --config ~/tokyofine.omp.toml)"
 fi
