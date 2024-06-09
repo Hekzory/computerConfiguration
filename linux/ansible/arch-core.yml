@@ -21,7 +21,7 @@
         - { regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16' }
         - { regexp: '^#ILoveCandy$', line: 'ILoveCandy' }
         - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
-        - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
+        # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' } # this one removes warnings but may break something so disabling by default, you are free to uncomment it
 
     # CONFIG - nano
 
@@ -152,7 +152,7 @@
         - ppdev              # parallel port device support, rarely used
         - snd_hda_codec_hdmi # audio through hdmi, almost never used
         - snd_hda_intel      # audio through hdmi, almost never used
-        - legion_laptop      # used by legion laptops, but wrongly loaded by every device i have
+        - legion_laptop      # should used by legion laptops, but wrongly loaded by every device i have
 
     - name: Copy reflector config - to setup proper mirror update
       become: true
@@ -203,7 +203,7 @@
     - name: Ensure wrong packages are absent
       community.general.pacman:
         name:
-          - zsh-theme-powerlevel10k
+          - zsh-theme-powerlevel10k # unsupported even though present in official repos, should be replaced by git version
         state: absent
 
     - name: Install packages from AUR using yay
@@ -211,6 +211,7 @@
         name:
           - zsh-theme-powerlevel10k-git
           - zsh-fast-syntax-highlighting
+          - oh-my-posh-git
         use: yay
         state: present
 
@@ -222,7 +223,7 @@
         shell: /bin/zsh
         name: "{{ the_user }}"
 
-    - name: Copy zsh dotfiles
+    - name: Copy zsh files and themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
@@ -235,6 +236,8 @@
         - .p10k-main.zsh
         - .p10k-portable.zsh
         - .p10k.zsh
+        - tokyofine.omp.toml
+
 
     # DOCKER
 
@@ -254,7 +257,7 @@
         networks: true
         volumes: true
         builder_cache: true
-        # ignore_errors: true # Basically due to some python dependency breakage this one may break so may we say it's ok sometimes
+        # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
 
     # CONFIG - neovim
 

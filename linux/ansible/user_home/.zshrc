@@ -2,10 +2,14 @@ if [[ $LINES -gt 30 ]] && zmodload zsh/terminfo && (( terminfo[colors] >= 256 ))
     flashfetch
 fi
 
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
+  eval "$(oh-my-posh init zsh --config ~/tokyofine.omp.toml)"
 fi
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+#if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+#fi
 
 HISTFILE=~/.histfile
 HISTSIZE=10000
@@ -61,7 +65,7 @@ alias htop='btop'
 alias top='btop'
 alias grep='rg -uuu'
 
-source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+#source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
 # Fish-like syntax highlighting and autosuggestions
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
@@ -81,8 +85,8 @@ compinit
 
 source /usr/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
 
-if zmodload zsh/terminfo && (( terminfo[colors] >= 256 )); then
-  [[ ! -f ~/.p10k-main.zsh ]] || source ~/.p10k-main.zsh
-else
-  [[ ! -f ~/.p10k-portable.zsh ]] || source ~/.p10k-portable.zsh
-fi
+#if zmodload zsh/terminfo && (( terminfo[colors] >= 256 )); then
+#[[ ! -f ~/.p10k-main.zsh ]] || source ~/.p10k-main.zsh
+#else
+#  [[ ! -f ~/.p10k-portable.zsh ]] || source ~/.p10k-portable.zsh
+#fi
