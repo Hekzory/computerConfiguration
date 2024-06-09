@@ -254,7 +254,7 @@
         networks: true
         volumes: true
         builder_cache: true
-      ignore_errors: true # Basically due to some python dependency breakage this one may break so we say it's ok sometimes
+        # ignore_errors: true # Basically due to some python dependency breakage this one may break so may we say it's ok sometimes
 
     # CONFIG - neovim
 
