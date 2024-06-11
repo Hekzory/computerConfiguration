@@ -10,7 +10,7 @@
 
     # CONFIG - Pacman
 
-    - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, and NoExtract fix for warnings
+    - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
       become: true
       ansible.builtin.lineinfile:
         path: /etc/pacman.conf
