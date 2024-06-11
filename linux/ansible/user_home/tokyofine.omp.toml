@@ -50,10 +50,16 @@ terminal_background = 'p:t-background'
 	  '{{ if gt .Ahead 0 }}p:terminal-blue{{ end }}',
 	  '{{ if gt .Behind 0 }}p:celeste-blue{{ end }}'
 	]
-    template = '{{ .HEAD }} {{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}{{ if .Staging.Changed }}  {{ .Staging.String }}{{ end }} {{ if gt .Behind 0 }}⇣{{ end }}{{ if gt .Ahead 0 }}⇡{{ end }}'
+    template = """\
+      {{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}\
+      {{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}\
+      {{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}\
+      {{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}\
+    """
 
     [blocks.segments.properties]
-      branch_icon = 'on  '
+      # branch_icon = 'on  ' # no support for templates
+	  branch_icon = 'on '
 	  commit_icon = '@'
       fetch_status = true
 	  fetch_upstream_icon = true
