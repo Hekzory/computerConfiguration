@@ -9,14 +9,14 @@ config.color_scheme = 'tokyonight_night'
 if wezterm.target_triple == "x86_64-unknown-linux-gnu" then
   config.default_prog = { '/bin/zsh' }
   config.font = wezterm.font_with_fallback{
-    'MesloLGS NF',
+    'MesloLGM Nerd Font Mono',
     'JetBrainsMono Nerd Font Mono', 
     'JetBrains Mono'
   }
 else
   config.default_prog = { 'pwsh.exe', '-NoLogo' }
   config.font = wezterm.font_with_fallback{
-    'MesloLGS Nerd Font Mono', 
+    'MesloLGM Nerd Font Mono', 
     'JetBrainsMono Nerd Font Mono', 
     'JetBrains Mono'
   }

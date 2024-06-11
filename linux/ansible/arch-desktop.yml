@@ -30,7 +30,8 @@
           - mpv                          # video player
           - yt-dlp                       # yt video player for mpv
           - realtime-privileges          # for better audio
-          - wezterm                    # cool terminal
+          - wezterm                      # cool terminal
+          - ttf-meslo-nerd
         state: present
 
     # PACKAGES - AUR desktop packages setup
@@ -41,7 +42,6 @@
           - google-chrome-beta
           - jetbrains-toolbox
           - prismlauncher-git
-          - ttf-meslo-nerd-font-powerlevel10k
           - jdk21-graalvm-ee-bin
         use: yay
         state: present
@@ -51,6 +51,7 @@
       community.general.pacman:
         name:
           - prismlauncher-git-debug
+          - ttf-meslo-nerd-font-powerlevel10k
         state: absent
 
     # CONFIG - Optimization and/or compatibility improvements
