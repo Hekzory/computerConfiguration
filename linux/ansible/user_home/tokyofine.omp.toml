@@ -4,7 +4,7 @@ version = 2
 final_space = true
 console_title_template = '{{ .Shell }} in {{ .Folder }}{{if .Root}}:: Admin{{end}}'
 terminal_background = 'p:t-background'
-
+disable_notice = true
 
 # First line starts
 [[blocks]]
@@ -15,14 +15,15 @@ terminal_background = 'p:t-background'
   newline = true
 
 
-  # Text block before path 
+  # Time 
   [[blocks.segments]]
-    type = 'text'
+    type = 'time'
     style = 'plain'
     foreground = 'p:terminal-blue'
     background = 'transparent'
-    #template = '▶ '
-    template = ' '
+    template = '<b>[{{ .CurrentDate | date .Format }}]</b>'
+	[blocks.segments.properties]
+	  time_format = "15:04:05"
 
   # Path info
   [[blocks.segments]]
@@ -32,7 +33,7 @@ terminal_background = 'p:t-background'
 	background = 'transparent'
     folder_separator_icon = '/'
 	home_icon = '~'
-	template = '<b>{{ .Path }} | </b>'
+	template = '<b> {{ .Path }} | </b>'
 
 	[blocks.segments.properties]
 	  style = 'mixed'
