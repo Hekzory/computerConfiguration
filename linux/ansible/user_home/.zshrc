@@ -49,11 +49,10 @@ alias please="sudo"
 
 alias cat='bat --style="auto"'
 alias ls='lsd -AhlF --color auto --icon auto'
-alias nano='micro'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
-alias less='less -r'
+alias less='less -R'
 alias grep="grep -n --color"
 alias mkdir="mkdir -pv"
 alias pacman="sudo pacman"
@@ -68,6 +67,7 @@ alias df='duf'
 alias htop='btop'
 alias top='btop'
 alias grep='rg -uuu'
+alias omp='oh-my-posh'
 
 #source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
