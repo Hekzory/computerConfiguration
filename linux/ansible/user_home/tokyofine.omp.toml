@@ -83,14 +83,14 @@ disable_notice = true
     style = 'plain'
     foreground = 'p:terminal-yellow'
 	background = 'transparent'
-    template = '{{ if .Env.LOW_COLOR_SUPPORT }}{{ .Full }}{{ else }} {{ .Full }}{{ end }}'
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}py {{ .Full }}{{ else }} {{ .Full }}{{ end }}'
 
   [[blocks.segments]]
     type = 'go'
     style = 'plain'
     foreground = 'p:light-sky-blue'
 	background = 'transparent'	
-    template = '{{ if .Env.LOW_COLOR_SUPPORT }}{{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
 
   # git status
   [[blocks.segments]]
