@@ -6,14 +6,16 @@ if zmodload zsh/terminfo && (( terminfo[colors] < 256 )); then
 	export LOW_COLOR_SUPPORT=1
 fi
 
+# Check if the theme file exists
+if [[ ! -f ~/tokyofine.omp.toml ]]; then
+	echo "Downloading missing tokyofine.omp.toml..."
+	curl -L "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o ~/tokyofine.omp.toml
+        echo "Theme downloaded successfully."
+fi
+
 if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
   eval "$(oh-my-posh init zsh --config ~/tokyofine.omp.toml)"
 fi
-
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-#if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-#  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-#fi
 
 HISTFILE=~/.histfile
 HISTSIZE=10000
@@ -28,16 +30,10 @@ COMPLETION_WAITING_DOTS="true"
 export HISTCONTROL=ignoreboth
 export HISTIGNORE="&:[bf]g:c:clear:history:exit:q:pwd:* --help"
 
-# Use custom `less` colors for `man` pages.
-# export LESS_TERMCAP_md="$(tput bold 2> /dev/null; tput setaf 2 2> /dev/null)"
-# export LESS_TERMCAP_me="$(tput sgr0 2> /dev/null)"
-
 # Make new shells get the history lines from all previous
 export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
 export FZF_BASE=/usr/share/fzf
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 alias make="make -j`nproc`"
@@ -69,8 +65,6 @@ alias top='btop'
 alias grep='rg -uuu'
 alias omp='oh-my-posh'
 
-#source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
-
 # Fish-like syntax highlighting and autosuggestions
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
@@ -88,9 +82,3 @@ autoload -Uz compinit
 compinit
 
 source /usr/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
-
-#if zmodload zsh/terminfo && (( terminfo[colors] >= 256 )); then
-#[[ ! -f ~/.p10k-main.zsh ]] || source ~/.p10k-main.zsh
-#else
-#  [[ ! -f ~/.p10k-portable.zsh ]] || source ~/.p10k-portable.zsh
-#fi
