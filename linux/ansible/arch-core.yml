@@ -1,15 +1,10 @@
----
 - name: Arch-core.yml - base setup for arch
   hosts: arch
   become: false
-
   vars:
     the_user: "{{ ansible_user_id }}"
-
   tasks:
-
     # CONFIG - Pacman
-
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
       become: true
       ansible.builtin.lineinfile:
@@ -17,108 +12,96 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       loop:
-        - { regexp: '^#Color$', line: 'Color' }
-        - { regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16' }
-        - { regexp: '^#ILoveCandy$', line: 'ILoveCandy' }
-        - { regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists' }
         # this one removes warnings but may break something so disabling by default, you are free to uncomment it
         # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
+        - {regexp: '^#Color$', line: 'Color'}
+        - {regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16'}
+        - {regexp: '^#ILoveCandy$', line: 'ILoveCandy'}
+        - {regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists'}
     # CONFIG - nano
-
     - name: Nano - Enable color in config
       become: true
       ansible.builtin.lineinfile:
         path: /etc/nanorc
         line: '{{ item.line }}'
       loop:
-        - { line: 'include "/usr/share/nano/extra/*.nanorc"' }
-        - { line: 'include "/usr/share/nano/*.nanorc"' }
-
+        - {line: 'include "/usr/share/nano/extra/*.nanorc"'}
+        - {line: 'include "/usr/share/nano/*.nanorc"'}
     # CONFIG - makepkg
-
     - name: Makepkg - disable pkg compression
       become: true
       ansible.builtin.lineinfile:
         path: /etc/makepkg.conf
         regexp: "PKGEXT='.pkg.tar.zst'"
         line: "PKGEXT='.pkg.tar'"
-
     # PACKAGES - Upgrade
-
     - name: Full system upgrade via pacman
       become: true
       community.general.pacman:
         update_cache: true
         upgrade: true
-
-
     # PACKAGES - Setup
-
     - name: Full system upgrade via pacman and setup base needed packages
       become: true
       community.general.pacman:
         update_cache: true
         name:
-          - nano                         # editor
-          - less                         # easy view utility
-          - git                          # to clone github repos
-          - base-devel                   # required packages for developer stuff
-          - curl                         # download utility
-          - wget                         # download utility
-          - rsync                        # copy utility
-          - bat                          # prettier cat
-          - fastfetch                    # system info
-          - btop                         # better resource monitor
-          - lsd                          # better ls
-          - zsh                          # better shell
-          - zsh-autosuggestions          # self-explanatory
+          - nano # editor
+          - less # easy view utility
+          - git # to clone github repos
+          - base-devel # required packages for developer stuff
+          - curl # download utility
+          - wget # download utility
+          - rsync # copy utility
+          - bat # prettier cat
+          - fastfetch # system info
+          - btop # better resource monitor
+          - lsd # better ls
+          - zsh # better shell
+          - zsh-autosuggestions # self-explanatory
           - zsh-history-substring-search # self-explanatory
-          - zsh-completions              # self-explanatory
-          - inxi                         # system info tool
-          - pigz                         # faster gzip
-          - pbzip2                       # faster bzip
-          - fwupd                        # firmware update tool
-          - amd-ucode                    # amd microcode
-          - linux-firmware               # linux firmware
-          - github-cli                   # better github integration
-          - networkmanager               # self-explanatory
-          - python3                      # self-explanatory
-          - reflector                    # mirror updater
-          - duf                          # df but better
-          - ripgrep                      # faster grep
-          - fzf                          # fast file search
-          - docker                       # containerization
-          - docker-compose               # easy container management
-          - docker-buildx                # new build system for docker
-          - neovim                       # lets try this cool editor
-          - wl-clipboard                 # wayland clipboard
-          - python-neovim                # python neovim integration
-          - git-delta                    # cool diff tool
-          - lld                          # faster linker
-          - python-requests              # docker requires it
+          - zsh-completions # self-explanatory
+          - inxi # system info tool
+          - pigz # faster gzip
+          - pbzip2 # faster bzip
+          - fwupd # firmware update tool
+          - amd-ucode # amd microcode
+          - linux-firmware # linux firmware
+          - github-cli # better github integration
+          - networkmanager # self-explanatory
+          - python3 # self-explanatory
+          - reflector # mirror updater
+          - duf # df but better
+          - ripgrep # faster grep
+          - fzf # fast file search
+          - docker # containerization
+          - docker-compose # easy container management
+          - docker-buildx # new build system for docker
+          - neovim # lets try this cool editor
+          - wl-clipboard # wayland clipboard
+          - python-neovim # python neovim integration
+          - git-delta # cool diff tool
+          - lld # faster linker
+          - python-requests # docker requires it
+          - stylua # lua formatter
+          - yamlfmt # yaml formatter
         state: present
-
     # CONFIG - GIT
-
     - name: Set gitconfig to personal preference at ~/.gitconfig
       community.general.git_config:
         scope: global
         name: "{{ item.name }}"
         value: "{{ item.value }}"
       loop:
-        - { name: 'diff.indentHeuristic', value: 'true' }
-        - { name: 'diff.algorithm', value: 'minimal' }
-
-
+        - {name: 'diff.indentHeuristic', value: 'true'}
+        - {name: 'diff.algorithm', value: 'minimal'}
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
-
     - name: Fstab - change relatime to noatime
       become: true
       ansible.builtin.replace:
         path: /etc/fstab
         regexp: 'relatime'
         replace: 'noatime'
-
     - name: Disable unnecessary services
       become: true
       ansible.builtin.service:
@@ -127,31 +110,29 @@
         enabled: false
       register: service_command_output
       failed_when: >
-        service_command_output.failed
-        and 'unrecognized service' not in service_command_output.msg
-        and 'Could not find the requested service' not in service_command_output.msg
-      loop:
-        - ModemManager.service  # Not needed by most people, so disable by default
+        service_command_output.failed and 'unrecognized service' not in service_command_output.msg and 'Could not find the
+        requested service' not in service_command_output.msg
 
+      loop:
+        - ModemManager.service # Not needed by most people, so disable by default
     - name: Blacklist unnecessary modules
       become: true
       community.general.kernel_blacklist:
         name: "{{ item }}"
         state: present
       loop:
-        - pcspkr             # motherboard speaker, useless
-        - snd_pcsp           # motherboard speaker, useless
-        - eeepc_wmi          # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-        - nouveau            # does not work properly on newer nvidia videocards or with worse performance
-        - iTCO_wdt           # watchdog timer, small performance improvement
-        - sp5100_tco         # watchdog timer, small performance improvement
-        - floppy             # useless, also bad for security
-        - parport            # parallel port support, rarely used nowadays
-        - ppdev              # parallel port device support, rarely used
+        - pcspkr # motherboard speaker, useless
+        - snd_pcsp # motherboard speaker, useless
+        - eeepc_wmi # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
+        - nouveau # does not work properly on newer nvidia videocards or with worse performance
+        - iTCO_wdt # watchdog timer, small performance improvement
+        - sp5100_tco # watchdog timer, small performance improvement
+        - floppy # useless, also bad for security
+        - parport # parallel port support, rarely used nowadays
+        - ppdev # parallel port device support, rarely used
         - snd_hda_codec_hdmi # audio through hdmi, almost never used
-        - snd_hda_intel      # audio through hdmi, almost never used
-        - legion_laptop      # should used by legion laptops, but wrongly loaded by every device i have
-
+        - snd_hda_intel # audio through hdmi, almost never used
+        - legion_laptop # should used by legion laptops, but wrongly loaded by every device i have
     - name: Copy reflector config - to setup proper mirror update
       become: true
       ansible.builtin.copy:
@@ -161,7 +142,6 @@
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
-
     - name: Enable/disable some services based on virtualization
       become: true
       ansible.builtin.systemd_service:
@@ -170,7 +150,6 @@
         enabled: "{{ ansible_virtualization_type == 'none' }}"
       loop:
         - fstrim.timer
-
     - name: Enable necessary services
       become: true
       ansible.builtin.systemd_service:
@@ -180,9 +159,7 @@
       loop:
         - reflector.timer
         - docker.socket
-
     # CONFIG - udev
-
     - name: Ioscheduler settings - change for better performance
       become: true
       ansible.builtin.copy:
@@ -194,27 +171,22 @@
         mode: u+rw,g+r,o+r
       loop:
         - 60-ioschedulers.rules # ioscheduler settings - change for better performance
-        - 50-sata.rules         # sata power settings - change for better performance
-
+        - 50-sata.rules # sata power settings - change for better performance
     # AUR Setup
-
     - name: Install yay using makepkg if it isn't installed already
       kewlfft.aur.aur:
         name: yay
         use: makepkg
         state: present
-
     # PACKAGES - AUR packages setup
-
     - name: Ensure wrong packages are absent
       become: true
       community.general.pacman:
         name:
-          - zsh-theme-powerlevel10k     # unsupported even though present in official repos, should be replaced by git version anyway if used at all
+          - zsh-theme-powerlevel10k # unsupported even though present in official repos, should be replaced by git version anyway if used at all
           - zsh-theme-powerlevel10k-git # also not supported anymore so remove it for good
-          - zsh-syntax-highlighting     # we are going to install a better alternative, this one not used anymore
+          - zsh-syntax-highlighting # we are going to install a better alternative, this one not used anymore
         state: absent
-
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
@@ -222,15 +194,12 @@
           - oh-my-posh-git
         use: yay
         state: present
-
     # CONFIG - ZSH
-
     - name: Change shell to zsh
       become: true
       ansible.builtin.user:
         shell: /bin/zsh
         name: "{{ the_user }}"
-
     - name: Copy zsh files and themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
@@ -242,9 +211,7 @@
       loop:
         - .zshrc
         - tokyofine.omp.toml
-
     # DOCKER
-
     - name: Add existing user to group docker and wheel if not present
       become: true
       ansible.builtin.user:
@@ -253,7 +220,6 @@
           - wheel
           - docker
         append: true
-
     - name: Docker cache cleanup
       community.docker.docker_prune:
         containers: true
@@ -262,9 +228,7 @@
         volumes: true
         builder_cache: true
         # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
-
     # CONFIG - neovim
-
     - name: Copy neovim dotfiles
       ansible.builtin.copy:
         src: "user_home/.config/nvim/{{ item }}"

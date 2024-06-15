@@ -1,22 +1,22 @@
 vim.opt.number = true
-vim.opt.mouse = 'a'
+vim.opt.mouse = "a"
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
 
-vim.keymap.set({'n', 'x'}, 'gy', '"+y')
-vim.keymap.set({'n', 'x'}, 'gp', '"+p')
+vim.keymap.set({ "n", "x" }, "gy", '"+y')
+vim.keymap.set({ "n", "x" }, "gp", '"+p')
 
 local lazy = {}
 
 function lazy.install(path)
 	if not (vim.uv or vim.loop).fs_stat(path) then
-		print('Installing lazy.nvim....')
+		print("Installing lazy.nvim....")
 		vim.fn.system({
-			'git',
-	  		'clone',
-			'--filter=blob:none',
-			'https://github.com/folke/lazy.nvim.git',
-			'--branch=stable', -- latest stable release
+			"git",
+			"clone",
+			"--filter=blob:none",
+			"https://github.com/folke/lazy.nvim.git",
+			"--branch=stable", -- latest stable release
 			path,
 		})
 	end
@@ -31,59 +31,121 @@ function lazy.setup(plugins)
 
 	vim.opt.rtp:prepend(lazy.path)
 
-	require('lazy').setup(plugins, lazy.opts)
+	require("lazy").setup(plugins, lazy.opts)
 	vim.g.plugins_ready = true
 end
 
 vim.g.suda_smart_edit = 1
 
-lazy.path = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
+lazy.path = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 lazy.opts = {}
 
 lazy.setup({
-	{"folke/tokyonight.nvim", lazy = false, priority = 1000 },
+	{ "folke/tokyonight.nvim", lazy = false, priority = 1000 },
 	{
-    	'nvim-lualine/lualine.nvim',
-    	dependencies = { 'nvim-tree/nvim-web-devicons' }
+		"nvim-lualine/lualine.nvim",
+		dependencies = { "nvim-tree/nvim-web-devicons" },
 	},
 	{
 		"ms-jpq/coq_nvim",
-		branch = 'coq',
+		branch = "coq",
 		dependencies = { "ms-jpq/coq.artifacts" },
 	},
 	{
 		"lambdalisue/vim-suda",
 	},
 	{
-		"nvim-treesitter/nvim-treesitter", 
-		build = ":TSUpdate"
+		"mfussenegger/nvim-lint",
 	},
 	{
-    	"nvim-neo-tree/neo-tree.nvim",
-    	branch = "v3.x",
-    	dependencies = {
-      		"nvim-lua/plenary.nvim",
-      		"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-      		"MunifTanjim/nui.nvim",
-      		-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
-    	},
+		"stevearc/conform.nvim",
+		opts = {},
+	},
+	{
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+	},
+	{
+		"nvim-neo-tree/neo-tree.nvim",
+		branch = "v3.x",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+			"MunifTanjim/nui.nvim",
+			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+		},
 	},
 })
 
 vim.opt.termguicolors = true
-vim.cmd[[colorscheme tokyonight-night]]
+vim.cmd([[colorscheme tokyonight-night]])
 
-require('lualine').setup({
-	options = { theme = 'tokyonight', },
+require("lualine").setup({
+	options = { theme = "tokyonight" },
 })
 
-vim.cmd[[COQnow --shut-up]]
+vim.cmd([[COQnow --shut-up]])
 
-require('nvim-treesitter.configs').setup({
-	ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "go", "cpp", "css", "html", "csv", "dockerfile", "gitignore", "html", "bash", "json", "make", "python", "rust", "sql", "udev", "yaml", "xml" },
+require("nvim-treesitter.configs").setup({
+	ensure_installed = {
+		"c",
+		"lua",
+		"vim",
+		"vimdoc",
+		"query",
+		"go",
+		"cpp",
+		"css",
+		"html",
+		"csv",
+		"dockerfile",
+		"gitignore",
+		"html",
+		"bash",
+		"json",
+		"make",
+		"python",
+		"rust",
+		"sql",
+		"udev",
+		"yaml",
+		"xml",
+	},
 	sync_install = true,
 	auto_install = true,
 	highlight = {
 		enable = true,
-	}
+	},
+})
+
+require("lint").linters_by_ft = {
+	zsh = { "zsh" },
+}
+
+vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+	callback = function()
+		-- try_lint without arguments runs the linters defined in `linters_by_ft`
+		require("lint").try_lint()
+	end,
+})
+
+require("conform").formatters.yamlfmt = {
+	prepend_args = { "-formatter", "max_line_length=120" },
+	-- The base args are { "-filename", "$FILENAME" } so the final args will be
+	-- { "-i", "2", "-filename", "$FILENAME" }
+}
+
+require("conform").setup({
+	formatters_by_ft = {
+		lua = { "stylua" },
+		yaml = { "yamlfmt" },
+	},
+})
+
+require("conform").setup({
+	format_on_save = {
+		-- These options will be passed to conform.format()
+		timeout_ms = 500,
+		lsp_fallback = true,
+	},
 })

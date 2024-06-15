@@ -1,41 +1,33 @@
----
 - name: Include arch-core.yml
   import_playbook: arch-core.yml
-
 - name: Arch-desktop.yml - desktop setup for arch
   hosts: arch
   become: false
-
   vars:
     the_user: "{{ ansible_user_id }}"
-
   tasks:
-
     # PACKAGES - Official repos desktop packages setup
-
     - name: Setup desktop packages
       become: true
       community.general.pacman:
         executable: yay
         update_cache: true
         name:
-          - ttf-roboto                   # fonts
-          - ttf-hack                     # fonts
-          - ttf-liberation               # fonts
-          - noto-fonts                   # fonts
-          - noto-fonts-extra             # fonts
-          - noto-fonts-emoji             # fonts
-          - adobe-source-sans-fonts      # fonts
-          - qbittorrent                  # torrent
-          - mpv                          # video player
-          - yt-dlp                       # yt video player for mpv
-          - realtime-privileges          # for better audio
-          - wezterm                      # cool terminal
+          - ttf-roboto # fonts
+          - ttf-hack # fonts
+          - ttf-liberation # fonts
+          - noto-fonts # fonts
+          - noto-fonts-extra # fonts
+          - noto-fonts-emoji # fonts
+          - adobe-source-sans-fonts # fonts
+          - qbittorrent # torrent
+          - mpv # video player
+          - yt-dlp # yt video player for mpv
+          - realtime-privileges # for better audio
+          - wezterm # cool terminal
           - ttf-meslo-nerd
         state: present
-
     # PACKAGES - AUR desktop packages setup
-
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
@@ -45,7 +37,6 @@
           - jdk21-graalvm-ee-bin
         use: yay
         state: present
-
     - name: Remove unneeded packages
       become: true
       community.general.pacman:
@@ -53,20 +44,15 @@
           - prismlauncher-git-debug
           - ttf-meslo-nerd-font-powerlevel10k
         state: absent
-
     # CONFIG - Optimization and/or compatibility improvements
-
     - name: Adding existing user to group audio
       become: true
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
           - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
-
         append: true
-
     # CONFIG - wezterm
-
     - name: Copy wezterm dotfiles
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
