@@ -85,6 +85,7 @@
           - python-requests # docker requires it
           - stylua # lua formatter
           - yamlfmt # yaml formatter
+          - taplo-cli # toml formatter
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig

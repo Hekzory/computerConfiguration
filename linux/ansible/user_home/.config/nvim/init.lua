@@ -131,14 +131,18 @@ vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
 
 require("conform").formatters.yamlfmt = {
 	prepend_args = { "-formatter", "max_line_length=120" },
-	-- The base args are { "-filename", "$FILENAME" } so the final args will be
-	-- { "-i", "2", "-filename", "$FILENAME" }
+}
+
+require("conform").formatters.taplo = {
+	args = { "format", "--option", "indent_tables=true", "-" },
 }
 
 require("conform").setup({
 	formatters_by_ft = {
 		lua = { "stylua" },
 		yaml = { "yamlfmt" },
+		xml = { "xmllint" },
+		toml = { "taplo" },
 	},
 })
 
