@@ -47,16 +47,33 @@ lazy.setup({
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 	},
 	{
-		"ms-jpq/coq_nvim",
-		branch = "coq",
-		dependencies = { "ms-jpq/coq.artifacts" },
+		"neovim/nvim-lspconfig", -- REQUIRED: for native Neovim LSP integration
+		lazy = false,
+		dependencies = {
+			{ "ms-jpq/coq_nvim", branch = "coq" },
+			{ "ms-jpq/coq.artifacts", branch = "artifacts" },
+			{ "ms-jpq/coq.thirdparty", branch = "3p" },
+		},
+		init = function()
+			vim.g.coq_settings = {
+				auto_start = "shut-up",
+				-- Your COQ settings here
+			}
+		end,
+		config = function()
+			-- Your LSP settings here
+		end,
+	},
+	{
+		"ms-jpq/chadtree",
+		branch = "chad",
 	},
 	{
 		"lambdalisue/vim-suda",
 	},
-	{
-		"mfussenegger/nvim-lint",
-	},
+	--{
+	--	"mfussenegger/nvim-lint",
+	--},
 	{
 		"stevearc/conform.nvim",
 		opts = {},
@@ -65,16 +82,16 @@ lazy.setup({
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
 	},
-	{
-		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v3.x",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-			"MunifTanjim/nui.nvim",
-			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
-		},
-	},
+	--{
+	--	"nvim-neo-tree/neo-tree.nvim",
+	--	branch = "v3.x",
+	--	dependencies = {
+	--		"nvim-lua/plenary.nvim",
+	--		"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+	--		"MunifTanjim/nui.nvim",
+	--		-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+	--	},
+	--},
 })
 
 vim.opt.termguicolors = true
@@ -84,7 +101,7 @@ require("lualine").setup({
 	options = { theme = "tokyonight" },
 })
 
-vim.cmd([[COQnow --shut-up]])
+--vim.cmd([[COQnow --shut-up]])
 
 require("nvim-treesitter.configs").setup({
 	ensure_installed = {
@@ -118,16 +135,16 @@ require("nvim-treesitter.configs").setup({
 	},
 })
 
-require("lint").linters_by_ft = {
-	zsh = { "zsh" },
-}
+--require("lint").linters_by_ft = {
+--	zsh = { "zsh" },
+--}
 
-vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
-	callback = function()
-		-- try_lint without arguments runs the linters defined in `linters_by_ft`
-		require("lint").try_lint()
-	end,
-})
+--vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+--	callback = function()
+--		-- try_lint without arguments runs the linters defined in `linters_by_ft`
+--		require("lint").try_lint()
+--	end,
+--})
 
 require("conform").formatters.yamlfmt = {
 	prepend_args = { "-formatter", "max_line_length=120" },
@@ -153,3 +170,5 @@ require("conform").setup({
 		lsp_fallback = true,
 	},
 })
+
+vim.keymap.set("n", "<F2>", "<cmd>CHADopen<cr>")
