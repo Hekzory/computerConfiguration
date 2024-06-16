@@ -230,6 +230,11 @@
         builder_cache: true
         # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
     # CONFIG - neovim
+    - name: ensure nvim directory exists
+      file:
+        path: "/home/{{ the_user }}/.config/nvim"
+        state: directory
+
     - name: Copy neovim dotfiles
       ansible.builtin.copy:
         src: "user_home/.config/nvim/{{ item }}"

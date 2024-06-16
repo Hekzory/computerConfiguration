@@ -54,7 +54,7 @@ config.use_fancy_tab_bar = true
 config.window_background_opacity = 0.975
 config.enable_scroll_bar = true
 config.use_resize_increments = true
-config.initial_rows = 42
+config.initial_rows = 36
 config.initial_cols = 128
 
 -- Window padding
