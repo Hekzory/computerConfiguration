@@ -86,6 +86,7 @@
           - stylua # lua formatter
           - yamlfmt # yaml formatter
           - taplo-cli # toml formatter
+          - openmp # parallel lib for speedups
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
