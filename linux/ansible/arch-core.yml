@@ -98,6 +98,11 @@
       loop:
         - {name: 'diff.indentHeuristic', value: 'true'}
         - {name: 'diff.algorithm', value: 'minimal'}
+        - {name: 'diff.colorMoved', value: 'default'}
+        - {name: 'core.pager', value: 'delta'}
+        - {name: 'interactive.diffFilter', value: 'delta --color-only'}
+        - {name: 'delta.navigate', value: 'true'}
+        - {name: 'merge.conflictstyle', value: 'diff3'}
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
     - name: Fstab - change relatime to noatime
       become: true
