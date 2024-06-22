@@ -160,6 +160,10 @@ require("conform").setup({
 		yaml = { "yamlfmt" },
 		xml = { "xmllint" },
 		toml = { "taplo" },
+		javascript = { "prettier" },
+		html = { "prettier" },
+		css = { "prettier" },
+		js = { "prettier" },
 	},
 })
 
