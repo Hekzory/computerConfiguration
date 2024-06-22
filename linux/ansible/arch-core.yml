@@ -87,6 +87,7 @@
           - yamlfmt # yaml formatter
           - taplo-cli # toml formatter
           - openmp # parallel lib for speedups
+          - pnpm # fast nodejs package manager
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -224,12 +225,20 @@
         append: true
     - name: Docker cache cleanup
       community.docker.docker_prune:
+        # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
         containers: true
         images: true
         networks: true
         volumes: true
         builder_cache: true
-        # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
+    # CONFIG - pnpm
+    - name: Install global pnpm packages
+      community.general.pnpm:
+        name: "{{ item }}"
+        state: latest
+        global: true
+      loop:
+        - prettier
     # CONFIG - neovim
     - name: Ensure nvim directory exists
       ansible.builtin.file:
