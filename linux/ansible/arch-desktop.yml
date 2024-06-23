@@ -33,7 +33,7 @@
         name:
           - google-chrome-beta
           - jetbrains-toolbox
-          - prismlauncher-git
+          - prismlauncher
           - jdk21-graalvm-ee-bin
         use: yay
         state: present
