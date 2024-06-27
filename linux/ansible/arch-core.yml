@@ -56,7 +56,7 @@
           - bat # prettier cat
           - fastfetch # system info
           - btop # better resource monitor
-          - lsd # better ls
+          - eza # better than ls and lsd
           - zsh # better shell
           - zsh-autosuggestions # self-explanatory
           - zsh-history-substring-search # self-explanatory
@@ -195,6 +195,7 @@
           - zsh-theme-powerlevel10k # unsupported even though present in official repos, should be replaced by git version anyway if used at all
           - zsh-theme-powerlevel10k-git # also not supported anymore so remove it for good
           - zsh-syntax-highlighting # we are going to install a better alternative, this one not used anymore
+          - lsd # replaced by eza
         state: absent
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
@@ -204,11 +205,16 @@
         use: yay
         state: present
     # CONFIG - change shell
-    - name: Change shell to zsh
+    - name: Change shell to fish
       become: true
       ansible.builtin.user:
-        shell: /bin/zsh
+        shell: /bin/fish
         name: "{{ the_user }}"
+    - name: Ensure fish config directory exists
+      ansible.builtin.file:
+        path: "/home/{{ the_user }}/.config/fish"
+        recurse: true
+        state: directory
     # CONFIG - shell configs setup
     - name: Copy zsh and fish files + themes
       ansible.builtin.copy:

@@ -44,7 +44,7 @@ alias mirrorupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.
 alias please="sudo"
 
 alias cat='bat --style="auto"'
-alias ls='lsd -AhlF --color auto --icon auto'
+alias ls='eza -Ahl --color auto --icons auto'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
