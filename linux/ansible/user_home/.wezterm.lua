@@ -51,7 +51,7 @@ config.window_frame = {
 	font_size = config.font_size,
 }
 config.use_fancy_tab_bar = true
-config.window_background_opacity = 0.975
+config.window_background_opacity = 0.99
 config.enable_scroll_bar = true
 config.use_resize_increments = true
 config.initial_rows = 36
