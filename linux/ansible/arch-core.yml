@@ -88,6 +88,7 @@
           - taplo-cli # toml formatter
           - openmp # parallel lib for speedups
           - pnpm # fast nodejs package manager
+          - fish # experiment shell
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -202,13 +203,14 @@
           - oh-my-posh-git
         use: yay
         state: present
-    # CONFIG - ZSH
+    # CONFIG - change shell
     - name: Change shell to zsh
       become: true
       ansible.builtin.user:
         shell: /bin/zsh
         name: "{{ the_user }}"
-    - name: Copy zsh files and themes
+    # CONFIG - shell configs setup
+    - name: Copy zsh and fish files + themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
@@ -219,6 +221,7 @@
       loop:
         - .zshrc
         - tokyofine.omp.toml
+        - .config/fish/config.fish
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
