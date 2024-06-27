@@ -57,10 +57,10 @@
           - fastfetch # system info
           - btop # better resource monitor
           - eza # better than ls and lsd
-          - zsh # better shell
-          - zsh-autosuggestions # self-explanatory
-          - zsh-history-substring-search # self-explanatory
-          - zsh-completions # self-explanatory
+          # - zsh # better shell
+          # - zsh-autosuggestions # self-explanatory
+          # - zsh-history-substring-search # self-explanatory
+          # - zsh-completions # self-explanatory
           - inxi # system info tool
           - pigz # faster gzip
           - pbzip2 # faster bzip
@@ -200,7 +200,7 @@
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
-          - zsh-fast-syntax-highlighting
+          # - zsh-fast-syntax-highlighting - switched to fish for now
           - oh-my-posh-git
         use: yay
         state: present
@@ -216,7 +216,7 @@
         recurse: true
         state: directory
     # CONFIG - shell configs setup
-    - name: Copy zsh and fish files + themes
+    - name: Copy fish files + themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
@@ -225,7 +225,7 @@
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
       loop:
-        - .zshrc
+        # - .zshrc
         - tokyofine.omp.toml
         - .config/fish/config.fish
     # DOCKER
