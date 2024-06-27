@@ -20,6 +20,8 @@ if wezterm.target_triple == "x86_64-apple-darwin" then
 			.. "/sbin:/Users/o-tsvetkov/Library/Python/3.12/bin:"
 			.. os.getenv("PATH"),
 	}
+	config.macos_window_background_blur = 20
+	config.window_background_opacity = 0.99
 elseif wezterm.target_triple == "x86_64-unknown-linux-gnu" then
 	config.font = wezterm.font_with_fallback({
 		--'Hack Nerd Font',
@@ -32,6 +34,7 @@ elseif wezterm.target_triple == "x86_64-unknown-linux-gnu" then
 	config.integrated_title_button_color = "Auto"
 	-- Set terminal type for better integration
 	config.term = "wezterm"
+	config.window_background_opacity = 0.99
 else
 	config.default_prog = { "pwsh.exe", "-NoLogo" }
 	config.font = wezterm.font_with_fallback({
@@ -43,6 +46,8 @@ else
 	config.integrated_title_button_color = "Auto"
 	-- Set terminal type for better integration
 	config.term = "wezterm"
+	config.win32_system_backdrop = "Tabbed"
+	config.window_background_opacity = 0.99
 end
 config.font_size = 11.0
 config.window_frame = {
@@ -50,7 +55,6 @@ config.window_frame = {
 	font_size = config.font_size,
 }
 config.use_fancy_tab_bar = true
-config.window_background_opacity = 0.99
 config.enable_scroll_bar = true
 config.use_resize_increments = true
 config.initial_rows = 36
