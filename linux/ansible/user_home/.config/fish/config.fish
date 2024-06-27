@@ -2,7 +2,7 @@ function fish_greeting
 	flashfetch
 end
 
-oh-my-posh init fish | source
+oh-my-posh init fish --config ~/tokyofine.omp.toml | source
 
 #if status is-interactive
     # Commands to run in interactive sessions can go here
