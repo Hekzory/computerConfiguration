@@ -95,7 +95,7 @@ lazy.setup({
 })
 
 vim.opt.termguicolors = true
-vim.cmd([[colorscheme tokyonight-night]])
+vim.cmd([[colorscheme tokyonight-moon]])
 
 require("lualine").setup({
 	options = { theme = "tokyonight" },

@@ -3,7 +3,7 @@ local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
 -- Appearance settings
-config.color_scheme = "tokyonight_night"
+config.color_scheme = "tokyonight_moon"
 if wezterm.target_triple == "x86_64-apple-darwin" then
 	config.default_prog = { "/bin/zsh" }
 	config.font = wezterm.font_with_fallback({
