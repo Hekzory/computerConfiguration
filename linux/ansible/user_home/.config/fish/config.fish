@@ -1,5 +1,18 @@
 function fish_greeting
-	flashfetch
+	if test (tput colors) -ge 256; and test (tput lines) -gt 30
+    	flashfetch
+	end
+end
+
+if test (tput colors) -lt 256
+    set -x LOW_COLOR_SUPPORT 1
+end
+
+# Check if the theme file exists
+if not test -f ~/tokyofine.omp.toml
+	echo "Downloading missing tokyofine.omp.toml..."
+	curl -L "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o ~/tokyofine.omp.toml
+	echo "Theme downloaded successfully."
 end
 
 oh-my-posh init fish --config ~/tokyofine.omp.toml | source
