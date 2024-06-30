@@ -45,8 +45,8 @@ function history
 end
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
-alias make="make -j`nproc`"
-alias ninja="ninja -j`nproc`"
+alias make="make -j"(nproc)""
+alias ninja="ninja -j"(nproc)""
 
 alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
 alias cmrupd="sudo cachyos-rate-mirrors"
