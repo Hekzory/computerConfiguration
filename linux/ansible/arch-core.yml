@@ -194,6 +194,7 @@
         name:
           - zsh-theme-powerlevel10k # unsupported even though present in official repos, should be replaced by git version anyway if used at all
           - zsh-theme-powerlevel10k-git # also not supported anymore so remove it for good
+          - oh-my-posh-git # git version is updated ten times a day
           - zsh-syntax-highlighting # we are going to install a better alternative, this one not used anymore
           - lsd # replaced by eza
         state: absent
@@ -201,7 +202,7 @@
       kewlfft.aur.aur:
         name:
           # - zsh-fast-syntax-highlighting - switched to fish for now
-          - oh-my-posh-git
+          - oh-my-posh
         use: yay
         state: present
     # CONFIG - change shell
