@@ -80,6 +80,7 @@
           - neovim # lets try this cool editor
           - wl-clipboard # wayland clipboard
           - python-neovim # python neovim integration
+          - tree-sitter-cli # needed for neovim
           - git-delta # cool diff tool
           - lld # faster linker
           - python-requests # docker requires it
@@ -88,7 +89,7 @@
           - taplo-cli # toml formatter
           - openmp # parallel lib for speedups
           - pnpm # fast nodejs package manager
-          - fish # experiment shell
+          - fish # experiment better shell
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
