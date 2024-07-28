@@ -89,6 +89,7 @@
           - taplo-cli # toml formatter
           - openmp # parallel lib for speedups
           - pnpm # fast nodejs package manager
+          - npm # still needed by pnpm sometimes sadly
           - fish # experiment better shell
         state: present
     # CONFIG - GIT
@@ -254,7 +255,8 @@
         state: latest
         global: true
       loop:
-        - prettier
+        - prettier # formatting in neovim and in general
+        - neovim # neovim integration
     # CONFIG - neovim
     - name: Ensure nvim directory exists
       ansible.builtin.file:
