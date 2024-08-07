@@ -50,27 +50,13 @@ lazy.setup({
 	{
 		"neovim/nvim-lspconfig", -- REQUIRED: for native Neovim LSP integration
 		lazy = false,
-		dependencies = {
-			--{ "ms-jpq/coq_nvim", branch = "coq" },
-			--{ "ms-jpq/coq.artifacts", branch = "artifacts" },
-			--{ "ms-jpq/coq.thirdparty", branch = "3p" },
-		},
-		init = function()
-			--vim.g.coq_settings = {
-			--	auto_start = "shut-up",
-			-- Your COQ settings here
-			--}
-		end,
-		config = function()
-			-- Your LSP settings here
-		end,
+		dependencies = {},
+		init = function() end,
+		config = function() end,
 	},
 	{
 		"lambdalisue/vim-suda",
 	},
-	--{
-	--	"mfussenegger/nvim-lint",
-	--},
 	{
 		"stevearc/conform.nvim",
 		opts = {},
@@ -117,13 +103,14 @@ lazy.setup({
 			},
 		},
 	},
+	{ "akinsho/toggleterm.nvim", version = "*", config = true },
 })
 
 vim.opt.termguicolors = true
 vim.cmd([[colorscheme tokyonight-moon]])
 
 require("lualine").setup({
-	options = { theme = "tokyonight" },
+	options = { theme = "tokyonight-moon", globalstatus = true },
 })
 
 require("neo-tree").setup({
@@ -136,8 +123,6 @@ require("neo-tree").setup({
 		},
 	},
 })
-
---vim.cmd([[COQnow --shut-up]])
 
 require("nvim-treesitter.configs").setup({
 	ensure_installed = {
@@ -173,17 +158,6 @@ require("nvim-treesitter.configs").setup({
 
 require("lspconfig").gopls.setup({})
 require("lspconfig").ruff.setup({})
-
---require("lint").linters_by_ft = {
---	zsh = { "zsh" },
---}
-
---vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
---	callback = function()
---		-- try_lint without arguments runs the linters defined in `linters_by_ft`
---		require("lint").try_lint()
---	end,
---})
 
 require("conform").formatters.yamlfmt = {
 	prepend_args = { "-formatter", "max_line_length=120" },
@@ -222,7 +196,15 @@ require("conform").setup({
 	},
 })
 
+require("toggleterm").setup({
+	open_mapping = "<F4>",
+	insert_mappings = true,
+	terminal_mappings = true,
+	close_on_exit = true,
+	size = 7,
+})
+
 vim.cmd([[Neotree action=show toggle=true]])
 vim.keymap.set("n", "<F2>", "<cmd>Neotree action=show toggle=true<CR>")
---vim.cmd([[Trouble diagnostics toggle focus=false filter.buf=0]])
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")
+--vim.cmd([[ToggleTerm]])
