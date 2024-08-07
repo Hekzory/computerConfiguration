@@ -90,6 +90,33 @@ lazy.setup({
 			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
 		},
 	},
+	{
+		"folke/trouble.nvim",
+		opts = {}, -- for default options, refer to the configuration section for custom setup.
+		cmd = "Trouble",
+		keys = {
+			{
+				"<leader>cs",
+				"<cmd>Trouble symbols toggle focus=false<cr>",
+				desc = "Symbols (Trouble)",
+			},
+			{
+				"<leader>cl",
+				"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+				desc = "LSP Definitions / references / ... (Trouble)",
+			},
+			{
+				"<leader>xL",
+				"<cmd>Trouble loclist toggle<cr>",
+				desc = "Location List (Trouble)",
+			},
+			{
+				"<leader>xQ",
+				"<cmd>Trouble qflist toggle<cr>",
+				desc = "Quickfix List (Trouble)",
+			},
+		},
+	},
 })
 
 vim.opt.termguicolors = true
@@ -144,6 +171,9 @@ require("nvim-treesitter.configs").setup({
 	},
 })
 
+require("lspconfig").gopls.setup({})
+require("lspconfig").ruff.setup({})
+
 --require("lint").linters_by_ft = {
 --	zsh = { "zsh" },
 --}
@@ -194,3 +224,5 @@ require("conform").setup({
 
 vim.cmd([[Neotree action=show toggle=true]])
 vim.keymap.set("n", "<F2>", "<cmd>Neotree action=show toggle=true<CR>")
+--vim.cmd([[Trouble diagnostics toggle focus=false filter.buf=0]])
+vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")

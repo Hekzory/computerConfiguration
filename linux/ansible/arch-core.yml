@@ -91,6 +91,8 @@
           - pnpm # fast nodejs package manager
           - npm # still needed by pnpm sometimes sadly
           - fish # experiment better shell
+          - gopls # go lsp
+          - ruff # python lsp
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
