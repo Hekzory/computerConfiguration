@@ -2,9 +2,11 @@ vim.opt.number = true
 vim.opt.mouse = "a"
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
+vim.opt.smartindent = true
+vim.opt.clipboard = "unnamedplus"
 
-vim.keymap.set({ "n", "x" }, "gy", '"+y')
-vim.keymap.set({ "n", "x" }, "gp", '"+p')
+--vim.keymap.set({ "n", "x" }, "gy", '"+y')
+--vim.keymap.set({ "n", "x" }, "gp", '"+p')
 
 local lazy = {}
 
@@ -104,6 +106,7 @@ lazy.setup({
 		},
 	},
 	{ "akinsho/toggleterm.nvim", version = "*", config = true },
+	{ "lewis6991/gitsigns.nvim", opts = {} },
 })
 
 vim.opt.termguicolors = true
@@ -203,6 +206,8 @@ require("toggleterm").setup({
 	close_on_exit = true,
 	size = 7,
 })
+
+require("gitsigns").setup()
 
 vim.cmd([[Neotree action=show toggle=true]])
 vim.keymap.set("n", "<F2>", "<cmd>Neotree action=show toggle=true<CR>")
