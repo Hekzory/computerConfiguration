@@ -107,6 +107,7 @@ lazy.setup({
 	},
 	{ "akinsho/toggleterm.nvim", version = "*", config = true },
 	{ "lewis6991/gitsigns.nvim", opts = {} },
+	{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 })
 
 vim.opt.termguicolors = true
@@ -206,6 +207,8 @@ require("toggleterm").setup({
 	close_on_exit = true,
 	size = 7,
 })
+
+require("ibl").setup()
 
 require("gitsigns").setup()
 
