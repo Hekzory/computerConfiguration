@@ -25,6 +25,7 @@
           - yt-dlp # yt video player for mpv
           - realtime-privileges # for better audio
           - wezterm # cool terminal
+          - kitty # also cool terminal
           - ttf-meslo-nerd
         state: present
     # PACKAGES - AUR desktop packages setup
@@ -63,3 +64,14 @@
         mode: u+rw,g+r,o--
       loop:
         - .wezterm.lua
+    # CONFIG - kitty
+    - name: Copy kitty dotfiles
+      ansible.builtin.copy:
+        src: "user_home/{{ item }}"
+        dest: "/home/{{ the_user }}/{{ item }}"
+        force: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+      loop:
+        - .config/kitty/
