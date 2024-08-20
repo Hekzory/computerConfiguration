@@ -24,7 +24,7 @@
           - mpv # video player
           - yt-dlp # yt video player for mpv
           - realtime-privileges # for better audio
-          - wezterm # cool terminal
+          # - wezterm # cool terminal but broken
           - kitty # also cool terminal
           - ttf-meslo-nerd
         state: present
