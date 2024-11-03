@@ -37,8 +37,6 @@ function lazy.setup(plugins)
 	vim.g.plugins_ready = true
 end
 
-vim.g.suda_smart_edit = 1
-
 lazy.path = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 lazy.opts = {}
 
@@ -62,20 +60,12 @@ lazy.setup({
 			{ "ms-jpq/coq.thirdparty", branch = "3p" },
 		},
 		init = function()
-			vim.g.coq_settings = {
-				auto_start = "shut-up", -- if you want to start COQ at startup
-				-- Your COQ settings here
-			}
+			vim.g.coq_settings = { auto_start = "shut-up" }
 		end,
 		config = function() end,
 	},
-	{
-		"lambdalisue/vim-suda",
-	},
-	{
-		"stevearc/conform.nvim",
-		opts = {},
-	},
+	{ "lambdalisue/vim-suda" },
+	{ "stevearc/conform.nvim", opts = {} },
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
@@ -123,6 +113,7 @@ lazy.setup({
 	{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 })
 
+vim.g.suda_smart_edit = 1
 vim.opt.termguicolors = true
 vim.cmd([[colorscheme tokyonight-moon]])
 
@@ -168,27 +159,18 @@ require("nvim-treesitter.configs").setup({
 	},
 	sync_install = true,
 	auto_install = true,
-	highlight = {
-		enable = true,
-	},
+	highlight = { enable = true },
 })
 
 require("lspconfig").gopls.setup({})
 require("lspconfig").ruff.setup({})
 
-require("conform").formatters.yamlfmt = {
-	prepend_args = { "-formatter", "max_line_length=120" },
-}
-
-require("conform").formatters.taplo = {
-	args = { "format", "--option", "indent_tables=true", "-" },
-}
-
-require("conform").formatters.prettier = {
-	prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" },
-}
-
 require("conform").setup({
+	formatters = {
+		yamlfmt = { prepend_args = { "-formatter", "max_line_length=120" } },
+		taplo = { args = { "format", "--option", "indent_tables=true", "-" } },
+		prettier = { prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" } },
+	},
 	formatters_by_ft = {
 		lua = { "stylua" },
 		yaml = { "yamlfmt" },
@@ -203,11 +185,7 @@ require("conform").setup({
 		json = { "prettier" },
 		typescript = { "prettier" },
 	},
-})
-
-require("conform").setup({
 	format_on_save = {
-		-- These options will be passed to conform.format()
 		timeout_ms = 500,
 		lsp_fallback = true,
 	},
@@ -222,7 +200,6 @@ require("toggleterm").setup({
 })
 
 require("ibl").setup()
-
 require("gitsigns").setup()
 
 vim.cmd([[Neotree action=show toggle=true]])
