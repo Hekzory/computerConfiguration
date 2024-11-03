@@ -1,7 +1,8 @@
 # Initializing some environment variables earlier:
 set -gx EDITOR nvim
 set -gx PAGER less
-
+set -gx MANROFFOPT "-c"
+set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
 function fish_greeting
 	if test (tput colors) -ge 256; and test (tput lines) -gt 30
@@ -10,7 +11,7 @@ function fish_greeting
 end
 
 if test (tput colors) -lt 256
-    set -x LOW_COLOR_SUPPORT 1
+    set -gx LOW_COLOR_SUPPORT 1
 end
 
 # Theme handling with error checking
@@ -21,11 +22,10 @@ if not test -f $theme_path
 end
 
 # Initialize oh-my-posh if available
-command -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
+type -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
 
 # Format man pages
-set -x MANROFFOPT "-c"
-set -x MANPAGER "sh -c 'col -bx | bat -l man -p'"
+
 
 ## Enable Wayland support for different applications
 if [ "$XDG_SESSION_TYPE" = "wayland" ]
@@ -56,13 +56,14 @@ alias cmrupd="sudo cachyos-rate-mirrors"
 
 alias please="sudo"
 
-alias cat='command -q bat && bat --style=auto || cat'
-alias ls='command -q eza && eza -Ahl --color=auto --icons=auto || ls -lah'
+alias cat='bat --style=auto'
+#alias ls='type -q eza && eza -Ahl --color=auto --icons=auto || ls -lah'
+alias ls='eza -Ahl --color=auto --icons=auto'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias less='less -R'
-alias grep='command -q rg && rg -uuu || grep -n --color'
+alias grep='rg -uuu'
 alias mkdir="mkdir -pv"
 alias pacman="sudo pacman"
 alias sctl="sudo systemctl"
@@ -72,10 +73,21 @@ alias chgrp='chgrp --preserve-root'
 alias jerr='journalctl -xb 0 -p 3'
 alias jwarn='journalctl -xb 0 -p 4'
 alias wget='wget -c'
-alias df='command -q duf && duf || df -h'
-alias top='command -q btop && btop || top'
-alias grep='rg -uuu'
+alias df='duf'
+alias top='type -q btop && btop || top'
 alias omp='oh-my-posh'
+
+# git part
+alias g='git'
+alias gundo='git reset --soft HEAD~1'  # Undo last commit, keep changes
+alias gfuck='git reset --hard HEAD~1'  # Nuclear option: undo last commit and changes
+alias gcar='git commit --amend --reset-author --no-edit' # Update last commit time signature and author
+alias gfix='git commit --amend' # smaller amend command
+alias gpforce='git push --force' # no comments
+alias gpsh='git push' # saving 4 characters, definitely worth it
+alias gpll='git pull' # and again
+alias gcom='git commit' # and again...
+
 
 # TokyoNight Color Palette
 set -l foreground c8d3f5
