@@ -1,3 +1,8 @@
+# Initializing some environment variables earlier:
+set -gx EDITOR nvim
+set -gx PAGER less
+
+
 function fish_greeting
 	if test (tput colors) -ge 256; and test (tput lines) -gt 30
     	flashfetch
@@ -8,18 +13,15 @@ if test (tput colors) -lt 256
     set -x LOW_COLOR_SUPPORT 1
 end
 
-# Check if the theme file exists
-if not test -f ~/tokyofine.omp.toml
-	echo "Downloading missing tokyofine.omp.toml..."
-	curl -L "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o ~/tokyofine.omp.toml
-	echo "Theme downloaded successfully."
+# Theme handling with error checking
+set -g theme_path ~/tokyofine.omp.toml
+if not test -f $theme_path
+    echo "Downloading missing theme..."
+    curl -sL "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o $theme_path || echo "Theme download failed!"
 end
 
-oh-my-posh init fish --config ~/tokyofine.omp.toml | source
-
-#if status is-interactive
-    # Commands to run in interactive sessions can go here
-#end
+# Initialize oh-my-posh if available
+command -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
 
 # Format man pages
 set -x MANROFFOPT "-c"
@@ -54,13 +56,13 @@ alias cmrupd="sudo cachyos-rate-mirrors"
 
 alias please="sudo"
 
-alias cat='bat --style="auto"'
-alias ls='eza -Ahl --color auto --icons auto'
+alias cat='command -q bat && bat --style=auto || cat'
+alias ls='command -q eza && eza -Ahl --color=auto --icons=auto || ls -lah'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias less='less -R'
-alias grep="grep -n --color"
+alias grep='command -q rg && rg -uuu || grep -n --color'
 alias mkdir="mkdir -pv"
 alias pacman="sudo pacman"
 alias sctl="sudo systemctl"
@@ -70,9 +72,8 @@ alias chgrp='chgrp --preserve-root'
 alias jerr='journalctl -xb 0 -p 3'
 alias jwarn='journalctl -xb 0 -p 4'
 alias wget='wget -c'
-alias df='duf'
-alias htop='btop'
-alias top='btop'
+alias df='command -q duf && duf || df -h'
+alias top='command -q btop && btop || top'
 alias grep='rg -uuu'
 alias omp='oh-my-posh'
 
