@@ -33,12 +33,12 @@
       kewlfft.aur.aur:
         name:
           - google-chrome-beta
-          - jetbrains-toolbox
+          # - jetbrains-toolbox # no longer install by default
           - prismlauncher
           - jdk21-graalvm-ee-bin
         use: yay
         state: present
-    - name: Remove unneeded packages
+    - name: Remove unneeded packages if present
       become: true
       community.general.pacman:
         name:
