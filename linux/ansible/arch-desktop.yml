@@ -34,7 +34,6 @@
         name:
           - google-chrome-beta
           # - jetbrains-toolbox # no longer install by default
-          - prismlauncher
           - jdk21-graalvm-ee-bin
         use: yay
         state: present

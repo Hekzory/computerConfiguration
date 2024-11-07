@@ -20,7 +20,7 @@ newline = true
   style = 'diamond'
   foreground = 'p:terminal-yellow'
   background = 'transparent'
-  template = "<b>{{ if .SSHSession }} {{ end }}{{ .HostName }}</b> "
+  template = "<b>{{ if .SSHSession }} {{ end }}{{ .UserName }}@{{ .HostName }}</b> "
 
   # Time 
   [[blocks.segments]]

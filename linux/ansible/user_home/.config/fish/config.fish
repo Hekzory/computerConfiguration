@@ -30,7 +30,7 @@ type -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
 ## Enable Wayland support for different applications
 if [ "$XDG_SESSION_TYPE" = "wayland" ]
     set -gx WAYLAND 1
-    set -gx QT_QPTry not to get overwhelmed:A_PLATFORM 'wayland;xcb'
+    set -gx QT_QPA_PLATFORM 'wayland;xcb'
     set -gx GDK_BACKEND 'wayland,x11'
     set -gx MOZ_DBUS_REMOTE 1
     set -gx MOZ_ENABLE_WAYLAND 1
@@ -126,7 +126,7 @@ set -g fish_pager_color_selected_background --background=$selection
 
 
 # pnpm
-set -gx PNPM_HOME "/home/oleg/.local/share/pnpm"
+set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 if not string match -q -- $PNPM_HOME $PATH
   set -gx PATH "$PNPM_HOME" $PATH
 end
@@ -231,7 +231,7 @@ function gbr --description "Create and checkout a new branch with a conventional
     # Create and checkout new branch
     echo "Creating new branch: $branch_name"
     git checkout -b $branch_name
-    
+
     # Set upstream
     echo "Setting upstream branch..."
     git push --set-upstream origin $branch_name
