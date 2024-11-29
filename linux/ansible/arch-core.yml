@@ -93,6 +93,7 @@
           - fish # experiment better shell
           - gopls # go lsp
           - ruff # python lsp
+          - shfmt # shell formatter
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -144,7 +145,6 @@
         - parport # parallel port support, rarely used nowadays
         - ppdev # parallel port device support, rarely used
         - snd_hda_codec_hdmi # audio through hdmi, almost never used
-        - snd_hda_intel # audio through hdmi, almost never used
         - legion_laptop # should used by legion laptops, but wrongly loaded by every device i have
     - name: Copy reflector config - to setup proper mirror update
       become: true

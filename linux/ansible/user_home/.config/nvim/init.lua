@@ -4,6 +4,10 @@ vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.smartindent = true
 vim.opt.clipboard = "unnamedplus"
+vim.opt.wrap = false -- Don't wrap lines
+vim.opt.expandtab = true -- Use spaces instead of tabs
+vim.opt.hlsearch = false -- Don't highlight search results
+vim.opt.incsearch = true -- Incremental search
 
 --vim.keymap.set({ "n", "x" }, "gy", '"+y')
 --vim.keymap.set({ "n", "x" }, "gp", '"+p')
@@ -111,6 +115,8 @@ lazy.setup({
 	{ "akinsho/toggleterm.nvim", version = "*", config = true },
 	{ "lewis6991/gitsigns.nvim", opts = {} },
 	{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
+	-- Auto pairs
+	{ "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
 })
 
 vim.g.suda_smart_edit = 1
@@ -167,8 +173,9 @@ require("lspconfig").ruff.setup({})
 
 require("conform").setup({
 	formatters = {
-		yamlfmt = { prepend_args = { "-formatter", "max_line_length=120" } },
+		yamlfmt = { prepend_args = { "-formatter", "max_line_length=240", "retain_line_breaks=true" } },
 		taplo = { args = { "format", "--option", "indent_tables=true", "-" } },
+		shfmt = { prepend_args = { "--indent", "4" } },
 		prettier = { prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" } },
 	},
 	formatters_by_ft = {
@@ -184,6 +191,8 @@ require("conform").setup({
 		markdown = { "prettier" },
 		json = { "prettier" },
 		typescript = { "prettier" },
+		bash = { "shfmt" },
+		sh = { "shfmt" },
 	},
 	format_on_save = {
 		timeout_ms = 500,
