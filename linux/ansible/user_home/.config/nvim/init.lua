@@ -1,13 +1,22 @@
+-- Core settings
 vim.opt.number = true
 vim.opt.mouse = "a"
+vim.opt.termguicolors = true
+
+-- Indentation
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.smartindent = true
+vim.opt.expandtab = true -- Use spaces instead of tabs
+vim.opt.autoindent = true
+
+-- Editor Behavior
 vim.opt.clipboard = "unnamedplus"
 vim.opt.wrap = false -- Don't wrap lines
-vim.opt.expandtab = true -- Use spaces instead of tabs
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
+vim.opt.ignorecase = true
+vim.opt.updatetime = 200 -- Faster updates
 
 --vim.keymap.set({ "n", "x" }, "gy", '"+y')
 --vim.keymap.set({ "n", "x" }, "gp", '"+p')
@@ -95,7 +104,8 @@ lazy.setup({
 				"<cmd>Trouble symbols toggle focus=false<cr>",
 				desc = "Symbols (Trouble)",
 			},
-			{
+			{ -- Use spaces instead of tabs
+
 				"<leader>cl",
 				"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
 				desc = "LSP Definitions / references / ... (Trouble)",
@@ -120,7 +130,6 @@ lazy.setup({
 })
 
 vim.g.suda_smart_edit = 1
-vim.opt.termguicolors = true
 vim.cmd([[colorscheme tokyonight-moon]])
 
 require("lualine").setup({
@@ -146,6 +155,8 @@ require("nvim-treesitter.configs").setup({
 		"vimdoc",
 		"query",
 		"go",
+		"gomod",
+		"gosum",
 		"cpp",
 		"css",
 		"html",
@@ -154,6 +165,7 @@ require("nvim-treesitter.configs").setup({
 		"gitignore",
 		"html",
 		"bash",
+		"fish",
 		"json",
 		"make",
 		"python",
@@ -162,6 +174,24 @@ require("nvim-treesitter.configs").setup({
 		"udev",
 		"yaml",
 		"xml",
+		"markdown_inline",
+		"markdown",
+		"cmake",
+		"comment",
+		"desktop",
+		"diff",
+		"git_config",
+		"git_rebase",
+		"gitattributes",
+		"gitcommit",
+		"java",
+		"javascript",
+		"json",
+		"json5",
+		"proto",
+		"regex",
+		"ssh_config",
+		"toml",
 	},
 	sync_install = true,
 	auto_install = true,

@@ -7,7 +7,9 @@ set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 function fish_greeting
 	if test (tput colors) -ge 256; and test (tput lines) -gt 30
     	flashfetch
-	end
+    else
+        echo "Welcome. Low color support or small screen detected."
+    end
 end
 
 if test (tput colors) -lt 256
@@ -53,7 +55,6 @@ alias ninja="ninja -j"(nproc)""
 alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
 alias cmrupd="sudo cachyos-rate-mirrors"
 
-
 alias please="sudo"
 
 alias cat='bat --style=auto'
@@ -83,7 +84,7 @@ alias gundo='git reset --soft HEAD~1'  # Undo last commit, keep changes
 alias gfuck='git reset --hard HEAD~1'  # Nuclear option: undo last commit and changes
 alias gcar='git commit --amend --reset-author --no-edit' # Update last commit time signature and author
 alias gfix='git commit --amend' # smaller amend command
-alias gpforce='git push --force' # no comments
+alias gpshf='git push --force' # no comments
 alias gpsh='git push' # saving 4 characters, definitely worth it
 alias gpll='git pull' # and again
 alias gcom='git commit' # and again...
@@ -134,49 +135,25 @@ end
 
 
 
-function gbr --description "Create and checkout a new branch with a conventional prefix"
-    # Define branch types with their prefixes
-    set -l types "feature" "fix" "hotfix" "refactor" "trg" "mnt"
-    set -l default_type "feature"
+function gbr --description "Create and checkout a new branch with useful functionality"
     set -l source_branch "master"
 
-    argparse --name=gbr 'h/help' 'l/list' 'b/base=' 't/type=' -- $argv
+    argparse --name=gbr 'h/help' 'l/list' 'b/base=' -- $argv
     or return
 
     if set -q _flag_help
-        echo "Usage: gbr [-t/--type TYPE] [-b/--base BASE_BRANCH] BRANCH_NAME"
-        echo "Creates a new branch with conventional prefix"
+        echo "Usage: gbr [-b/--base BASE_BRANCH] BRANCH_NAME"
+        echo "Creates a new branch with useful functionality"
         echo ""
         echo "Options:"
         echo "  -h/--help          Show this help message"
         echo "  -l/--list          List available branch types"
-        echo "  -t/--type TYPE     Specify branch type (default: feature)"
         echo "  -b/--base BRANCH   Specify base branch (defaults to master, obviously)"
         echo ""
         echo "Examples:"
         echo "  gbr add-login-page"
-        echo "  gbr -t fix login-validation"
-        echo "  gbr -t hotfix -b production critical-error"
+        echo "  gbr -b production critical-error"
         return 0
-    end
-
-    if set -q _flag_list
-        echo "Available branch types:"
-        printf "%s\n" $types
-        return 0
-    end
-
-    # Set branch type
-    set -l branch_type $default_type
-    if set -q _flag_type
-        if contains $_flag_type $types
-            set branch_type $_flag_type
-        else
-            echo "Invalid branch type: $_flag_type"
-            echo "Available types:"
-            printf "%s\n" $types
-            return 1
-        end
     end
 
     # Set base branch
@@ -191,7 +168,7 @@ function gbr --description "Create and checkout a new branch with a conventional
     end
 
     # Construct branch name
-    set -l branch_name "$branch_type-$argv[1]"
+    set -l branch_name "$argv[1]"
 
 	# Check for uncommitted changes
     set -l has_changes (git status --porcelain)

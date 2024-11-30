@@ -1,154 +1,7 @@
-#:schema https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json
-
-version = 2
-final_space = true
 console_title_template = '{{ .Shell }} in {{ .Folder }}{{if .Root}}:: Admin{{end}}'
 terminal_background = 'p:t-background'
-disable_notice = true
-
-# First line starts
-[[blocks]]
-
-# Left part of first line starts
-type = 'prompt'
-alignment = 'left'
-newline = true
-
-  # Text
-  [[blocks.segments]]
-  type = 'session'
-  style = 'diamond'
-  foreground = 'p:terminal-yellow'
-  background = 'transparent'
-  template = "<b>{{ if .SSHSession }} {{ end }}{{ .UserName }}@{{ .HostName }}</b> "
-
-  # Time 
-  [[blocks.segments]]
-  type = 'time'
-  style = 'plain'
-  foreground = 'p:terminal-blue'
-  background = 'transparent'
-  template = '<b>[{{ .CurrentDate | date .Format }}]</b>'
-    [blocks.segments.properties]
-    time_format = "15:04:05"
-
-  # Path info
-  [[blocks.segments]]
-  type = 'path'
-  style = 'plain'
-  foreground = 'p:terminal-magenta'
-  background = 'transparent'
-  folder_separator_icon = '/'
-  home_icon = '~'
-  template = '<b> {{ .Path }} | </b>'
-
-    [blocks.segments.properties]
-    style = 'mixed'
-    mixed_threshold = 16
-
-  # Git info
-  [[blocks.segments]]
-  type = 'git'
-  style = 'plain'
-  foreground = 'p:light-sky-blue'
-  background = 'transparent'
-  foreground_templates = [
-    '{{ if or (.Working.Changed) (.Staging.Changed) }}p:terminal-red{{ end }}',
-    '{{ if and (gt .Ahead 0) (gt .Behind 0)}}p:light-sky-blue {{ end }}',
-    '{{ if gt .Ahead 0 }}p:terminal-blue{{ end }}',
-    '{{ if gt .Behind 0 }}p:celeste-blue{{ end }}',
-  ]
-  template = """\
-      {{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}\
-      {{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}\
-      {{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}\
-      {{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}\
-    """
-
-    [blocks.segments.properties]
-    # branch_icon = 'on  ' # no support for templates
-    branch_icon = 'on '
-    commit_icon = '@'
-    fetch_status = true
-    fetch_upstream_icon = true
-  # status module
-  [[blocks.segments]]
-  type = 'status'
-  style = 'plain'
-  foreground = 'p:terminal-red'
-  background = 'transparent'
-  template = '{{ if .Env.LOW_COLOR_SUPPORT }} X{{ else }} {{ end }} '
-
-# right side of first line starts
-[[blocks]]
-type = 'prompt'
-alignment = 'right'
-overflow = 'hide'
-  # icons if language is present in wd 
-  [[blocks.segments]]
-  type = 'python'
-  style = 'plain'
-  foreground = 'p:terminal-yellow'
-  background = 'transparent'
-  template = '{{ if .Env.LOW_COLOR_SUPPORT }}py {{ .Full }}{{ else }} {{ .Full }}{{ end }}'
-
-  [[blocks.segments]]
-  type = 'go'
-  style = 'plain'
-  foreground = 'p:light-sky-blue'
-  background = 'transparent'
-  template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
-
-  # git status
-  [[blocks.segments]]
-  type = 'command'
-  style = 'plain'
-  foreground = 'p:white-blue'
-  background = 'transparent'
-  template = 'last commit: {{ .Output }}'
-
-    [blocks.segments.properties]
-    command = 'git log --pretty=format:%cr -1 || date +%H:%M:%S'
-    shell = 'zsh'
-
-  [[blocks.segments]]
-  type = 'executiontime'
-  style = 'plain'
-  foreground = 'p:white-blue'
-  background = 'transparent'
-  template = ' | took: {{ .FormattedMs }}'
-
-    [blocks.segments.properties]
-    threshold = 1000
-
-# second line begins
-[[blocks]]
-type = 'prompt'
-alignment = 'left'
-newline = true
-
-  [[blocks.segments]]
-  type = 'text'
-  style = 'plain'
-  foreground_templates = [
-    "{{if gt .Code 0}}p:terminal-red{{end}}",
-    "{{if eq .Code 0}}p:pistachio-green{{end}}",
-  ]
-  background = 'transparent'
-  template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }}'
-
-[transient_prompt]
-foreground_templates = [
-  "{{if gt .Code 0}}p:terminal-red{{end}}",
-  "{{if eq .Code 0}}p:pistachio-blue{{end}}",
-]
-background = 'transparent'
-template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }} '
-
-[secondary_prompt]
-foreground = 'p:terminal-blue'
-background = 'transparent'
-template = '{{ if .Env.LOW_COLOR_SUPPORT }}>>{{ else }}❯❯{{ end }} '
+version = 3
+final_space = true
 
 [palette]
 blue-bell = '#9aa5ce'
@@ -167,3 +20,150 @@ terminal-red = '#f7768e'
 terminal-white = '#c0caf5'
 terminal-yellow = '#e0af68'
 white-blue = '#a9b1d6'
+
+[secondary_prompt]
+template = '{{ if .Env.LOW_COLOR_SUPPORT }}>>{{ else }}❯❯{{ end }} '
+foreground = 'p:terminal-blue'
+background = 'transparent'
+
+[transient_prompt]
+template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }} '
+background = 'transparent'
+foreground_templates = [
+  '{{if gt .Code 0}}p:terminal-red{{end}}',
+  '{{if eq .Code 0}}p:pistachio-blue{{end}}',
+]
+
+[[blocks]]
+type = 'prompt'
+alignment = 'left'
+newline = true
+
+  [[blocks.segments]]
+  template = '<b>{{ if .SSHSession }} {{ end }}{{ .UserName }}@{{ .HostName }}</b> '
+  foreground = 'p:terminal-yellow'
+  background = 'transparent'
+  type = 'session'
+  style = 'diamond'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+
+  [[blocks.segments]]
+  template = '<b>[{{ .CurrentDate | date .Format }}]</b>'
+  foreground = 'p:terminal-blue'
+  background = 'transparent'
+  type = 'time'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+    time_format = '15:04:05'
+
+  [[blocks.segments]]
+  template = '<b> {{ .Path }} | </b>'
+  foreground = 'p:terminal-magenta'
+  background = 'transparent'
+  type = 'path'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+    mixed_threshold = 16
+    style = 'mixed'
+
+  [[blocks.segments]]
+  template = '{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}{{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}{{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}{{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}'
+  foreground = 'p:light-sky-blue'
+  background = 'transparent'
+  type = 'git'
+  style = 'plain'
+  foreground_templates = [
+    '{{ if or (.Working.Changed) (.Staging.Changed) }}p:terminal-red{{ end }}',
+    '{{ if and (gt .Ahead 0) (gt .Behind 0)}}p:light-sky-blue {{ end }}',
+    '{{ if gt .Ahead 0 }}p:terminal-blue{{ end }}',
+    '{{ if gt .Behind 0 }}p:celeste-blue{{ end }}',
+  ]
+
+    [blocks.segments.properties]
+    branch_icon = 'on '
+    cache_duration = 'none'
+    commit_icon = '@'
+    fetch_status = true
+    fetch_upstream_icon = true
+
+  [[blocks.segments]]
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }} X{{ else }} {{ end }} '
+  foreground = 'p:terminal-red'
+  background = 'transparent'
+  type = 'status'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+
+[[blocks]]
+type = 'prompt'
+alignment = 'right'
+overflow = 'hide'
+
+  [[blocks.segments]]
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }}py {{ .Full }}{{ else }} {{ .Full }}{{ end }}'
+  foreground = 'p:terminal-yellow'
+  background = 'transparent'
+  type = 'python'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+
+  [[blocks.segments]]
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
+  foreground = 'p:light-sky-blue'
+  background = 'transparent'
+  type = 'go'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+
+  [[blocks.segments]]
+  template = 'last commit: {{ .Output }}'
+  foreground = 'p:white-blue'
+  background = 'transparent'
+  type = 'command'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+    command = 'git log --pretty=format:%cr -1 || date +%H:%M:%S'
+    shell = 'zsh'
+
+  [[blocks.segments]]
+  template = ' | took: {{ .FormattedMs }}'
+  foreground = 'p:white-blue'
+  background = 'transparent'
+  type = 'executiontime'
+  style = 'plain'
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
+    threshold = 1000
+
+[[blocks]]
+type = 'prompt'
+alignment = 'left'
+newline = true
+
+  [[blocks.segments]]
+  template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }}'
+  background = 'transparent'
+  type = 'text'
+  style = 'plain'
+  foreground_templates = [
+    '{{if gt .Code 0}}p:terminal-red{{end}}',
+    '{{if eq .Code 0}}p:pistachio-green{{end}}',
+  ]
+
+    [blocks.segments.properties]
+    cache_duration = 'none'
