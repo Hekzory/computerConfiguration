@@ -6,7 +6,7 @@ set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
 function fish_greeting
 	if test (tput colors) -ge 256; and test (tput lines) -gt 30
-    	flashfetch
+    	fastfetch
     else
         echo "Welcome. Low color support or small screen detected."
     end
