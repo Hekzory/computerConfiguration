@@ -26,9 +26,6 @@ end
 # Initialize oh-my-posh if available
 type -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
 
-# Format man pages
-
-
 ## Enable Wayland support for different applications
 if [ "$XDG_SESSION_TYPE" = "wayland" ]
     set -gx WAYLAND 1
@@ -55,16 +52,22 @@ alias ninja="ninja -j"(nproc)""
 alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
 alias cmrupd="sudo cachyos-rate-mirrors"
 
-alias please="sudo"
+#   For when 'sudo' is too mainstream
+alias please='echo "Oh, 𝓿𝓮𝓻𝔂 well..." && sudo' 
 
-alias cat='bat --style=auto'
-#alias ls='type -q eza && eza -Ahl --color=auto --icons=auto || ls -lah'
-alias ls='eza -Ahl --color=auto --icons=auto'
+if type -q bat
+    alias cat='bat --style=auto'
+end
+if type -q eza
+    alias ls='eza -Ahl --color=auto --icons=auto'
+end
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias less='less -R'
-alias grep='rg -uuu'
+if type -q rg
+    alias grep='rg -u'
+end
 alias mkdir="mkdir -pv"
 alias pacman="sudo pacman"
 alias sctl="sudo systemctl"
@@ -74,8 +77,12 @@ alias chgrp='chgrp --preserve-root'
 alias jerr='journalctl -xb 0 -p 3'
 alias jwarn='journalctl -xb 0 -p 4'
 alias wget='wget -c'
-alias df='duf'
-alias top='type -q btop && btop || top'
+if type -q duf
+    alias df='duf'
+end
+if type -q btop
+    alias top='btop'
+end
 alias omp='oh-my-posh'
 
 # git part

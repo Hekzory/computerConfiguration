@@ -27,13 +27,6 @@
       loop:
         - {line: 'include "/usr/share/nano/extra/*.nanorc"'}
         - {line: 'include "/usr/share/nano/*.nanorc"'}
-    # CONFIG - makepkg
-    - name: Makepkg - disable pkg compression
-      become: true
-      ansible.builtin.lineinfile:
-        path: /etc/makepkg.conf
-        regexp: "PKGEXT='.pkg.tar.zst'"
-        line: "PKGEXT='.pkg.tar'"
     # PACKAGES - Upgrade
     - name: Full system upgrade via pacman
       become: true
@@ -126,7 +119,6 @@
       failed_when: >
         service_command_output.failed and 'unrecognized service' not in service_command_output.msg and 'Could not find the
         requested service' not in service_command_output.msg
-
       loop:
         - ModemManager.service # Not needed by most people, so disable by default
     - name: Blacklist unnecessary modules

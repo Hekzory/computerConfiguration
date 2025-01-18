@@ -13,13 +13,15 @@
         executable: yay
         update_cache: true
         name:
-          - ttf-roboto # fonts
-          - ttf-hack # fonts
-          - ttf-liberation # fonts
-          - noto-fonts # fonts
-          - noto-fonts-extra # fonts
-          - noto-fonts-emoji # fonts
-          - adobe-source-sans-fonts # fonts
+          # Fonts
+          - ttf-roboto
+          - ttf-hack
+          - ttf-liberation
+          - noto-fonts
+          - noto-fonts-extra
+          - noto-fonts-emoji
+          - adobe-source-sans-fonts
+          # Applications
           - qbittorrent # torrent
           - mpv # video player
           - yt-dlp # yt video player for mpv
@@ -33,8 +35,8 @@
       kewlfft.aur.aur:
         name:
           - google-chrome-beta
-          # - jetbrains-toolbox # no longer install by default
-          - jdk21-graalvm-ee-bin
+          # - jetbrains-toolbox # no longer installing by default
+          - jdk23-graalvm-ee-bin
         use: yay
         state: present
     - name: Remove unneeded packages if present
@@ -42,7 +44,9 @@
       community.general.pacman:
         name:
           - prismlauncher-git-debug
-          - ttf-meslo-nerd-font-powerlevel10k
+          - ttf-meslo-nerd-font-powerlevel10k # p10k not used anymore
+          - jdk22-graalvm-ee-bin # older java
+          - jdk21-graalvm-ee-bin # older java
         state: absent
     # CONFIG - Optimization and/or compatibility improvements
     - name: Adding existing user to group audio

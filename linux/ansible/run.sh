@@ -8,10 +8,12 @@ IFS=$'\n\t'
 readonly VALID_PLAYBOOKS=("arch-core" "arch-desktop")
 readonly REQUIREMENTS_FILE="roles/requirements.yml"
 
-# Function to display an error message and exit
-echo_error() {
-    printf "Error: %s\n" "$1" >&2
-    exit 1
+# --- Error Handling: with a hint of theatrical flair ---
+die() {
+    local msg="$1"
+    local code="${2:-1}" # Default to 1 if not provided
+    printf "FATAL: %s\n" "$msg" >&2
+    exit "$code"
 }
 
 # Function to display usage
@@ -35,7 +37,7 @@ for valid_playbook in "${VALID_PLAYBOOKS[@]}"; do
     fi
 done
 
-[[ $playbook_valid -eq 0 ]] && echo_error "Invalid playbook specified: $1"
+[[ $playbook_valid -eq 0 ]] && die "Invalid playbook specified: $1"
 
 # Set the PLAYBOOK variable
 readonly PLAYBOOK_FILE="$1.yml"
@@ -44,13 +46,13 @@ readonly PLAYBOOK_FILE="$1.yml"
 check_files_exist() {
     local file
     for file in "$@"; do
-        [[ -f "$file" ]] || echo_error "File not found: $file"
+        [[ -f "$file" ]] || die "File not found: $file"
     done
 }
 
 # Function to check command availability
 check_command() {
-    command -v "$1" >/dev/null 2>&1 || echo_error "$1 is not installed"
+    command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"
 }
 
 # Main execution
@@ -62,12 +64,12 @@ main() {
 
     echo "Installing requirements..."
     if ! ansible-galaxy install -r "$REQUIREMENTS_FILE"; then
-        echo_error "Failed to install Ansible requirements"
+        die "Failed to install Ansible requirements"
     fi
 
     echo "Running playbook..."
     if ! ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook -v --ask-become-pass "$PLAYBOOK_FILE"; then
-        echo_error "Playbook execution failed"
+        die "Playbook execution failed"
     fi
 
     echo "Playbook executed successfully"
