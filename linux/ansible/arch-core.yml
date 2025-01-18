@@ -216,13 +216,16 @@
       ansible.builtin.user:
         shell: /bin/fish
         name: "{{ the_user }}"
-    - name: Ensure fish config directory exists
+    - name: Ensure config directories exist
       ansible.builtin.file:
-        path: "/home/{{ the_user }}/.config/fish"
+        path: "{{ item }}"
         recurse: true
         state: directory
+      loop:
+        - "/home/{{ the_user }}/.config/fish"
+        - "/home/{{ the_user }}/.config/fastfetch"
     # CONFIG - shell configs setup
-    - name: Copy fish files + themes
+    - name: Copy config files + themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
         dest: "/home/{{ the_user }}/{{ item }}"
@@ -234,6 +237,7 @@
         # - .zshrc
         - tokyofine.omp.toml
         - .config/fish/config.fish
+        - .config/fastfetch/config.jsonc
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
