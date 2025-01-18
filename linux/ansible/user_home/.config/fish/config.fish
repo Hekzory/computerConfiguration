@@ -1,6 +1,6 @@
 # Initializing some environment variables earlier:
 set -gx EDITOR nvim
-set -gx PAGER less
+set -gx PAGER "less -R"
 set -gx MANROFFOPT "-c"
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
@@ -95,6 +95,7 @@ alias gpshf='git push --force' # no comments
 alias gpsh='git push' # saving 4 characters, definitely worth it
 alias gpll='git pull' # and again
 alias gcom='git commit' # and again...
+alias gd='git diff'
 
 
 # TokyoNight Color Palette
@@ -124,6 +125,7 @@ set -g fish_color_search_match --background=$selection
 set -g fish_color_operator $green
 set -g fish_color_escape $pink
 set -g fish_color_autosuggestion $comment
+set -g fish_color_separator --dimmed
 
 # Completion Pager Colors
 set -g fish_pager_color_progress $comment
