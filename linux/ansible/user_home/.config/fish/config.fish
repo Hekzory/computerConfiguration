@@ -8,7 +8,7 @@ function fish_greeting
     if test (tput colors) -ge 256; and test (tput lines) -gt 25
     	fastfetch
     else
-        echo "Welcome. Small screen or low color support detected, will not display fastfetch."
+        echo "Welcome. Small screen or low color support detected, no fastfetch for you."
     end
 end
 
