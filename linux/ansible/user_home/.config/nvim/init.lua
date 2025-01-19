@@ -12,7 +12,7 @@ vim.opt.autoindent = true
 
 -- Editor Behavior
 vim.opt.clipboard = "unnamedplus"
-vim.opt.wrap = false -- Don't wrap lines
+vim.opt.wrap = true -- Don't wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
 vim.opt.ignorecase = true
@@ -43,9 +43,7 @@ function lazy.setup(plugins)
 	end
 
 	lazy.install(lazy.path)
-
 	vim.opt.rtp:prepend(lazy.path)
-
 	require("lazy").setup(plugins, lazy.opts)
 	vim.g.plugins_ready = true
 end
@@ -54,79 +52,83 @@ lazy.path = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 lazy.opts = {}
 
 lazy.setup({
-	{ "folke/tokyonight.nvim", lazy = false, priority = 1000 },
-	{
-		"nvim-lualine/lualine.nvim",
-		dependencies = { "nvim-tree/nvim-web-devicons" },
-		lazy = false,
-	},
-	{
-		"neovim/nvim-lspconfig", -- REQUIRED: for native Neovim LSP integration
-		lazy = false,
-		dependencies = {
-			-- main one
-			{ "ms-jpq/coq_nvim", branch = "coq" },
-			-- 9000+ Snippets
-			{ "ms-jpq/coq.artifacts", branch = "artifacts" },
-			-- lua & third party sources -- See https://github.com/ms-jpq/coq.thirdparty
-			-- Need to **configure separately**
-			{ "ms-jpq/coq.thirdparty", branch = "3p" },
+	install = { colorscheme = { "tokyonight" } },
+	checker = { enabled = true },
+	spec = {
+		{ "folke/tokyonight.nvim", lazy = false, priority = 1000 },
+		{
+			"nvim-lualine/lualine.nvim",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			lazy = false,
 		},
-		init = function()
-			vim.g.coq_settings = { auto_start = "shut-up" }
-		end,
-		config = function() end,
-	},
-	{ "lambdalisue/vim-suda" },
-	{ "stevearc/conform.nvim", opts = {} },
-	{
-		"nvim-treesitter/nvim-treesitter",
-		build = ":TSUpdate",
-	},
-	{
-		"nvim-neo-tree/neo-tree.nvim",
-		lazy = false,
-		branch = "v3.x",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-			"MunifTanjim/nui.nvim",
-			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
-		},
-	},
-	{
-		"folke/trouble.nvim",
-		opts = {}, -- for default options, refer to the configuration section for custom setup.
-		cmd = "Trouble",
-		keys = {
-			{
-				"<leader>cs",
-				"<cmd>Trouble symbols toggle focus=false<cr>",
-				desc = "Symbols (Trouble)",
+		{
+			"neovim/nvim-lspconfig", -- REQUIRED: for native Neovim LSP integration
+			lazy = false,
+			dependencies = {
+				-- main one
+				{ "ms-jpq/coq_nvim", branch = "coq" },
+				-- 9000+ Snippets
+				{ "ms-jpq/coq.artifacts", branch = "artifacts" },
+				-- lua & third party sources -- See https://github.com/ms-jpq/coq.thirdparty
+				-- Need to **configure separately**
+				{ "ms-jpq/coq.thirdparty", branch = "3p" },
 			},
-			{ -- Use spaces instead of tabs
+			init = function()
+				vim.g.coq_settings = { auto_start = "shut-up" }
+			end,
+			config = function() end,
+		},
+		{ "lambdalisue/vim-suda" },
+		{ "stevearc/conform.nvim", opts = {} },
+		{
+			"nvim-treesitter/nvim-treesitter",
+			build = ":TSUpdate",
+		},
+		{
+			"nvim-neo-tree/neo-tree.nvim",
+			lazy = false,
+			branch = "v3.x",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+				"MunifTanjim/nui.nvim",
+				-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+			},
+		},
+		{
+			"folke/trouble.nvim",
+			opts = {}, -- for default options, refer to the configuration section for custom setup.
+			cmd = "Trouble",
+			keys = {
+				{
+					"<leader>cs",
+					"<cmd>Trouble symbols toggle focus=false<cr>",
+					desc = "Symbols (Trouble)",
+				},
+				{ -- Use spaces instead of tabs
 
-				"<leader>cl",
-				"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
-				desc = "LSP Definitions / references / ... (Trouble)",
-			},
-			{
-				"<leader>xL",
-				"<cmd>Trouble loclist toggle<cr>",
-				desc = "Location List (Trouble)",
-			},
-			{
-				"<leader>xQ",
-				"<cmd>Trouble qflist toggle<cr>",
-				desc = "Quickfix List (Trouble)",
+					"<leader>cl",
+					"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+					desc = "LSP Definitions / references / ... (Trouble)",
+				},
+				{
+					"<leader>xL",
+					"<cmd>Trouble loclist toggle<cr>",
+					desc = "Location List (Trouble)",
+				},
+				{
+					"<leader>xQ",
+					"<cmd>Trouble qflist toggle<cr>",
+					desc = "Quickfix List (Trouble)",
+				},
 			},
 		},
+		{ "akinsho/toggleterm.nvim", version = "*", config = true },
+		{ "lewis6991/gitsigns.nvim", opts = {} },
+		{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
+		-- Auto pairs
+		{ "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
 	},
-	{ "akinsho/toggleterm.nvim", version = "*", config = true },
-	{ "lewis6991/gitsigns.nvim", opts = {} },
-	{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
-	-- Auto pairs
-	{ "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
 })
 
 vim.g.suda_smart_edit = 1

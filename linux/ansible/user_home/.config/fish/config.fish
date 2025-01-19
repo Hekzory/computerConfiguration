@@ -1,4 +1,4 @@
-# Initializing some environment variables earlier:
+# Early environment variables
 set -gx EDITOR nvim
 set -gx PAGER "less -R"
 set -gx MANROFFOPT "-c"
@@ -24,7 +24,9 @@ if not test -f $theme_path
 end
 
 # Initialize oh-my-posh if available
-type -q oh-my-posh && oh-my-posh init fish --config $theme_path | source
+if type -q oh-my-posh
+    oh-my-posh init fish --config $theme_path | source
+end
 
 ## Enable Wayland support for different applications
 if [ "$XDG_SESSION_TYPE" = "wayland" ]
