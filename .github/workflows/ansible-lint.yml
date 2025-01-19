@@ -8,7 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Add fake .git dir
+        run: mkdir -p "${{ github.workspace }}/linux/ansible/.git"
       - name: Run ansible-lint
-        uses: ansible/ansible-lint@v24.6.0
+        uses: ansible/ansible-lint@v24.6.1
         with:
           working_directory: "${{ github.workspace }}/linux/ansible"
