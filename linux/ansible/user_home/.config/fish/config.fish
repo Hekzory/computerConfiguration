@@ -142,7 +142,10 @@ if not string match -q -- $PNPM_HOME $PATH
 end
 # pnpm end
 
-
+# Load custom.fish config if it exists
+if test -f ~/.config/fish/custom.fish
+    source ~/.config/fish/custom.fish
+end
 
 function gbr --description "Create and checkout a new branch with useful functionality"
     set -l source_branch "master"
