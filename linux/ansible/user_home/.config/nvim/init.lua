@@ -53,7 +53,7 @@ lazy.opts = {}
 
 lazy.setup({
 	install = { colorscheme = { "tokyonight" } },
-	checker = { enabled = true },
+	checker = { enabled = false }, -- update reminder is a bit intrusive
 	spec = {
 		{ "folke/tokyonight.nvim", lazy = false, priority = 1000 },
 		{
