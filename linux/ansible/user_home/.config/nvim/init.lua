@@ -180,7 +180,7 @@ require("nvim-treesitter.configs").setup({
 		"markdown",
 		"cmake",
 		"comment",
-		"desktop",
+		-- "desktop", -- Does not work for now
 		"diff",
 		"git_config",
 		"git_rebase",

@@ -216,6 +216,7 @@
       loop:
         - "/home/{{ the_user }}/.config/fish"
         - "/home/{{ the_user }}/.config/fastfetch"
+        - "/home/{{ the_user }}/.config/btop"
     # CONFIG - shell configs setup
     - name: Copy config files + themes
       ansible.builtin.copy:
@@ -230,6 +231,7 @@
         - tokyofine.omp.toml
         - .config/fish/config.fish
         - .config/fastfetch/config.jsonc
+        - .config/btop/btop.conf
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
