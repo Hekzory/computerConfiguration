@@ -11,6 +11,6 @@ jobs:
       - name: Add fake .git dir
         run: mkdir -p "${{ github.workspace }}/linux/ansible/.git"
       - name: Run ansible-lint
-        uses: ansible/ansible-lint@v25.1.0
+        uses: ansible/ansible-lint@v25.1.1
         with:
           working_directory: "${{ github.workspace }}/linux/ansible"
