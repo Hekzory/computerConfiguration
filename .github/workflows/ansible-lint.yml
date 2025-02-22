@@ -1,9 +1,16 @@
-name: ansible-lint
+name: Ansible Quality Gates
 on:
   push:
     branches: ["main", "master"]
+    paths:
+      - 'linux/ansible/**'
+      - 'windows/**'
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
 jobs:
-  build:
+  lint:
     name: Ansible Lint
     runs-on: ubuntu-latest
     steps:
