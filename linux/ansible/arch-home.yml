@@ -1,0 +1,34 @@
+- name: Include arch-desktop.yml
+  import_playbook: arch-desktop.yml
+- name: Arch-home.yml - personal setup for arch
+  hosts: arch
+  become: false
+  vars:
+    the_user: "{{ ansible_user_id }}"
+  tasks:
+    # PACKAGES - Official repos home packages setup
+    - name: Setup home packages
+      become: true
+      community.general.pacman:
+        executable: yay
+        update_cache: true
+        name:
+          - qbittorrent # torrent client
+        state: present
+    # PACKAGES - AUR home packages setup
+    - name: Install packages from AUR using yay
+      kewlfft.aur.aur:
+        name:
+          - cursor-bin # VSCode with AI
+          - telegram-desktop-bin # messaging
+          - vesktop # discord ascended
+        use: yay
+        state: present
+    # CONFIG - Gaming optimizations
+    - name: Adding existing user to gaming groups
+      become: true
+      ansible.builtin.user:
+        name: "{{ the_user }}"
+        groups:
+          - games # For better gaming performance
+        append: true

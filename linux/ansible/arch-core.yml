@@ -39,54 +39,54 @@
       community.general.pacman:
         update_cache: true
         name:
-          - nano # editor
-          - less # easy view utility
-          - git # to clone github repos
-          - base-devel # required packages for developer stuff
-          - curl # download utility
-          - wget # download utility
-          - rsync # copy utility
-          - bat # prettier cat
-          - fastfetch # system info
-          - btop # better resource monitor
-          - eza # better than ls and lsd
-          # - zsh # better shell
-          # - zsh-autosuggestions # self-explanatory
-          # - zsh-history-substring-search # self-explanatory
-          # - zsh-completions # self-explanatory
-          - inxi # system info tool
-          - pigz # faster gzip
-          - pbzip2 # faster bzip
-          - fwupd # firmware update tool
-          - amd-ucode # amd microcode
-          - linux-firmware # linux firmware
-          - github-cli # better github integration
-          - networkmanager # self-explanatory
-          - python3 # self-explanatory
-          - reflector # mirror updater
-          - duf # df but better
-          - ripgrep # faster grep
-          - fzf # fast file search
-          - docker # containerization
-          - docker-compose # easy container management
-          - docker-buildx # new build system for docker
-          - neovim # lets try this cool editor
-          - wl-clipboard # wayland clipboard
-          - python-neovim # python neovim integration
-          - tree-sitter-cli # needed for neovim
-          - git-delta # cool diff tool
-          - lld # faster linker
-          - python-requests # docker requires it
-          - stylua # lua formatter
-          - yamlfmt # yaml formatter
-          - taplo-cli # toml formatter
-          - openmp # parallel lib for speedups
-          - pnpm # fast nodejs package manager
-          - npm # still needed by pnpm sometimes sadly
-          - fish # experiment better shell
-          - gopls # go lsp
-          - ruff # python lsp
-          - shfmt # shell formatter
+          # Core Utilities - The Basics, But Better
+          - nano # When vim feels like overkill
+          - less # For when you need to scroll *gracefully*
+          - git # Version control
+          - base-devel # Because we build things here
+          - curl # HTTP wizardry
+          - wget # When curl feels too fancy
+          - rsync # Moving bits, atomically
+          # Enhanced Experience
+          - bat # cat with wings
+          - fastfetch # System introspection with style
+          - btop # Resource monitoring as an art form
+          - eza # ls evolved - because progress matters
+          - inxi # System insights, delivered with precision
+          # Performance Enhancers - Speed is a feature
+          - pigz # Parallel gzip - because waiting is obsolete
+          - pbzip2 # Parallel bzip - same story
+          - lld # Linking at the speed of thought
+          - openmp # Parallel processing? Yes, please
+          - ccache # Cache your builds
+          # Development Arsenal - Tools of the Trade
+          - docker # Containers
+          - docker-compose # Orchestra conductor for your containers
+          - docker-buildx # Because building should be an experience
+          - neovim # Text editing ascended
+          - git-delta # Diffs that tell a story
+          - stylua # Lua, but make it pretty
+          - yamlfmt # YAML deserves beauty too
+          - taplo-cli # TOML formatter - because structure matters
+          - pnpm # Package management at light speed
+          - npm # The necessary evil
+          - fish # Shell evolution in progress
+          - gopls # Go lsp server
+          - ruff # Python's new best friend
+          - shfmt # Because shell scripts deserve love too
+          # System Essentials - The Foundation
+          - fwupd # Firmware: the forgotten update
+          - amd-ucode # AMD microcode - because bare metal matters
+          - linux-firmware # The kernel's wardrobe
+          - networkmanager # Network whisperer
+          - python3 # The snake that powers everything
+          - reflector # Mirror optimization magic
+          # Quality of Life - Because life's too short for bad tools
+          - ripgrep # grep at ludicrous speed
+          - fzf # Fuzzy finding nirvana
+          - duf # Disk usage, but make it beautiful
+          - wl-clipboard # Wayland clipboard sorcery
+          - tree-sitter-cli # AST manipulation made elegant
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -111,6 +111,7 @@
         replace: 'noatime'
     - name: Configure sysctl for better performance
       become: true
+      failed_when: false # some of them might not be applied dynamically or at all in some systems
       ansible.posix.sysctl:
         name: "{{ item.key }}"
         value: "{{ item.value }}"
@@ -125,6 +126,8 @@
         - { key: 'net.ipv4.tcp_window_scaling', value: '1' }
         - { key: 'net.core.default_qdisc', value: 'cake' }
         - { key: 'net.ipv4.tcp_congestion_control', value: 'bbr' }
+        - { key: 'net.ipv4.tcp_slow_start_after_idle', value: '0' }
+        - { key: 'kernel.nmi_watchdog', value: '0' }
     - name: Disable unnecessary services
       become: true
       ansible.builtin.service:
@@ -163,12 +166,12 @@
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
-    - name: Enable/disable some services based on virtualization
+    - name: Enable/disable some services based on if running under WSL
       become: true
       ansible.builtin.systemd_service:
         name: "{{ item }}"
-        state: "{{ 'enabled' if ansible_virtualization_type == 'none' else 'stopped' }}"
-        enabled: "{{ ansible_virtualization_type == 'none' }}"
+        state: "{{ 'stopped' if 'microsoft' in ansible_facts['kernel'] else 'started' }}"
+        enabled: "{{ 'microsoft' not in ansible_facts['kernel'] }}"
       loop:
         - fstrim.timer
     - name: Enable necessary services
@@ -258,8 +261,8 @@
           - docker
         append: true
     - name: Docker cache cleanup
+      failed_when: false # It's ok if cleanup fails, let's not break the whole playbook over this
       community.docker.docker_prune:
-        # ignore_errors: true # Basically due to some python dependency breakage this one may break so we may say it's ok sometimes
         containers: true
         images: true
         networks: true

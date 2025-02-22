@@ -13,40 +13,40 @@
         executable: yay
         update_cache: true
         name:
-          # Fonts
-          - ttf-roboto
-          - ttf-hack
-          - ttf-liberation
-          - noto-fonts
-          - noto-fonts-extra
-          - noto-fonts-emoji
-          - adobe-source-sans-fonts
-          # Applications
-          - qbittorrent # torrent
-          - mpv # video player
-          - yt-dlp # yt video player for mpv
-          - realtime-privileges # for better audio
-          # - wezterm # cool terminal but broken
-          - kitty # also cool terminal
-          - ttf-meslo-nerd
+          # Typography Foundation
+          - ttf-roboto # The backbone of modern interfaces
+          - ttf-hack # Monospace perfection
+          - ttf-liberation # Freedom in letterforms
+          - noto-fonts # Unicode coverage done right
+          - noto-fonts-extra # Because *every* glyph matters
+          - noto-fonts-emoji # Expression through pictographs
+          - adobe-source-sans-fonts # Professional grade typography
+          - ttf-fira-code # For when your code needs to *speak*
+          - ttf-jetbrains-mono-nerd # Because even monospace deserves personality
+          # Core Experience
+          - mpv # Video playback ascended
+          - yt-dlp # Content acquisition utility
+          - realtime-privileges # Audio latency? Not in my system
+          - kitty # Terminal emulation evolved
+          - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
     # PACKAGES - AUR desktop packages setup
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
-          - google-chrome-beta
-          # - jetbrains-toolbox # no longer installing by default
-          - jdk23-graalvm-ee-bin
+          - google-chrome-beta # Web browsing on the somewhat-bleeding edge
+          - jdk23-graalvm-ee-bin # Java performance, unleashed
         use: yay
         state: present
     - name: Remove unneeded packages if present
       become: true
       community.general.pacman:
         name:
-          - prismlauncher-git-debug
-          - ttf-meslo-nerd-font-powerlevel10k # p10k not used anymore
-          - jdk22-graalvm-ee-bin # older java
-          - jdk21-graalvm-ee-bin # older java
+          - prismlauncher-git-debug # Debugging artifacts, begone
+          - ttf-meslo-nerd-font-powerlevel10k # Legacy font
+          - jdk22-graalvm-ee-bin # Yesterday's Java
+          - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
+          - wezterm # A path not taken
         state: absent
     # CONFIG - Optimization and/or compatibility improvements
     - name: Adding existing user to group audio
@@ -56,17 +56,6 @@
         groups:
           - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
         append: true
-    # CONFIG - wezterm
-    - name: Copy wezterm dotfiles
-      ansible.builtin.copy:
-        src: "user_home/{{ item }}"
-        dest: "/home/{{ the_user }}/{{ item }}"
-        force: true
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-      loop:
-        - .wezterm.lua
     # CONFIG - kitty
     - name: Copy kitty dotfiles
       ansible.builtin.copy:

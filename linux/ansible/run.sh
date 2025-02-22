@@ -5,7 +5,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Constants - uppercase by convention
-readonly VALID_PLAYBOOKS=("arch-core" "arch-desktop")
+readonly VALID_PLAYBOOKS=("arch-core" "arch-desktop" "arch-home")
 readonly REQUIREMENTS_FILE="roles/requirements.yml"
 
 # --- Error Handling: with a hint of theatrical flair ---
