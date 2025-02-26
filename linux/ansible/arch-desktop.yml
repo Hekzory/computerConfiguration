@@ -54,7 +54,7 @@
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
-          - realtime # Apparently adding user to this group may allow direct device access in realtime, which might be useful
+          - realtime # Adding user to this group may allow direct device access in realtime
         append: true
     # CONFIG - kitty
     - name: Copy kitty dotfiles

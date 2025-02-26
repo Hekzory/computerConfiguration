@@ -180,7 +180,6 @@ require("nvim-treesitter.configs").setup({
 		"markdown",
 		"cmake",
 		"comment",
-		-- "desktop", -- Does not work for now
 		"diff",
 		"git_config",
 		"git_rebase",
@@ -194,6 +193,7 @@ require("nvim-treesitter.configs").setup({
 		"regex",
 		"ssh_config",
 		"toml",
+		"jinja",
 	},
 	sync_install = true,
 	auto_install = true,

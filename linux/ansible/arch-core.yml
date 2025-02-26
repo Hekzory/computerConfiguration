@@ -14,16 +14,16 @@
       loop:
         # this one removes warnings but may break something so disabling by default, you are free to uncomment it
         # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
-        - {regexp: '^#Color$', line: 'Color'}
-        - {regexp: 'ParallelDownloads =', line: 'ParallelDownloads = 16'}
-        - {regexp: '^#ILoveCandy$', line: 'ILoveCandy'}
-        - {regexp: '^#VerbosePkgLists$', line: 'VerbosePkgLists'}
+        - {regexp: "^#Color$", line: "Color"}
+        - {regexp: "ParallelDownloads =", line: "ParallelDownloads = 16"}
+        - {regexp: "^#ILoveCandy$", line: "ILoveCandy"}
+        - {regexp: "^#VerbosePkgLists$", line: "VerbosePkgLists"}
     # CONFIG - nano
     - name: Nano - Enable color in config
       become: true
       ansible.builtin.lineinfile:
         path: /etc/nanorc
-        line: '{{ item.line }}'
+        line: "{{ item.line }}"
       loop:
         - {line: 'include "/usr/share/nano/extra/*.nanorc"'}
         - {line: 'include "/usr/share/nano/*.nanorc"'}
@@ -66,7 +66,6 @@
           - neovim # Text editing ascended
           - git-delta # Diffs that tell a story
           - stylua # Lua, but make it pretty
-          - yamlfmt # YAML deserves beauty too
           - taplo-cli # TOML formatter - because structure matters
           - pnpm # Package management at light speed
           - npm # The necessary evil
@@ -74,6 +73,7 @@
           - gopls # Go lsp server
           - ruff # Python's new best friend
           - shfmt # Because shell scripts deserve love too
+          - yamlfmt # yaml formatter
           # System Essentials - The Foundation
           - fwupd # Firmware: the forgotten update
           - amd-ucode # AMD microcode - because bare metal matters
@@ -95,20 +95,20 @@
         name: "{{ item.name }}"
         value: "{{ item.value }}"
       loop:
-        - {name: 'diff.indentHeuristic', value: 'true'}
-        - {name: 'diff.algorithm', value: 'minimal'}
-        - {name: 'diff.colorMoved', value: 'default'}
-        - {name: 'core.pager', value: 'delta'}
-        - {name: 'interactive.diffFilter', value: 'delta --color-only'}
-        - {name: 'delta.navigate', value: 'true'}
-        - {name: 'merge.conflictstyle', value: 'diff3'}
+        - {name: "diff.indentHeuristic", value: "true"}
+        - {name: "diff.algorithm", value: "minimal"}
+        - {name: "diff.colorMoved", value: "default"}
+        - {name: "core.pager", value: "delta"}
+        - {name: "interactive.diffFilter", value: "delta --color-only"}
+        - {name: "delta.navigate", value: "true"}
+        - {name: "merge.conflictstyle", value: "diff3"}
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
     - name: Fstab - change relatime to noatime
       become: true
       ansible.builtin.replace:
         path: /etc/fstab
-        regexp: 'relatime'
-        replace: 'noatime'
+        regexp: "relatime"
+        replace: "noatime"
     - name: Configure sysctl for better performance
       become: true
       failed_when: false # some of them might not be applied dynamically or at all in some systems
@@ -119,15 +119,15 @@
         state: present
         reload: true
       loop:
-        - { key: 'net.core.netdev_max_backlog', value: '16384' }
-        - { key: 'net.core.somaxconn', value: '8192' }
-        - { key: 'net.ipv4.tcp_max_syn_backlog', value: '8192' }
-        - { key: 'net.ipv4.tcp_fastopen', value: '3' }
-        - { key: 'net.ipv4.tcp_window_scaling', value: '1' }
-        - { key: 'net.core.default_qdisc', value: 'cake' }
-        - { key: 'net.ipv4.tcp_congestion_control', value: 'bbr' }
-        - { key: 'net.ipv4.tcp_slow_start_after_idle', value: '0' }
-        - { key: 'kernel.nmi_watchdog', value: '0' }
+        - {key: "net.core.netdev_max_backlog", value: "16384"}
+        - {key: "net.core.somaxconn", value: "8192"}
+        - {key: "net.ipv4.tcp_max_syn_backlog", value: "8192"}
+        - {key: "net.ipv4.tcp_fastopen", value: "3"}
+        - {key: "net.ipv4.tcp_window_scaling", value: "1"}
+        - {key: "net.core.default_qdisc", value: "cake"}
+        - {key: "net.ipv4.tcp_congestion_control", value: "bbr"}
+        - {key: "net.ipv4.tcp_slow_start_after_idle", value: "0"}
+        - {key: "kernel.nmi_watchdog", value: "0"}
     - name: Disable unnecessary services
       become: true
       ansible.builtin.service:
@@ -136,8 +136,8 @@
         enabled: false
       register: service_command_output
       failed_when: >
-        service_command_output.failed and 'unrecognized service' not in service_command_output.msg and 'Could not find the
-        requested service' not in service_command_output.msg
+        service_command_output.failed and 'unrecognized service' not in service_command_output.msg
+        and 'Could not find the requested service' not in service_command_output.msg
       loop:
         - ModemManager.service # Not needed by most people, so disable by default
     - name: Blacklist unnecessary modules
