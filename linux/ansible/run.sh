@@ -8,11 +8,18 @@ IFS=$'\n\t'
 readonly VALID_PLAYBOOKS=("arch-core" "arch-desktop" "arch-home")
 readonly REQUIREMENTS_FILE="roles/requirements.yml"
 
+# Colors for better output
+readonly GREEN='\033[0;32m'
+readonly RED='\033[0;31m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
+
 # --- Error Handling: with a hint of theatrical flair ---
 die() {
     local msg="$1"
     local code="${2:-1}" # Default to 1 if not provided
-    printf "FATAL: %s\n" "$msg" >&2
+    printf "${RED}FATAL: %s${NC}\n" "$msg" >&2
     exit "$code"
 }
 
@@ -62,7 +69,7 @@ main() {
     check_command ansible-galaxy
     check_command ansible-playbook
 
-    echo "Installing requirements..."
+    printf "${BLUE}Installing requirements...${NC}\n"
     if ! ansible-galaxy install -r "$REQUIREMENTS_FILE"; then
         die "Failed to install Ansible requirements"
     fi
@@ -72,8 +79,11 @@ main() {
         die "Playbook execution failed"
     fi
 
-    echo "Playbook executed successfully"
+    printf "${GREEN}Playbook executed successfully${NC}\n"
 }
+
+# Trap ctrl-c and call cleanup
+trap 'echo -e "${YELLOW}Exiting...${NC}"; exit 130' INT
 
 # Execute main function
 main
