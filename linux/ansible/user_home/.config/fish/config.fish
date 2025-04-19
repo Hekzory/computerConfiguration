@@ -59,7 +59,7 @@ alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mi
 alias cmrupd="sudo cachyos-rate-mirrors"
 
 #   For when 'sudo' is too mainstream
-alias please='echo "Oh, 𝓿𝓮𝓻𝔂 well..." && sudo' 
+alias please='echo "Oh, 𝓿𝓮𝓻𝔂 well..." && sudo'
 
 if type -q bat
     alias cat='bat --style=auto'

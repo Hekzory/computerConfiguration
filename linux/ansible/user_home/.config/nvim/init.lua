@@ -1,4 +1,7 @@
+vim.loader.enable()
+
 -- Core settings
+vim.g.mapleader = " " -- <Space> as leader
 vim.opt.number = true
 vim.opt.mouse = "a"
 vim.opt.termguicolors = true
@@ -8,7 +11,6 @@ vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.smartindent = true
 vim.opt.expandtab = true -- Use spaces instead of tabs
-vim.opt.autoindent = true
 
 -- Editor Behavior
 vim.opt.clipboard = "unnamedplus"
@@ -17,11 +19,22 @@ vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
 vim.opt.smartcase = true
 vim.opt.updatetime = 50 -- Faster updates
+vim.opt.timeoutlen = 1000
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
 
 vim.opt.cursorline = true
-vim.opt.signcolumn = "yes"
+vim.opt.cursorlineopt = "number"
+vim.opt.signcolumn = "yes:1"
 vim.opt.scrolloff = 4
 vim.opt.sidescrolloff = 8
+
+vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<CR>", { desc = "Find files" })
+vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", { desc = "Find text" })
+vim.keymap.set("n", "<leader>fb", "<cmd>Telescope buffers<CR>", { desc = "Buffers" })
+vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
+vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
+vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Toggle Explorer" })
 
 --vim.keymap.set({ "n", "x" }, "gy", '"+y')
 --vim.keymap.set({ "n", "x" }, "gp", '"+p')
@@ -128,11 +141,21 @@ lazy.setup({
 				},
 			},
 		},
+		{
+			"nvim-telescope/telescope.nvim",
+			tag = "0.1.8",
+			dependencies = { "nvim-lua/plenary.nvim" },
+		},
+		{
+			"numToStr/Comment.nvim",
+			opts = { padding = true },
+		},
 		{ "akinsho/toggleterm.nvim", version = "*", config = true },
 		{ "lewis6991/gitsigns.nvim", opts = {} },
 		{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 		-- Auto pairs
 		{ "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
+		{ "folke/which-key.nvim", opts = {} },
 	},
 })
 
@@ -154,13 +177,17 @@ require("neo-tree").setup({
 	},
 })
 
+require("telescope").setup({
+	pickers = {
+		find_files = { hidden = true },
+	},
+})
+
 require("nvim-treesitter.configs").setup({
 	ensure_installed = {
-		"c",
 		"lua",
 		"vim",
 		"vimdoc",
-		"query",
 		"go",
 		"gomod",
 		"gosum",
@@ -216,6 +243,7 @@ require("conform").setup({
 		prettier = { prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" } },
 	},
 	formatters_by_ft = {
+		["*"] = { "trim_whitespace" },
 		lua = { "stylua" },
 		yaml = { "yamlfmt" },
 		xml = { "xmllint" },
@@ -251,4 +279,3 @@ require("gitsigns").setup()
 vim.cmd([[Neotree action=show toggle=true]])
 vim.keymap.set("n", "<F2>", "<cmd>Neotree action=show toggle=true<CR>")
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")
---vim.cmd([[ToggleTerm]])

@@ -87,6 +87,7 @@
           - duf # Disk usage, but make it beautiful
           - wl-clipboard # Wayland clipboard sorcery
           - tree-sitter-cli # AST manipulation made elegant
+          - fd # fast find alternative
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
