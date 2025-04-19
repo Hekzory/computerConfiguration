@@ -4,11 +4,13 @@ set -gx PAGER "less -R"
 set -gx MANROFFOPT "-c"
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
-function fish_greeting
-    if test (tput colors) -ge 256; and test (tput lines) -gt 25
-    	fastfetch
-    else
-        echo "Welcome. Small screen or low color support detected, no fastfetch for you."
+if status is-interactive
+    function fish_greeting
+        if test (tput colors) -ge 256; and test (tput lines) -gt 25
+    	    fastfetch
+        else
+            echo "Welcome. Small screen or low color support detected, no fastfetch for you."
+        end
     end
 end
 
@@ -16,11 +18,13 @@ if test (tput colors) -lt 256
     set -gx LOW_COLOR_SUPPORT 1
 end
 
-# Theme handling with error checking
-set -g theme_path ~/tokyofine.omp.toml
-if not test -f $theme_path
-    echo "🔄 Downloading missing theme..."
-    curl -sL "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o $theme_path || echo "❌ Theme download failed!"
+if status is-interactive
+    # Theme handling with error checking
+    set -g theme_path ~/tokyofine.omp.toml
+    if not test -f $theme_path
+        echo "🔄 Downloading missing theme..."
+        curl -sL "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o $theme_path || echo "❌ Theme download failed!"
+    end
 end
 
 # Initialize oh-my-posh if available

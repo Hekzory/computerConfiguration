@@ -12,11 +12,16 @@ vim.opt.autoindent = true
 
 -- Editor Behavior
 vim.opt.clipboard = "unnamedplus"
-vim.opt.wrap = true -- Don't wrap lines
+vim.opt.wrap = false -- No wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
-vim.opt.ignorecase = true
-vim.opt.updatetime = 200 -- Faster updates
+vim.opt.smartcase = true
+vim.opt.updatetime = 50 -- Faster updates
+
+vim.opt.cursorline = true
+vim.opt.signcolumn = "yes"
+vim.opt.scrolloff = 4
+vim.opt.sidescrolloff = 8
 
 --vim.keymap.set({ "n", "x" }, "gy", '"+y')
 --vim.keymap.set({ "n", "x" }, "gp", '"+p')
