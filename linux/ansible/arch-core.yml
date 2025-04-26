@@ -144,13 +144,11 @@
         - pcspkr # motherboard speaker, useless
         - snd_pcsp # motherboard speaker, useless
         - eeepc_wmi # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-        - nouveau # does not work properly on newer nvidia videocards or with worse performance
         - iTCO_wdt # watchdog timer, small performance improvement
         - sp5100_tco # watchdog timer, small performance improvement
         - floppy # useless, also bad for security
         - parport # parallel port support, rarely used nowadays
         - ppdev # parallel port device support, rarely used
-        - snd_hda_codec_hdmi # audio through hdmi, almost never used
         - legion_laptop # should used by legion laptops, but wrongly loaded by every device i have
     - name: Copy reflector config - to setup proper mirror update
       become: true
