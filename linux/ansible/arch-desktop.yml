@@ -67,3 +67,14 @@
         mode: u+rw,g+r,o--
       loop:
         - .config/kitty/
+    # CONFIG - copy other config files
+    - name: Copy other dotfiles
+      ansible.builtin.copy:
+        src: "user_home/{{ item }}"
+        dest: "/home/{{ the_user }}/{{ item }}"
+        force: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: u+rw,g+r,o--
+      loop:
+        - .config/chrome-beta-flags.conf
