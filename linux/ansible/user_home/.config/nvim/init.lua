@@ -25,9 +25,10 @@ vim.g.loaded_perl_provider = 0
 
 vim.opt.cursorline = true
 vim.opt.cursorlineopt = "number"
-vim.opt.signcolumn = "yes:1"
+vim.opt.signcolumn = "yes"
 vim.opt.scrolloff = 4
 vim.opt.sidescrolloff = 8
+vim.opt.showmode = false
 
 vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<CR>", { desc = "Find files" })
 vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", { desc = "Find text" })
@@ -214,7 +215,6 @@ require("nvim-treesitter.configs").setup({
 		"csv",
 		"dockerfile",
 		"gitignore",
-		"html",
 		"bash",
 		"fish",
 		"json",
@@ -236,7 +236,6 @@ require("nvim-treesitter.configs").setup({
 		"gitcommit",
 		"java",
 		"javascript",
-		"json",
 		"json5",
 		"proto",
 		"regex",
