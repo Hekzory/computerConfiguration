@@ -18,7 +18,7 @@ vim.opt.wrap = false -- No wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
 vim.opt.smartcase = true
-vim.opt.updatetime = 50 -- Faster updates
+vim.opt.updatetime = 150 -- Faster updates
 vim.opt.timeoutlen = 1000
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
@@ -36,9 +36,6 @@ vim.keymap.set("n", "<leader>fb", "<cmd>Telescope buffers<CR>", { desc = "Buffer
 vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
 vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Toggle Explorer" })
-
---vim.keymap.set({ "n", "x" }, "gy", '"+y')
---vim.keymap.set({ "n", "x" }, "gp", '"+p')
 
 local lazy = {}
 
@@ -86,17 +83,21 @@ lazy.setup({
 		},
 		{
 			"hrsh7th/nvim-cmp",
+			event = "InsertEnter",
 			dependencies = {
 				"hrsh7th/cmp-nvim-lsp",
 				"hrsh7th/cmp-buffer",
 				"hrsh7th/cmp-path",
 				"hrsh7th/cmp-cmdline",
-				"L3MON4D3/LuaSnip",
-				"saadparwaiz1/cmp_luasnip",
+				"L3MON4D3/LuaSnip", -- Snippet engine
+				"saadparwaiz1/cmp_luasnip", -- Snippet source for nvim-cmp
+				"onsails/lspkind.nvim", -- VSCode-like pictograms for completion items
+				"windwp/nvim-autopairs",
 			},
 			config = function()
 				local cmp = require("cmp")
 				local luasnip = require("luasnip")
+				local lspkind = require("lspkind")
 
 				cmp.setup({
 					snippet = {
@@ -136,6 +137,49 @@ lazy.setup({
 						{ name = "buffer" },
 						{ name = "path" },
 					}),
+					window = {
+						completion = cmp.config.window.bordered(),
+						documentation = cmp.config.window.bordered(),
+					},
+					formatting = {
+						format = lspkind.cmp_format({
+							mode = "symbol_text", -- Show symbol and text
+							maxwidth = 50, -- Truncate item text if it's too long
+							ellipsis_char = "...", -- Character to use for truncation
+							-- Define how different completion item kinds are displayed.
+							-- For more advanced configuration, see lspkind documentation.
+							symbol_map = {
+								Text = "󰉿",
+								Method = "󰆧",
+								Function = "󰊕",
+								Constructor = "",
+								Field = "󰜢",
+								Variable = "󰀫",
+								Class = "󰠱",
+								Interface = "",
+								Module = "",
+								Property = "󰜢",
+								Unit = "󰑭",
+								Value = "󰎠",
+								Enum = "",
+								Keyword = "󰌋",
+								Snippet = "",
+								Color = "󰏘",
+								File = "󰈙",
+								Reference = "󰈇",
+								Folder = "󰉋",
+								EnumMember = "",
+								Constant = "󰏿",
+								Struct = "󰙅",
+								Event = "",
+								Operator = "󰆕",
+								TypeParameter = "󰊄",
+							},
+						}),
+					},
+					experimental = {
+						ghost_text = true,
+					},
 				})
 
 				-- Setup for command line
@@ -204,7 +248,10 @@ lazy.setup({
 		{
 			"nvim-telescope/telescope.nvim",
 			tag = "0.1.8",
-			dependencies = { "nvim-lua/plenary.nvim" },
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+			},
 		},
 		{
 			"numToStr/Comment.nvim",
@@ -214,7 +261,17 @@ lazy.setup({
 		{ "lewis6991/gitsigns.nvim", opts = {} },
 		{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 		-- Auto pairs
-		{ "windwp/nvim-autopairs", event = "InsertEnter", opts = {} },
+		{
+			"windwp/nvim-autopairs",
+			event = "InsertEnter",
+			opts = {},
+			config = function()
+				-- Integration with nvim-cmp
+				local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+				local cmp = require("cmp")
+				cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+			end,
+		},
 		{ "folke/which-key.nvim", opts = {} },
 		{
 			"romgrk/barbar.nvim",
@@ -307,7 +364,25 @@ require("nvim-treesitter.configs").setup({
 	highlight = { enable = true },
 })
 
-local capabilities = require("cmp_nvim_lsp").default_capabilities()
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
+capabilities.textDocument.completion.completionItem = {
+	documentationFormat = { "markdown", "plaintext" },
+	snippetSupport = true,
+	preselectSupport = true,
+	insertReplaceSupport = true,
+	labelDetailsSupport = true,
+	deprecatedSupport = true,
+	commitCharactersSupport = true,
+	tagSupport = { valueSet = { 1 } },
+	resolveSupport = {
+		properties = {
+			"documentation",
+			"detail",
+			"additionalTextEdits",
+		},
+	},
+}
 
 require("lspconfig").gopls.setup({
 	capabilities = capabilities,
