@@ -88,16 +88,20 @@ lazy.setup({
 				"hrsh7th/cmp-nvim-lsp",
 				"hrsh7th/cmp-buffer",
 				"hrsh7th/cmp-path",
-				"hrsh7th/cmp-cmdline",
+				{ "hrsh7th/cmp-cmdline", event = "CmdlineEnter" },
 				"L3MON4D3/LuaSnip", -- Snippet engine
 				"saadparwaiz1/cmp_luasnip", -- Snippet source for nvim-cmp
 				"onsails/lspkind.nvim", -- VSCode-like pictograms for completion items
 				"windwp/nvim-autopairs",
+				"rafamadriz/friendly-snippets", -- Useful snippets collection
 			},
 			config = function()
 				local cmp = require("cmp")
 				local luasnip = require("luasnip")
 				local lspkind = require("lspkind")
+
+				-- Load friendly-snippets
+				require("luasnip.loaders.from_vscode").lazy_load()
 
 				cmp.setup({
 					snippet = {
