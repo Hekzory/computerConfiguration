@@ -244,6 +244,7 @@
         - .config/fish/config.fish
         - .config/fastfetch/config.jsonc
         - .config/btop/btop.conf
+        - .config/xdg-desktop-portal/portals.conf
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
