@@ -229,6 +229,7 @@
         - "/home/{{ the_user }}/.config/fish"
         - "/home/{{ the_user }}/.config/fastfetch"
         - "/home/{{ the_user }}/.config/btop"
+        - "/home/{{ the_user }}/.config/xdg-desktop-portal"
     # CONFIG - shell configs setup
     - name: Copy config files + themes
       ansible.builtin.copy:
