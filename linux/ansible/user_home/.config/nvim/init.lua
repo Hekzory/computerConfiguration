@@ -5,6 +5,8 @@ vim.g.mapleader = " " -- <Space> as leader
 vim.opt.number = true
 vim.opt.mouse = "a"
 vim.opt.termguicolors = true
+vim.opt.list = true -- Show invisible characters
+vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
 
 -- Indentation
 vim.opt.tabstop = 4
