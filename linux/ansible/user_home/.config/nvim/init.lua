@@ -4,6 +4,7 @@ vim.loader.enable()
 vim.g.mapleader = " " -- <Space> as leader
 vim.opt.number = true
 vim.opt.mouse = "a"
+vim.opt.mousemoveevent = true -- Enable mouse move events (useful for hover features)
 vim.opt.termguicolors = true
 vim.opt.list = true -- Show invisible characters
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
@@ -31,6 +32,7 @@ vim.opt.signcolumn = "yes"
 vim.opt.scrolloff = 4
 vim.opt.sidescrolloff = 8
 vim.opt.showmode = false
+vim.opt.smoothscroll = true
 
 vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<CR>", { desc = "Find files" })
 vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", { desc = "Find text" })
@@ -39,37 +41,20 @@ vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
 vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Toggle Explorer" })
 
-local lazy = {}
-
-function lazy.install(path)
-	if not (vim.uv or vim.loop).fs_stat(path) then
-		print("Installing lazy.nvim....")
-		vim.fn.system({
-			"git",
-			"clone",
-			"--filter=blob:none",
-			"https://github.com/folke/lazy.nvim.git",
-			"--branch=stable", -- latest stable release
-			path,
-		})
-	end
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+	vim.fn.system({
+		"git",
+		"clone",
+		"--filter=blob:none",
+		"https://github.com/folke/lazy.nvim.git",
+		"--branch=stable",
+		lazypath,
+	})
 end
+vim.opt.rtp:prepend(lazypath)
 
-function lazy.setup(plugins)
-	if vim.g.plugins_ready then
-		return
-	end
-
-	lazy.install(lazy.path)
-	vim.opt.rtp:prepend(lazy.path)
-	require("lazy").setup(plugins, lazy.opts)
-	vim.g.plugins_ready = true
-end
-
-lazy.path = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-lazy.opts = {}
-
-lazy.setup({
+require("lazy").setup({
 	install = { colorscheme = { "tokyonight" } },
 	checker = { enabled = false }, -- update reminder is a bit intrusive
 	spec = {
@@ -78,6 +63,9 @@ lazy.setup({
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			lazy = false,
+			opts = {
+				options = { theme = "tokyonight-moon", globalstatus = true },
+			},
 		},
 		{
 			"neovim/nvim-lspconfig",
@@ -94,7 +82,6 @@ lazy.setup({
 				"L3MON4D3/LuaSnip", -- Snippet engine
 				"saadparwaiz1/cmp_luasnip", -- Snippet source for nvim-cmp
 				"onsails/lspkind.nvim", -- VSCode-like pictograms for completion items
-				"windwp/nvim-autopairs",
 				"rafamadriz/friendly-snippets", -- Useful snippets collection
 			},
 			config = function()
@@ -218,9 +205,48 @@ lazy.setup({
 			branch = "v3.x",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
-				"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+				"nvim-tree/nvim-web-devicons",
 				"MunifTanjim/nui.nvim",
-				-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+			},
+			opts = {
+				close_if_last_window = true,
+				enable_git_status = true,
+				enable_diagnostics = true,
+				default_component_configs = {
+					git_status = {
+						symbols = {
+							added = "",
+							modified = "",
+							deleted = "✖",
+							renamed = "➜",
+							untracked = "★",
+							ignored = "◌",
+							unstaged = "✗",
+							staged = "✓",
+							conflict = "??",
+						},
+					},
+				},
+				window = {
+					width = 35,
+					mappings = {
+						["<space>"] = "none",
+						["<2-LeftMouse>"] = "open",
+						["<cr>"] = "open",
+						["l"] = "open",
+						["h"] = "close_node",
+						["s"] = "open_vsplit",
+					},
+				},
+				filesystem = {
+					filtered_items = {
+						hide_dotfiles = false,
+						hide_hidden = false,
+						hide_by_name = { ".git", ".DS_Store", "thumbs.db" },
+					},
+					follow_current_file = { enabled = true, leave_dirs_open = true },
+					use_libuv_file_watcher = true,
+				},
 			},
 		},
 		{
@@ -296,26 +322,42 @@ lazy.setup({
 			},
 			version = "^1.0.0", -- optional: only update when a new 1.x version is released
 		},
+		{
+			"nvim-pack/nvim-spectre",
+			dependencies = { "nvim-lua/plenary.nvim" },
+			config = function()
+				require("spectre").setup({
+					highlight = {
+						ui = "String",
+						search = "DiffChange",
+						replace = "DiffDelete",
+					},
+				})
+				vim.keymap.set(
+					"n",
+					"<leader>S",
+					'<cmd>lua require("spectre").toggle()<CR>',
+					{ desc = "Toggle Spectre" }
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>sw",
+					'<cmd>lua require("spectre").open_visual({select_word=true})<CR>',
+					{ desc = "Search current word" }
+				)
+				vim.keymap.set(
+					"v",
+					"<leader>sw",
+					'<esc><cmd>lua require("spectre").open_visual()<CR>',
+					{ desc = "Search current selection" }
+				)
+			end,
+		},
 	},
 })
 
 vim.g.suda_smart_edit = 1
 vim.cmd([[colorscheme tokyonight-moon]])
-
-require("lualine").setup({
-	options = { theme = "tokyonight-moon", globalstatus = true },
-})
-
-require("neo-tree").setup({
-	close_if_last_window = true,
-	enable_git_status = true,
-	filesystem = {
-		filtered_items = {
-			hide_dotfiles = false,
-			hide_hidden = false,
-		},
-	},
-})
 
 require("telescope").setup({
 	pickers = {
@@ -370,25 +412,7 @@ require("nvim-treesitter.configs").setup({
 	highlight = { enable = true },
 })
 
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
-capabilities.textDocument.completion.completionItem = {
-	documentationFormat = { "markdown", "plaintext" },
-	snippetSupport = true,
-	preselectSupport = true,
-	insertReplaceSupport = true,
-	labelDetailsSupport = true,
-	deprecatedSupport = true,
-	commitCharactersSupport = true,
-	tagSupport = { valueSet = { 1 } },
-	resolveSupport = {
-		properties = {
-			"documentation",
-			"detail",
-			"additionalTextEdits",
-		},
-	},
-}
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 require("lspconfig").gopls.setup({
 	capabilities = capabilities,
@@ -439,5 +463,4 @@ require("ibl").setup()
 require("gitsigns").setup()
 
 vim.cmd([[Neotree action=show toggle=true]])
-vim.keymap.set("n", "<F2>", "<cmd>Neotree action=show toggle=true<CR>")
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")
