@@ -119,6 +119,14 @@
         - {name: "interactive.diffFilter", value: "delta --color-only"}
         - {name: "delta.navigate", value: "true"}
         - {name: "merge.conflictstyle", value: "diff3"}
+        - {name: "pull.rebase", value: "true"}  # rebase instead of merge on pull
+        - {name: "rebase.autoStash", value: "true"}  # auto-stash before rebase
+        - {name: "push.default", value: "current"}  # push current branch
+        - {name: "push.autoSetupRemote", value: "true"}  # auto-track remote
+        - {name: "fetch.prune", value: "true"}  # remove deleted remote branches
+        - {name: "fetch.pruneTags", value: "true"}
+        - {name: "core.preloadindex", value: "true"}
+        - {name: "help.autocorrect", value: "20"}  # auto-correct typos after 2 sec
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
     - name: Fstab - change relatime to noatime
       become: true
