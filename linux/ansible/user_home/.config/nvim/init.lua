@@ -1,5 +1,9 @@
 vim.loader.enable()
 
+-- disable netrw at the very start to to allow neotree to take over
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Core settings
 vim.g.mapleader = " " -- <Space> as leader
 vim.opt.number = true
@@ -34,12 +38,8 @@ vim.opt.sidescrolloff = 8
 vim.opt.showmode = false
 vim.opt.smoothscroll = true
 
-vim.keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<CR>", { desc = "Find files" })
-vim.keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", { desc = "Find text" })
-vim.keymap.set("n", "<leader>fb", "<cmd>Telescope buffers<CR>", { desc = "Buffers" })
 vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
-vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Toggle Explorer" })
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -55,6 +55,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
+	rocks = { enabled = false },
 	install = { colorscheme = { "tokyonight" } },
 	checker = { enabled = false }, -- update reminder is a bit intrusive
 	spec = {
@@ -194,10 +195,87 @@ require("lazy").setup({
 			end,
 		},
 		{ "lambdalisue/vim-suda" },
-		{ "stevearc/conform.nvim", opts = {} },
+		{
+			"stevearc/conform.nvim",
+			opts = {
+				formatters = {
+					yamlfmt = { prepend_args = { "-formatter", "max_line_length=240", "retain_line_breaks=true" } },
+					taplo = { args = { "format", "--option", "indent_tables=true", "-" } },
+					shfmt = { prepend_args = { "--indent", "4" } },
+					prettier = { prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" } },
+				},
+				formatters_by_ft = {
+					["*"] = { "trim_whitespace" },
+					lua = { "stylua" },
+					yaml = { "yamlfmt" },
+					xml = { "xmllint" },
+					svg = { "xmllint" },
+					toml = { "taplo" },
+					javascript = { "prettier" },
+					html = { "prettier" },
+					css = { "prettier" },
+					js = { "prettier" },
+					markdown = { "prettier" },
+					json = { "prettier" },
+					typescript = { "prettier" },
+					bash = { "shfmt" },
+					sh = { "shfmt" },
+				},
+				format_on_save = { timeout_ms = 500, lsp_fallback = true },
+			},
+		},
 		{
 			"nvim-treesitter/nvim-treesitter",
 			build = ":TSUpdate",
+			opts = {
+				ensure_installed = {
+					"lua",
+					"vim",
+					"vimdoc",
+					"go",
+					"gomod",
+					"gosum",
+					"cpp",
+					"css",
+					"html",
+					"csv",
+					"dockerfile",
+					"gitignore",
+					"bash",
+					"fish",
+					"json",
+					"make",
+					"python",
+					"rust",
+					"sql",
+					"udev",
+					"yaml",
+					"xml",
+					"markdown_inline",
+					"markdown",
+					"cmake",
+					"comment",
+					"diff",
+					"git_config",
+					"git_rebase",
+					"gitattributes",
+					"gitcommit",
+					"java",
+					"javascript",
+					"json5",
+					"proto",
+					"regex",
+					"ssh_config",
+					"toml",
+					"jinja",
+				},
+				sync_install = true,
+				auto_install = true,
+				highlight = { enable = true },
+			},
+			config = function(_, opts)
+				require("nvim-treesitter.configs").setup(opts)
+			end,
 		},
 		{
 			"nvim-neo-tree/neo-tree.nvim",
@@ -208,6 +286,17 @@ require("lazy").setup({
 				"nvim-tree/nvim-web-devicons",
 				"MunifTanjim/nui.nvim",
 			},
+			keys = {
+				{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle Explorer" },
+			},
+			init = function()
+				vim.api.nvim_create_autocmd("VimEnter", {
+					once = true,
+					callback = function()
+						vim.cmd("Neotree action=show toggle=true")
+					end,
+				})
+			end,
 			opts = {
 				close_if_last_window = true,
 				enable_git_status = true,
@@ -245,7 +334,6 @@ require("lazy").setup({
 						hide_by_name = { ".git", ".DS_Store", "thumbs.db" },
 					},
 					follow_current_file = { enabled = true, leave_dirs_open = true },
-					use_libuv_file_watcher = true,
 				},
 			},
 		},
@@ -259,7 +347,7 @@ require("lazy").setup({
 					"<cmd>Trouble symbols toggle focus=false<cr>",
 					desc = "Symbols (Trouble)",
 				},
-				{ -- Use spaces instead of tabs
+				{
 
 					"<leader>cl",
 					"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
@@ -282,14 +370,62 @@ require("lazy").setup({
 			tag = "0.1.8",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
-				{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+				{
+					"nvim-telescope/telescope-fzf-native.nvim",
+					build = "make",
+					cond = function()
+						return vim.fn.executable("make") == 1
+					end,
+				},
 			},
+			cmd = "Telescope",
+			keys = {
+				{
+					"<leader>ff",
+					function()
+						require("telescope.builtin").find_files({ hidden = true })
+					end,
+					desc = "Find files",
+				},
+				{
+					"<leader>fg",
+					function()
+						require("telescope.builtin").live_grep()
+					end,
+					desc = "Find text",
+				},
+				{
+					"<leader>fb",
+					function()
+						require("telescope.builtin").buffers()
+					end,
+					desc = "Buffers",
+				},
+			},
+			opts = {
+				pickers = { find_files = { hidden = true } },
+			},
+			config = function(_, opts)
+				local telescope = require("telescope")
+				telescope.setup(opts)
+				pcall(telescope.load_extension, "fzf")
+			end,
 		},
 		{
 			"numToStr/Comment.nvim",
 			opts = { padding = true },
 		},
-		{ "akinsho/toggleterm.nvim", version = "*", config = true },
+		{
+			"akinsho/toggleterm.nvim",
+			version = "*",
+			opts = {
+				open_mapping = "<F4>",
+				insert_mappings = true,
+				terminal_mappings = true,
+				close_on_exit = true,
+				size = 7,
+			},
+		},
 		{ "lewis6991/gitsigns.nvim", opts = {} },
 		{ "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 		-- Auto pairs
@@ -308,8 +444,8 @@ require("lazy").setup({
 		{
 			"romgrk/barbar.nvim",
 			dependencies = {
-				"lewis6991/gitsigns.nvim", -- OPTIONAL: for git status
-				"nvim-tree/nvim-web-devicons", -- OPTIONAL: for file icons
+				"lewis6991/gitsigns.nvim",
+				"nvim-tree/nvim-web-devicons",
 			},
 			init = function()
 				vim.g.barbar_auto_setup = false
@@ -359,59 +495,6 @@ require("lazy").setup({
 vim.g.suda_smart_edit = 1
 vim.cmd([[colorscheme tokyonight-moon]])
 
-require("telescope").setup({
-	pickers = {
-		find_files = { hidden = true },
-	},
-})
-
-require("nvim-treesitter.configs").setup({
-	ensure_installed = {
-		"lua",
-		"vim",
-		"vimdoc",
-		"go",
-		"gomod",
-		"gosum",
-		"cpp",
-		"css",
-		"html",
-		"csv",
-		"dockerfile",
-		"gitignore",
-		"bash",
-		"fish",
-		"json",
-		"make",
-		"python",
-		"rust",
-		"sql",
-		"udev",
-		"yaml",
-		"xml",
-		"markdown_inline",
-		"markdown",
-		"cmake",
-		"comment",
-		"diff",
-		"git_config",
-		"git_rebase",
-		"gitattributes",
-		"gitcommit",
-		"java",
-		"javascript",
-		"json5",
-		"proto",
-		"regex",
-		"ssh_config",
-		"toml",
-		"jinja",
-	},
-	sync_install = true,
-	auto_install = true,
-	highlight = { enable = true },
-})
-
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 require("lspconfig").gopls.setup({
@@ -421,46 +504,4 @@ require("lspconfig").ruff.setup({
 	capabilities = capabilities,
 })
 
-require("conform").setup({
-	formatters = {
-		yamlfmt = { prepend_args = { "-formatter", "max_line_length=240", "retain_line_breaks=true" } },
-		taplo = { args = { "format", "--option", "indent_tables=true", "-" } },
-		shfmt = { prepend_args = { "--indent", "4" } },
-		prettier = { prepend_args = { "--print-width", "120", "--tab-width", "4", "--bracket-same-line" } },
-	},
-	formatters_by_ft = {
-		["*"] = { "trim_whitespace" },
-		lua = { "stylua" },
-		yaml = { "yamlfmt" },
-		xml = { "xmllint" },
-		svg = { "xmllint" },
-		toml = { "taplo" },
-		javascript = { "prettier" },
-		html = { "prettier" },
-		css = { "prettier" },
-		js = { "prettier" },
-		markdown = { "prettier" },
-		json = { "prettier" },
-		typescript = { "prettier" },
-		bash = { "shfmt" },
-		sh = { "shfmt" },
-	},
-	format_on_save = {
-		timeout_ms = 500,
-		lsp_fallback = true,
-	},
-})
-
-require("toggleterm").setup({
-	open_mapping = "<F4>",
-	insert_mappings = true,
-	terminal_mappings = true,
-	close_on_exit = true,
-	size = 7,
-})
-
-require("ibl").setup()
-require("gitsigns").setup()
-
-vim.cmd([[Neotree action=show toggle=true]])
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")
