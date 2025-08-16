@@ -59,7 +59,14 @@ require("lazy").setup({
 	install = { colorscheme = { "tokyonight" } },
 	checker = { enabled = false }, -- update reminder is a bit intrusive
 	spec = {
-		{ "folke/tokyonight.nvim", lazy = false, priority = 1000 },
+		{
+			"folke/tokyonight.nvim",
+			lazy = false,
+			priority = 1000,
+			config = function()
+				vim.cmd([[colorscheme tokyonight-moon]])
+			end,
+		},
 		{
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -493,7 +500,6 @@ require("lazy").setup({
 })
 
 vim.g.suda_smart_edit = 1
-vim.cmd([[colorscheme tokyonight-moon]])
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
