@@ -4,6 +4,25 @@
   vars:
     the_user: "{{ ansible_user_id }}"
   tasks:
+
+    - name: Pre-flight checks
+      block:
+      - name: Check if running on Arch Linux
+        ansible.builtin.fail:
+          msg: "This playbook is designed for Arch Linux only"
+        when: ansible_distribution != "Archlinux"
+  
+      - name: Check internet connectivity
+        ansible.builtin.uri:
+          url: http://archlinux.org
+          timeout: 5
+        register: internet_check
+        failed_when: false
+    
+      - name: Fail if no internet
+        ansible.builtin.fail:
+          msg: "Internet connection required"
+        when: internet_check.failed
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
       become: true
