@@ -80,6 +80,19 @@ require("lazy").setup({
 			lazy = false,
 		},
 		{
+			"sphamba/smear-cursor.nvim",
+			opts = {
+				time_interval = 5,
+				damping = 0.7,
+				damping_insert_mode = 0.8,
+				legacy_computing_symbols_support = true,
+			},
+		},
+		{
+			"mateuszwieloch/automkdir.nvim",
+			opts = {},
+		},
+		{
 			"hrsh7th/nvim-cmp",
 			event = "InsertEnter",
 			dependencies = {
