@@ -14,7 +14,7 @@ jobs:
     name: Ansible Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Add fake .git dir
         run: mkdir -p "${{ github.workspace }}/linux/ansible/.git"
       - name: Run ansible-lint
