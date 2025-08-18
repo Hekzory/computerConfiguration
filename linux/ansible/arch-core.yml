@@ -63,6 +63,7 @@
           - curl # HTTP wizardry
           - wget # When curl feels too fancy
           - rsync # Moving bits, atomically
+          - iwd # Modern WiFi daemon - faster and more reliable than wpa_supplicant
           # Enhanced Experience
           - bat # cat with wings
           - fastfetch # System introspection with style
@@ -312,3 +313,25 @@
         mode: u+rw,g+r,o--
       loop:
         - init.lua
+    # CONFIG - NETWORK OPTIMIZATION
+    - name: Configure NetworkManager to use iwd backend
+      become: true
+      community.general.ini_file:
+        path: /etc/NetworkManager/NetworkManager.conf
+        section: device
+        option: wifi.backend
+        value: iwd
+        mode: '0644'
+
+    - name: Configure WiFi power saving and optimization
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/modprobe.d/iwlwifi.conf
+        content: |
+          # Disable power saving for better performance
+          options iwlwifi power_save=0
+          # Disable software crypto for better performance
+          options iwlwifi swcrypto=0
+          # Set power scheme to performance
+          options iwlmvm power_scheme=1
+        mode: '0644'
