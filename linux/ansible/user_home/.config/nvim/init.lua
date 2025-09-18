@@ -246,7 +246,9 @@ require("lazy").setup({
 		},
 		{
 			"nvim-treesitter/nvim-treesitter",
+			lazy = false,
 			build = ":TSUpdate",
+			branch = "main",
 			opts = {
 				ensure_installed = {
 					"lua",
@@ -283,18 +285,27 @@ require("lazy").setup({
 					"java",
 					"javascript",
 					"json5",
+					"jsonc",
 					"proto",
 					"regex",
 					"ssh_config",
 					"toml",
 					"jinja",
+					"jinja_inline",
+					"jq",
+					"ini",
+					"latex",
+					"nginx",
+					"passwd",
+					"requirements",
+					"tsx",
 				},
 				sync_install = true,
 				auto_install = true,
 				highlight = { enable = true },
 			},
 			config = function(_, opts)
-				require("nvim-treesitter.configs").setup(opts)
+				require("nvim-treesitter").setup(opts)
 			end,
 		},
 		{
@@ -516,11 +527,14 @@ vim.g.suda_smart_edit = 1
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-require("lspconfig").gopls.setup({
+vim.lsp.config("gopls", {
 	capabilities = capabilities,
 })
-require("lspconfig").ruff.setup({
+vim.lsp.config("ruff", {
 	capabilities = capabilities,
 })
+
+vim.lsp.enable("gopls")
+vim.lsp.enable("ruff")
 
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")

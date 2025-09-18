@@ -2,6 +2,7 @@ console_title_template = '{{ .Shell }} in {{ .Folder }}{{if .Root}}:: Admin{{end
 terminal_background = 'p:t-background'
 version = 3
 final_space = true
+shell_integration = true
 
 [palette]
 blue-bell = '#9aa5ce'
@@ -31,7 +32,7 @@ template = '{{ if .Env.LOW_COLOR_SUPPORT }}>{{ else }}❯{{ end }} '
 background = 'transparent'
 foreground_templates = [
   '{{if gt .Code 0}}p:terminal-red{{end}}',
-  '{{if eq .Code 0}}p:pistachio-blue{{end}}',
+  '{{if eq .Code 0}}p:pistachio-green{{end}}',
 ]
 
 [[blocks]]
@@ -115,7 +116,7 @@ overflow = 'hide'
   style = 'plain'
 
     [blocks.segments.properties]
-    cache_duration = 'none'
+    cache_duration = '5m'
 
   [[blocks.segments]]
   template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
@@ -125,7 +126,7 @@ overflow = 'hide'
   style = 'plain'
 
     [blocks.segments.properties]
-    cache_duration = 'none'
+    cache_duration = '5m'
 
   [[blocks.segments]]
   template = 'last commit: {{ .Output }}'
@@ -135,9 +136,9 @@ overflow = 'hide'
   style = 'plain'
 
     [blocks.segments.properties]
-    cache_duration = 'none'
+    cache_duration = '1m'
     command = 'git log --pretty=format:%cr -1 || date +%H:%M:%S'
-    shell = 'zsh'
+    shell = 'fish'
 
   [[blocks.segments]]
   template = ' | took: {{ .FormattedMs }}'
