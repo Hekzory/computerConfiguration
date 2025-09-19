@@ -58,11 +58,8 @@ alias ninja="ninja -j"(nproc)""
 alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
 alias cmrupd="sudo cachyos-rate-mirrors"
 
-#   For when 'sudo' is too mainstream
-alias please='echo "Oh, 𝓿𝓮𝓻𝔂 well..." && sudo'
-
 if type -q bat
-    alias cat='bat --style=auto'
+    alias cat='bat --style=auto --paging=never'
 end
 if type -q eza
     alias ls='eza -Ahl --color=auto --icons=auto'
@@ -152,6 +149,8 @@ end
 if test -f ~/.config/fish/custom.fish
     source ~/.config/fish/custom.fish
 end
+
+bind \cf 'fzf | read -l result; and commandline -i $result'  # Ctrl+F for fuzzy file search
 
 function gbr --description "Create and checkout a new branch with useful functionality"
     set -l source_branch "master"
