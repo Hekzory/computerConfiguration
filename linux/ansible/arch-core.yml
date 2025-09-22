@@ -145,7 +145,6 @@
         state: present
         reload: true
       loop:
-        - {key: "net.core.somaxconn", value: "8192"}
         - {key: "net.ipv4.tcp_fastopen", value: "3"}
         - {key: "kernel.nmi_watchdog", value: "0"}
     - name: Disable unnecessary services
@@ -186,7 +185,7 @@
         mode: u+rw,g+r,o+r
     - name: Enable/disable some services based on if running under WSL
       become: true
-      ansible.builtin.systemd_service:
+      ansible.builtin.service:
         name: "{{ item }}"
         state: "{{ 'stopped' if 'microsoft' in ansible_facts['kernel'] else 'started' }}"
         enabled: "{{ 'microsoft' not in ansible_facts['kernel'] }}"
@@ -194,7 +193,7 @@
         - fstrim.timer
     - name: Enable necessary services
       become: true
-      ansible.builtin.systemd_service:
+      ansible.builtin.service:
         name: "{{ item }}"
         state: started
         enabled: true
