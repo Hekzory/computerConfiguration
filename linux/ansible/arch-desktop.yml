@@ -25,7 +25,6 @@
           - ttf-jetbrains-mono-nerd # Because even monospace deserves personality
           # Core Experience
           - mpv # Video playback ascended
-          - yt-dlp # Content acquisition utility
           - realtime-privileges # Audio latency? Not in my system
           - kitty # Terminal emulation evolved
           - ttf-meslo-nerd # Glyphs for the discerning eye
@@ -36,6 +35,7 @@
         name:
           - google-chrome-beta # Web browsing on the somewhat-bleeding edge
           - jdk23-graalvm-ee-bin # Java performance, unleashed
+          - jdk24-graalvm-ee-bin # newer one
         use: yay
         state: present
     - name: Remove unneeded packages if present

@@ -213,12 +213,17 @@
       loop:
         - 60-ioschedulers.rules # ioscheduler settings - change for better performance
         - 50-sata.rules # sata power settings - change for better performance
+    - name: Check if yay is installed
+      ansible.builtin.stat:
+        path: /usr/bin/yay
+      register: yay_installed
     # AUR Setup
     - name: Install yay using makepkg if it isn't installed already
       kewlfft.aur.aur:
         name: yay
         use: makepkg
         state: present
+      when: not yay_installed.stat.exists
     # PACKAGES - AUR packages setup
     - name: Ensure wrong packages are absent
       become: true
@@ -281,6 +286,7 @@
         append: true
     - name: Docker cache cleanup
       failed_when: false # It's ok if cleanup fails, let's not break the whole playbook over this
+      changed_when: false
       community.docker.docker_prune:
         containers: true
         images: true

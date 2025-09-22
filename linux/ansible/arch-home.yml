@@ -14,6 +14,7 @@
         update_cache: true
         name:
           - qbittorrent # torrent client
+          - yt-dlp
         state: present
     # PACKAGES - AUR home packages setup
     - name: Install packages from AUR using yay
