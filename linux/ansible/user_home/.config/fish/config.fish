@@ -4,6 +4,11 @@ set -gx PAGER "less -R"
 set -gx MANROFFOPT "-c"
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
+# I use kitty, but can't guarantee that its' terminfo will be present on remote host, so need to be safe
+if test "$TERM" = "xterm-kitty"
+    set -gx TERM xterm-256color
+end
+
 if status is-interactive
     function fish_greeting
         if test (tput colors) -ge 256; and test (tput lines) -gt 25
@@ -25,11 +30,12 @@ if status is-interactive
         echo "🔄 Downloading missing theme..."
         curl -sL "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o $theme_path || echo "❌ Theme download failed!"
     end
-end
 
-# Initialize oh-my-posh if available
-if type -q oh-my-posh
-    oh-my-posh init fish --config $theme_path | source
+    # Initialize oh-my-posh if available
+    if type -q oh-my-posh
+        oh-my-posh init fish --config $theme_path | source
+    end
+
 end
 
 ## Enable Wayland support for different applications
@@ -51,9 +57,14 @@ function history
     builtin history --show-time='%F %T '
 end
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-alias make="make -j"(nproc)""
-alias ninja="ninja -j"(nproc)""
+# Set personal aliases
+function make
+    command make -j(nproc) $argv
+end
+
+function ninja
+    command ninja -j(nproc) $argv
+end
 
 alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
 alias cmrupd="sudo cachyos-rate-mirrors"
