@@ -34,7 +34,6 @@
       kewlfft.aur.aur:
         name:
           - google-chrome-beta # Web browsing on the somewhat-bleeding edge
-          - jdk23-graalvm-ee-bin # Java performance, unleashed
           - jdk24-graalvm-ee-bin # newer one
         use: yay
         state: present
@@ -44,6 +43,7 @@
         name:
           - prismlauncher-git-debug # Debugging artifacts, begone
           - ttf-meslo-nerd-font-powerlevel10k # Legacy font
+          - jdk23-graalvm-ee-bin # nope
           - jdk22-graalvm-ee-bin # Yesterday's Java
           - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
           - wezterm # A path not taken
