@@ -21,8 +21,8 @@
           - noto-fonts-extra # Because *every* glyph matters
           - noto-fonts-emoji # Expression through pictographs
           - adobe-source-sans-fonts # Professional grade typography
-          - ttf-fira-code # For when your code needs to *speak*
-          - ttf-jetbrains-mono-nerd # Because even monospace deserves personality
+          - ttf-firacode-nerd
+          - ttf-jetbrains-mono-nerd
           # Core Experience
           - mpv # Video playback ascended
           - realtime-privileges # Audio latency? Not in my system
@@ -47,6 +47,7 @@
           - jdk22-graalvm-ee-bin # Yesterday's Java
           - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
           - wezterm # A path not taken
+          - ttf-fira-code # already used, but without nerd patches
         state: absent
     # CONFIG - Optimization and/or compatibility improvements
     - name: Adding existing user to group audio
