@@ -2,10 +2,11 @@
 ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="*", ATTR{idProduct}=="*", TEST=="power/control", ATTR{power/control}="on"
 
 # More targeted - only for HID devices (keyboards, mice)
-ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usbhid", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usbhid", TEST=="power/control", ATTR{power/control}="on"
 
 # Keep USB HID (mice/keyboards) fully on
 ACTION=="add", SUBSYSTEM=="usb", ENV{ID_USB_INTERFACES}=="*030000*", TEST=="power/control", ATTR{power/control}="on"
 
 # Keep USB Audio (both AudioControl 01xx and AudioStreaming 01xx) fully on
 ACTION=="add", SUBSYSTEM=="usb", ENV{ID_USB_INTERFACES}=="*0101??*|*0102??*", TEST=="power/control", ATTR{power/control}="on"
+

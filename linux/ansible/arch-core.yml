@@ -313,6 +313,7 @@
         builder_cache: true
     # CONFIG - pnpm
     - name: Install global pnpm packages
+      ignore_errors: yes
       community.general.pnpm:
         name: "{{ item }}"
         state: latest
