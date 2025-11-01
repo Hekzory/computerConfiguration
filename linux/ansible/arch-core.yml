@@ -229,6 +229,8 @@
       loop:
         - 60-ioschedulers.rules # ioscheduler settings - change for better performance
         - 50-sata.rules # sata power settings - change for better performance
+        - 70-usb.rules # disable usb autosuspend
+        - 71-net.rules # same for net
     - name: Check if yay is installed
       ansible.builtin.stat:
         path: /usr/bin/yay

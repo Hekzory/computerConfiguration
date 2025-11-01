@@ -5,4 +5,9 @@ ACTION=="add|change", KERNEL=="sd[a-z]*", ATTR{queue/rotational}=="1", ATTR{queu
 ACTION=="add|change", KERNEL=="sd[a-z]*|mmcblk[0-9]*", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="mq-deadline"
 
 # NVMe SSD
+# no scheduler is beneficial due to speed of nvme
 ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="none"
+# To perform completions only on the processor that issued the I/O request, set the rq_affinity to 2
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL=="nvme[0-9]*n[0-9]*", ATTR{queue/rq_affinity}="2"
+# Keep NVMe controllers out of runtime suspend
+ACTION=="add", SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", ATTR{power/control}="on"
