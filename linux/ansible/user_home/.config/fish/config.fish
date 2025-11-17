@@ -9,6 +9,10 @@ if test "$TERM" = "xterm-kitty"
     set -gx TERM xterm-256color
 end
 
+if test (tput colors) -lt 256
+    set -gx LOW_COLOR_SUPPORT 1
+end
+
 if status is-interactive
     function fish_greeting
         if test (tput colors) -ge 256; and test (tput lines) -gt 25
@@ -17,13 +21,7 @@ if status is-interactive
             echo "Welcome. Small screen or low color support detected, no fastfetch for you."
         end
     end
-end
 
-if test (tput colors) -lt 256
-    set -gx LOW_COLOR_SUPPORT 1
-end
-
-if status is-interactive
     # Theme handling with error checking
     set -g theme_path ~/tokyofine.omp.toml
     if not test -f $theme_path
@@ -98,6 +96,10 @@ if type -q btop
     alias top='btop'
 end
 alias omp='oh-my-posh'
+
+if type -q wl-copy  # Wayland
+    alias yank='wl-copy'
+end
 
 # git part
 alias g='git'
