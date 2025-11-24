@@ -14,11 +14,17 @@ if test (tput colors) -lt 256
 end
 
 if status is-interactive
-    function fish_greeting
-        if test (tput colors) -ge 256; and test (tput lines) -gt 25
-    	    fastfetch
-        else
-            echo "Welcome. Small screen or low color support detected, no fastfetch for you."
+    if test "$TERM_PROGRAM" != "vscode"; and test "$TERMINAL_EMULATOR" != "JetBrains-JediTerm"
+        function fish_greeting
+            if test (tput colors) -ge 256; and test (tput lines) -gt 25
+                fastfetch
+            else
+                echo "Welcome. Small screen or low color support detected, no fastfetch for you."
+            end
+        end
+    else
+        function fish_greeting
+            echo ""
         end
     end
 

@@ -1,2 +1,2 @@
 # Disable power management for ethernet
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|enp*", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|enp*", TEST=="power/control", ATTR{power/control}="on"
