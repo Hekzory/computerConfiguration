@@ -4,13 +4,12 @@
   hosts: arch
   become: false
   vars:
-    the_user: "{{ ansible_user_id }}"
+    the_user: "{{ ansible_facts['user_id'] }}"
   tasks:
     # PACKAGES - Official repos desktop packages setup
     - name: Setup desktop packages
       become: true
       community.general.pacman:
-        executable: yay
         update_cache: true
         name:
           # Typography Foundation
@@ -79,3 +78,4 @@
         mode: u+rw,g+r,o--
       loop:
         - .config/chrome-beta-flags.conf
+

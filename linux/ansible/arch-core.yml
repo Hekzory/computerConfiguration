@@ -2,14 +2,14 @@
   hosts: arch
   become: false
   vars:
-    the_user: "{{ ansible_user_id }}"
+    the_user: "{{ ansible_facts['user_id'] }}"
   tasks:
     - name: Pre-flight checks
       block:
         - name: Check if running on Arch Linux
           ansible.builtin.fail:
             msg: "This playbook is designed for Arch Linux only"
-          when: ansible_distribution != "Archlinux"
+          when: ansible_facts['distribution'] != "Archlinux"
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
       become: true
@@ -18,12 +18,14 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       loop:
-        # this one removes warnings but may break something so disabling by default, you are free to uncomment it
-        # - { regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
+        # this one removes warnings but may break something, you are free to comment it
+        - {regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
         - {regexp: "^#Color$", line: "Color"}
-        - {regexp: "ParallelDownloads =", line: "ParallelDownloads = 16"}
+        - {regexp: "^#?ParallelDownloads.*$", line: "ParallelDownloads = 16"}
         - {regexp: "^#ILoveCandy$", line: "ILoveCandy"}
         - {regexp: "^#VerbosePkgLists$", line: "VerbosePkgLists"}
+      loop_control:
+        label: "{{ item.line }}"
     # CONFIG - nano
     - name: Nano - Enable color in config
       become: true
@@ -33,6 +35,8 @@
       loop:
         - {line: 'include "/usr/share/nano/extra/*.nanorc"'}
         - {line: 'include "/usr/share/nano/*.nanorc"'}
+      loop_control:
+        label: "{{ item | truncate(40) }}"
     # PACKAGES - Upgrade
     - name: Full system upgrade via pacman
       become: true
@@ -43,7 +47,6 @@
     - name: Full system upgrade via pacman and setup base needed packages
       become: true
       community.general.pacman:
-        update_cache: true
         name:
           # Core Utilities - The Basics, But Better
           - nano # When vim feels like overkill
@@ -89,11 +92,11 @@
           - python3 # The snake that powers everything
           - reflector # Mirror optimization magic
           # Quality of Life - Because life's too short for bad tools
-          - ripgrep # grep at ludicrous speed
-          - fzf # Fuzzy finding nirvana
-          - duf # Disk usage, but make it beautiful
-          - wl-clipboard # Wayland clipboard sorcery
-          - tree-sitter-cli # AST manipulation made elegant
+          - ripgrep # grep at speed
+          - fzf # Fuzzy finding
+          - duf # Disk usage, but beautiful
+          - wl-clipboard # Wayland clipboard
+          - tree-sitter-cli # AST manipulation
           - fd # fast find alternative
         state: present
     # CONFIG - GIT
@@ -118,13 +121,16 @@
         - {name: "fetch.pruneTags", value: "true"}
         - {name: "core.preloadindex", value: "true"}
         - {name: "help.autocorrect", value: "20"}  # auto-correct typos after 2 sec
+      loop_control:
+        label: "{{ item.name }}"
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
     - name: Fstab - change relatime to noatime
       become: true
       ansible.builtin.replace:
         path: /etc/fstab
-        regexp: "relatime"
+        regexp: "\brelatime\b"
         replace: "noatime"
+        backup: true
     - name: Ensure file exists
       become: true
       ansible.builtin.copy:
@@ -143,7 +149,7 @@
         sysctl_set: true
         sysctl_file: "/etc/sysctl.d/99-sysctl.conf"
         state: present
-        reload: true
+        reload: false
       loop:
         - {key: "-net.core.somaxconn", value: "8192"}
         - {key: "-net.ipv4.tcp_fastopen", value: "3"}
@@ -162,6 +168,16 @@
         - {key: "-net.core.wmem_default", value: "1048576"}     # 1 MiB
         - {key: "-net.ipv4.udp_rmem_min", value: "16384"}
         - {key: "-net.ipv4.udp_wmem_min", value: "16384"}
+      loop_control:
+        label: "{{ item.key }}"
+      register: sysctl_results
+
+    - name: Reload sysctl settings
+      become: true
+      ansible.builtin.command: sysctl --system
+      changed_when: sysctl_results is changed
+      failed_when: false # some of them might not be applied dynamically or at all in some systems
+      when: sysctl_results is changed
 
     - name: Disable unnecessary services
       become: true
@@ -217,7 +233,7 @@
         - reflector.timer
         - docker.socket
     # CONFIG - udev
-    - name: Ioscheduler settings - change for better performance
+    - name: Udev settings - change for better performance
       become: true
       ansible.builtin.copy:
         src: "etc/udev/rules.d/{{ item }}"
@@ -277,6 +293,7 @@
         - "/home/{{ the_user }}/.config/fastfetch"
         - "/home/{{ the_user }}/.config/btop"
         - "/home/{{ the_user }}/.config/xdg-desktop-portal"
+        - "/home/{{ the_user }}/.config/nvim"
     # CONFIG - shell configs setup
     - name: Copy config files + themes
       ansible.builtin.copy:
@@ -313,7 +330,7 @@
         builder_cache: true
     # CONFIG - pnpm
     - name: Install global pnpm packages
-      ignore_errors: yes
+      # ignore_errors: true
       community.general.pnpm:
         name: "{{ item }}"
         state: latest
@@ -321,12 +338,6 @@
       loop:
         - prettier # formatting in neovim and in general
         - neovim # neovim integration
-    # CONFIG - neovim
-    - name: Ensure nvim directory exists
-      ansible.builtin.file:
-        path: "/home/{{ the_user }}/.config/nvim"
-        recurse: true
-        state: directory
     - name: Copy neovim dotfiles
       ansible.builtin.copy:
         src: "user_home/.config/nvim/{{ item }}"
@@ -359,3 +370,4 @@
           # Set power scheme to performance
           options iwlmvm power_scheme=1
         mode: '0644'
+

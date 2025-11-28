@@ -4,7 +4,7 @@
   hosts: arch
   become: false
   vars:
-    the_user: "{{ ansible_user_id }}"
+    the_user: "{{ ansible_facts['user_id'] }}"
   tasks:
     # PACKAGES - Official repos home packages setup
     - name: Setup home packages
