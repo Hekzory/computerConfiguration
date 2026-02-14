@@ -1,14 +1,44 @@
 - name: Include arch-core.yml
   import_playbook: arch-core.yml
+
 - name: Arch-desktop.yml - desktop setup for arch
   hosts: arch
   become: false
   vars:
     the_user: "{{ ansible_facts['user_id'] }}"
+    user_home: "{{ ansible_facts['env'].HOME }}"
+    is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | lower) }}"
+
+  handlers:
+    - name: Rebuild font cache
+      listen: fonts_changed
+      ansible.builtin.command: fc-cache -f
+      changed_when: true
+
   tasks:
+    - name: Verify not running under WSL
+      ansible.builtin.assert:
+        that: not (is_wsl | bool)
+        fail_msg: "This desktop playbook should not run under WSL"
+        success_msg: "Bare-metal or VM confirmed"
+
+    # Cleanup first
+    - name: Remove unneeded packages if present
+      become: true
+      community.general.pacman:
+        name:
+          - prismlauncher-git-debug # Debugging artifacts, begone
+          - ttf-meslo-nerd-font-powerlevel10k # Legacy font
+          - jdk23-graalvm-ee-bin # nope
+          - jdk22-graalvm-ee-bin # Yesterday's Java
+          - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
+          - ttf-fira-code # already used, but without nerd patches
+        state: absent
+
     # PACKAGES - Official repos desktop packages setup
     - name: Setup desktop packages
       become: true
+      notify: fonts_changed
       community.general.pacman:
         update_cache: true
         name:
@@ -24,10 +54,11 @@
           - ttf-jetbrains-mono-nerd
           # Core Experience
           - mpv # Video playback ascended
-          - realtime-privileges # Audio latency? Not in my system
+          - realtime-privileges
           - kitty # Terminal emulation evolved
           - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
+
     # PACKAGES - AUR desktop packages setup
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
@@ -36,45 +67,24 @@
           - jdk24-graalvm-ee-bin # newer one
         use: yay
         state: present
-    - name: Remove unneeded packages if present
-      become: true
-      community.general.pacman:
-        name:
-          - prismlauncher-git-debug # Debugging artifacts, begone
-          - ttf-meslo-nerd-font-powerlevel10k # Legacy font
-          - jdk23-graalvm-ee-bin # nope
-          - jdk22-graalvm-ee-bin # Yesterday's Java
-          - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
-          - wezterm # A path not taken
-          - ttf-fira-code # already used, but without nerd patches
-        state: absent
+
     # CONFIG - Optimization and/or compatibility improvements
-    - name: Adding existing user to group audio
+    - name: Add user to realtime group for low-latency audio
       become: true
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
-          - realtime # Adding user to this group may allow direct device access in realtime
+          - realtime
         append: true
-    # CONFIG - kitty
-    - name: Copy kitty dotfiles
+    # CONFIG - dotfiles
+    - name: Copy desktop dotfiles
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
-        dest: "/home/{{ the_user }}/{{ item }}"
+        dest: "{{ user_home }}/{{ item }}"
         force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
       loop:
         - .config/kitty/
-    # CONFIG - copy other config files
-    - name: Copy other dotfiles
-      ansible.builtin.copy:
-        src: "user_home/{{ item }}"
-        dest: "/home/{{ the_user }}/{{ item }}"
-        force: true
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-      loop:
         - .config/chrome-beta-flags.conf

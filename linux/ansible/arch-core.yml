@@ -3,19 +3,29 @@
   become: false
   vars:
     the_user: "{{ ansible_facts['user_id'] }}"
+    user_home: "{{ ansible_facts['env'].HOME }}"
+    is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | lower) }}"
+    pacman_parallel_downloads: 16
+    suppress_pam_systemd_home_warning: true
   handlers:
     - name: Apply sysctl
       become: true
       listen: sysctl_changed
       ansible.builtin.command: sysctl --system
       changed_when: true
+    - name: Restart NetworkManager
+      become: true
+      listen: networkmanager_changed
+      ansible.builtin.service:
+        name: NetworkManager
+        state: restarted
+      when: not (is_wsl | bool)
   tasks:
-    - name: Pre-flight checks
-      block:
-        - name: Check if running on Arch Linux
-          ansible.builtin.fail:
-            msg: "This playbook is designed for Arch Linux only"
-          when: ansible_facts['distribution'] != "Archlinux"
+    - name: Verify running on Arch Linux
+      ansible.builtin.assert:
+        that: ansible_facts['distribution'] == "Archlinux"
+        fail_msg: "This playbook requires Arch Linux (detected: {{ ansible_facts['distribution'] }})"
+        success_msg: "Arch Linux confirmed"
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
       become: true
@@ -113,25 +123,29 @@
         value: "{{ item.value }}"
       loop:
         - {name: "diff.indentHeuristic", value: "true"}
-        - {name: "diff.algorithm", value: "minimal"}
+        - {name: "diff.algorithm", value: "histogram"}
         - {name: "diff.colorMoved", value: "default"}
         - {name: "core.pager", value: "delta"}
         - {name: "interactive.diffFilter", value: "delta --color-only"}
         - {name: "delta.navigate", value: "true"}
-        - {name: "merge.conflictstyle", value: "diff3"}
+        - {name: "merge.conflictstyle", value: "zdiff3"}
         - {name: "pull.rebase", value: "true"}  # rebase instead of merge on pull
         - {name: "rebase.autoStash", value: "true"}  # auto-stash before rebase
+        - {name: "rebase.updateRefs", value: "true"}
         - {name: "push.default", value: "current"}  # push current branch
         - {name: "push.autoSetupRemote", value: "true"}  # auto-track remote
         - {name: "fetch.prune", value: "true"}  # remove deleted remote branches
         - {name: "fetch.pruneTags", value: "true"}
         - {name: "core.preloadindex", value: "true"}
+        - {name: "core.untrackedCache", value: "true"}
         - {name: "help.autocorrect", value: "20"}  # auto-correct typos after 2 sec
+        - {name: "rerere.enabled", value: "true"} # smarter conflict resolution
       loop_control:
         label: "{{ item.name }}"
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
     - name: Fstab - change relatime to noatime
       become: true
+      when: not (is_wsl | bool)
       ansible.builtin.replace:
         path: /etc/fstab
         regexp: "\brelatime\b"
@@ -186,12 +200,41 @@
         enabled: false
       register: service_command_output
       failed_when: >
-        service_command_output.failed and 'unrecognized service' not in service_command_output.msg
+        service_command_output.failed
+        and 'unrecognized service' not in service_command_output.msg
         and 'Could not find the requested service' not in service_command_output.msg
       loop:
         - ModemManager.service # Not needed by most people, so disable by default
+    - name: Manage hardware-dependent services (disabled on WSL)
+      become: true
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: "{{ 'stopped' if (is_wsl | bool) else 'started' }}"
+        enabled: "{{ not (is_wsl | bool) }}"
+      loop:
+        - fstrim.timer
+        - fwupd-refresh.timer
+    - name: Copy reflector config - to setup proper mirror update
+      become: true
+      ansible.builtin.copy:
+        src: "etc/xdg/reflector/reflector.conf"
+        dest: "/etc/xdg/reflector/reflector.conf"
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+    - name: Enable necessary services
+      become: true
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - reflector.timer
+        - docker.socket
     - name: Blacklist unnecessary modules
       become: true
+      when: not (is_wsl | bool)
       community.general.kernel_blacklist:
         name: "{{ item }}"
         state: present
@@ -205,35 +248,24 @@
         - parport # parallel port support, rarely used nowadays
         - ppdev # parallel port device support, rarely used
         - legion_laptop # should used by legion laptops, but wrongly loaded by every device i have
-    - name: Copy reflector config - to setup proper mirror update
+    - name: Optimize makepkg - parallel builds and compression
       become: true
-      ansible.builtin.copy:
-        src: "etc/xdg/reflector/reflector.conf"
-        dest: "/etc/xdg/reflector/reflector.conf"
-        force: true
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-    - name: Enable/disable some services based on if running under WSL
-      become: true
-      ansible.builtin.service:
-        name: "{{ item }}"
-        state: "{{ 'stopped' if 'microsoft' in ansible_facts['kernel'] else 'started' }}"
-        enabled: "{{ 'microsoft' not in ansible_facts['kernel'] }}"
+      ansible.builtin.lineinfile:
+        path: /etc/makepkg.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
       loop:
-        - fstrim.timer
-    - name: Enable necessary services
-      become: true
-      ansible.builtin.service:
-        name: "{{ item }}"
-        state: started
-        enabled: true
-      loop:
-        - reflector.timer
-        - docker.socket
+        - { regexp: '^#?MAKEFLAGS=', line: 'MAKEFLAGS="-j$(nproc)"' }
+        - { regexp: '^COMPRESSGZ=', line: 'COMPRESSGZ=(pigz -c -f -n)' }
+        - { regexp: '^COMPRESSBZ2=', line: 'COMPRESSBZ2=(pbzip2 -c -f)' }
+        - { regexp: '^COMPRESSXZ=', line: 'COMPRESSXZ=(xz -c -z --threads=0 -)' }
+        - { regexp: '^COMPRESSZST=', line: 'COMPRESSZST=(zstd -c -z -q --threads=0 -)' }
+      loop_control:
+        label: "{{ item.line }}"
     # CONFIG - udev
     - name: Udev settings - change for better performance
       become: true
+      when: not (is_wsl | bool)
       ansible.builtin.copy:
         src: "etc/udev/rules.d/{{ item }}"
         dest: "/etc/udev/rules.d/{{ item }}"
@@ -272,7 +304,6 @@
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
-          # - zsh-fast-syntax-highlighting - switched to fish for now
           - oh-my-posh-bin # most stable one
         use: yay
         state: present
@@ -287,17 +318,18 @@
         path: "{{ item }}"
         recurse: true
         state: directory
+        mode: '0755'
       loop:
-        - "/home/{{ the_user }}/.config/fish"
-        - "/home/{{ the_user }}/.config/fastfetch"
-        - "/home/{{ the_user }}/.config/btop"
-        - "/home/{{ the_user }}/.config/xdg-desktop-portal"
-        - "/home/{{ the_user }}/.config/nvim"
+        - "{{ user_home }}/.config/fish"
+        - "{{ user_home }}/.config/fastfetch"
+        - "{{ user_home }}/.config/btop"
+        - "{{ user_home }}/.config/xdg-desktop-portal"
+        - "{{ user_home }}/.config/nvim"
     # CONFIG - shell configs setup
     - name: Copy config files + themes
       ansible.builtin.copy:
         src: "user_home/{{ item }}"
-        dest: "/home/{{ the_user }}/{{ item }}"
+        dest: "{{ user_home }}/{{ item }}"
         force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
@@ -309,6 +341,7 @@
         - .config/fastfetch/config.jsonc
         - .config/btop/btop.conf
         - .config/xdg-desktop-portal/portals.conf
+        - .config/nvim/init.lua
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
@@ -337,16 +370,6 @@
       loop:
         - prettier # formatting in neovim and in general
         - neovim # neovim integration
-    - name: Copy neovim dotfiles
-      ansible.builtin.copy:
-        src: "user_home/.config/nvim/{{ item }}"
-        dest: "/home/{{ the_user }}/.config/nvim/{{ item }}"
-        force: true
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-      loop:
-        - init.lua
     # CONFIG - NETWORK OPTIMIZATION
     - name: Configure NetworkManager to use iwd backend
       become: true
@@ -356,6 +379,8 @@
         option: wifi.backend
         value: iwd
         mode: '0644'
+      when: not (is_wsl | bool)
+      notify: networkmanager_changed
 
     - name: Configure WiFi power saving and optimization
       become: true
@@ -369,3 +394,16 @@
           # Set power scheme to performance
           options iwlmvm power_scheme=1
         mode: '0644'
+      when: not (is_wsl | bool)
+
+    - name: Configure journald - limit log storage
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/journald.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^#?SystemMaxUse=', line: 'SystemMaxUse=256M' }
+        - { regexp: '^#?SystemMaxFileSize=', line: 'SystemMaxFileSize=32M' }
+      loop_control:
+        label: "{{ item.line }}"

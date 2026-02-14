@@ -20,16 +20,15 @@
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:
         name:
-          - cursor-bin # VSCode with AI
           - telegram-desktop-bin # messaging
           - vesktop # discord ascended
         use: yay
         state: present
-    # CONFIG - Gaming optimizations
+    # CONFIG - gaming group?
     - name: Adding existing user to gaming groups
       become: true
       ansible.builtin.user:
         name: "{{ the_user }}"
         groups:
-          - games # For better gaming performance
+          - games
         append: true
