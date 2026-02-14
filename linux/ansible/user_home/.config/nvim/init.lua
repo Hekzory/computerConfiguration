@@ -12,6 +12,7 @@ vim.opt.mousemoveevent = true -- Enable mouse move events (useful for hover feat
 vim.opt.termguicolors = true
 vim.opt.list = true -- Show invisible characters
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
+vim.opt.undofile = true
 
 -- Indentation
 vim.opt.tabstop = 4
@@ -24,6 +25,7 @@ vim.opt.clipboard = "unnamedplus"
 vim.opt.wrap = false -- No wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
+vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.updatetime = 150 -- Faster updates
 vim.opt.timeoutlen = 1000
@@ -241,7 +243,7 @@ require("lazy").setup({
 					bash = { "shfmt" },
 					sh = { "shfmt" },
 				},
-				format_on_save = { timeout_ms = 500, lsp_fallback = true },
+				format_on_save = { timeout_ms = 500, lsp_format = "fallback" },
 			},
 		},
 		{
@@ -488,37 +490,6 @@ require("lazy").setup({
 				clickable = true,
 			},
 			version = "^1.0.0", -- optional: only update when a new 1.x version is released
-		},
-		{
-			"nvim-pack/nvim-spectre",
-			dependencies = { "nvim-lua/plenary.nvim" },
-			config = function()
-				require("spectre").setup({
-					highlight = {
-						ui = "String",
-						search = "DiffChange",
-						replace = "DiffDelete",
-					},
-				})
-				vim.keymap.set(
-					"n",
-					"<leader>S",
-					'<cmd>lua require("spectre").toggle()<CR>',
-					{ desc = "Toggle Spectre" }
-				)
-				vim.keymap.set(
-					"n",
-					"<leader>sw",
-					'<cmd>lua require("spectre").open_visual({select_word=true})<CR>',
-					{ desc = "Search current word" }
-				)
-				vim.keymap.set(
-					"v",
-					"<leader>sw",
-					'<esc><cmd>lua require("spectre").open_visual()<CR>',
-					{ desc = "Search current selection" }
-				)
-			end,
 		},
 	},
 })
