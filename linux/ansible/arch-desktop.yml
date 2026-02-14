@@ -78,4 +78,3 @@
         mode: u+rw,g+r,o--
       loop:
         - .config/chrome-beta-flags.conf
-

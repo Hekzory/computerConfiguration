@@ -3,6 +3,12 @@
   become: false
   vars:
     the_user: "{{ ansible_facts['user_id'] }}"
+  handlers:
+    - name: Apply sysctl
+      become: true
+      listen: sysctl_changed
+      ansible.builtin.command: sysctl --system
+      changed_when: true
   tasks:
     - name: Pre-flight checks
       block:
@@ -151,33 +157,26 @@
         state: present
         reload: false
       loop:
-        - {key: "-net.core.somaxconn", value: "8192"}
-        - {key: "-net.ipv4.tcp_fastopen", value: "3"}
-        - {key: "-kernel.nmi_watchdog", value: "0"}
-        - {key: "-net.core.default_qdisc", value: "fq"}
-        - {key: "-net.ipv4.tcp_congestion_control", value: "bbr"}
-        - {key: "-net.ipv4.tcp_max_syn_backlog", value: "8192"}
-        - {key: "-net.ipv4.tcp_mtu_probing", value: "1"}
-        - {key: "-net.ipv4.tcp_slow_start_after_idle", value: "0"}
-        - {key: "-net.ipv4.tcp_ecn", value: "1"} # ECN for better congestion control with bbr
-        - {key: "-net.ipv4.tcp_tw_reuse", value: "1"} # Reuse TIME_WAIT sockets (safe for client)
+        - {key: "net.core.somaxconn", value: "8192"}
+        - {key: "net.ipv4.tcp_fastopen", value: "3"}
+        - {key: "kernel.nmi_watchdog", value: "0"}
+        - {key: "net.core.default_qdisc", value: "fq"}
+        - {key: "net.ipv4.tcp_congestion_control", value: "bbr"}
+        - {key: "net.ipv4.tcp_max_syn_backlog", value: "8192"}
+        - {key: "net.ipv4.tcp_mtu_probing", value: "1"}
+        - {key: "net.ipv4.tcp_slow_start_after_idle", value: "0"}
+        - {key: "net.ipv4.tcp_ecn", value: "1"} # ECN for better congestion control with bbr
+        - {key: "net.ipv4.tcp_tw_reuse", value: "1"} # Reuse TIME_WAIT sockets (safe for client)
         # Allow larger per-socket buffers
-        - {key: "-net.core.rmem_max", value: "33554432"}        # 32 MiB
-        - {key: "-net.core.wmem_max", value: "33554432"}        # 32 MiB
-        - {key: "-net.core.rmem_default", value: "1048576"}     # 1 MiB
-        - {key: "-net.core.wmem_default", value: "1048576"}     # 1 MiB
-        - {key: "-net.ipv4.udp_rmem_min", value: "16384"}
-        - {key: "-net.ipv4.udp_wmem_min", value: "16384"}
+        - {key: "net.core.rmem_max", value: "67108864"}        # 64 MiB
+        - {key: "net.core.wmem_max", value: "67108864"}        # 64 MiB
+        - {key: "net.core.rmem_default", value: "1048576"}     # 1 MiB
+        - {key: "net.core.wmem_default", value: "1048576"}     # 1 MiB
+        - {key: "net.ipv4.udp_rmem_min", value: "16384"}
+        - {key: "net.ipv4.udp_wmem_min", value: "16384"}
       loop_control:
         label: "{{ item.key }}"
-      register: sysctl_results
-
-    - name: Reload sysctl settings
-      become: true
-      ansible.builtin.command: sysctl --system
-      changed_when: sysctl_results is changed
-      failed_when: false # some of them might not be applied dynamically or at all in some systems
-      when: sysctl_results is changed
+      notify: sysctl_changed
 
     - name: Disable unnecessary services
       become: true
@@ -370,4 +369,3 @@
           # Set power scheme to performance
           options iwlmvm power_scheme=1
         mode: '0644'
-
