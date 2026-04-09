@@ -72,7 +72,6 @@
           - curl # HTTP wizardry
           - wget # When curl feels too fancy
           - rsync # Moving bits, atomically
-          - iwd # Modern WiFi daemon - faster and more reliable than wpa_supplicant
           # Enhanced Experience
           - bat # cat with wings
           - fastfetch # System introspection with style
@@ -370,17 +369,6 @@
       loop:
         - prettier # formatting in neovim and in general
         - neovim # neovim integration
-    # CONFIG - NETWORK OPTIMIZATION
-    - name: Configure NetworkManager to use iwd backend
-      become: true
-      community.general.ini_file:
-        path: /etc/NetworkManager/NetworkManager.conf
-        section: device
-        option: wifi.backend
-        value: iwd
-        mode: '0644'
-      when: not (is_wsl | bool)
-      notify: networkmanager_changed
 
     - name: Configure WiFi power saving and optimization
       become: true
