@@ -14,17 +14,18 @@ if test (tput colors) -lt 256
 end
 
 if status is-interactive
-    if test "$TERM_PROGRAM" != "vscode"; and test "$TERMINAL_EMULATOR" != "JetBrains-JediTerm"
-        function fish_greeting
-            if test (tput colors) -ge 256; and test (tput lines) -gt 25
-                fastfetch
-            else
-                echo "Welcome. Small screen or low color support detected, no fastfetch for you."
-            end
-        end
-    else
-        function fish_greeting
-            echo ""
+    function fish_greeting
+        # Skip greeting in editor terminals, AI agent shells, nested shells, and dumb terminals.
+        # AI agents parse the banner as wasted tokens; nested shells (nvim :term, `fish` in fish) don't need it.
+        test "$TERM_PROGRAM" = vscode; and return
+        test "$TERMINAL_EMULATOR" = JetBrains-JediTerm; and return
+        set -q CLAUDECODE; and return
+        set -q CURSOR_TRACE_ID; and return
+        test "$TERM" = dumb; and return
+        test "$SHLVL" -gt 1; and return
+
+        if type -q fastfetch; and test (tput colors) -ge 256; and test (tput lines) -gt 25
+            fastfetch
         end
     end
 
@@ -38,6 +39,11 @@ if status is-interactive
     # Initialize oh-my-posh if available
     if type -q oh-my-posh
         oh-my-posh init fish --config $theme_path | source
+    end
+
+    # zoxide: smart cd — `z <substr>` jumps to most-used matching dir, `zi` = interactive fzf pick
+    if type -q zoxide
+        zoxide init fish | source
     end
 
 end
@@ -83,9 +89,6 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias less='less -R'
-if type -q rg
-    alias grep='rg -u'
-end
 alias mkdir="mkdir -pv"
 alias pacman="sudo pacman"
 alias sctl="sudo systemctl"
@@ -159,9 +162,7 @@ set -g fish_pager_color_selected_background --background=$selection
 
 # pnpm
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
-if not string match -q -- $PNPM_HOME $PATH
-  set -gx PATH "$PNPM_HOME" $PATH
-end
+fish_add_path -g $PNPM_HOME
 # pnpm end
 
 # Load custom.fish config if it exists

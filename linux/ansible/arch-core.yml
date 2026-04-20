@@ -133,6 +133,7 @@
           - wl-clipboard # Wayland clipboard
           - tree-sitter-cli # AST manipulation
           - fd # fast find alternative
+          - zoxide # smart cd that learns frequent dirs
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
