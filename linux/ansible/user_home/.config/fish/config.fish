@@ -110,6 +110,29 @@ if type -q wl-copy  # Wayland
     alias yank='wl-copy'
 end
 
+# grep intentionally left alone — `rg` has different regex/output semantics
+
+# Under an AI agent: drop aliases that stall (interactive -i prompts, sudo prompts,
+# full-screen TUIs) or waste tokens (icons, ANSI, box-drawing). Where the modern
+# tool can be tuned to still beat the classic, keep it; otherwise fall through.
+if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID
+    # Bare commands are leanest — no usable tuned variant exists for these
+    functions --erase rm cp mv cat df top pacman sctl
+
+    # eza tuned: ISO dates, no icons/ANSI, `-` for dir sizes — more compact than `ls -Ahl`
+    if type -q eza
+        alias ls='eza -Ahl --color=never --icons=never --time-style=long-iso'
+    end
+
+    # Keep -p (prevents retry on missing parent), drop -v (per-dir spam)
+    alias mkdir='mkdir -p'
+
+    # Pagers auto-invoke on PTY even in agent sessions — force non-paging output
+    set -gx PAGER cat
+    set -gx SYSTEMD_PAGER cat
+    set -gx MANPAGER 'col -bx'
+end
+
 # git part
 alias g='git'
 alias gundo='git reset --soft HEAD~1'  # Undo last commit, keep changes
