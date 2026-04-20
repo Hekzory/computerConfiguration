@@ -20,6 +20,21 @@
         name: NetworkManager
         state: restarted
       when: not (is_wsl | bool)
+    - name: Restart systemd-resolved
+      become: true
+      listen: resolved_changed
+      ansible.builtin.service:
+        name: systemd-resolved
+        state: restarted
+      when: not (is_wsl | bool)
+    - name: Restart docker
+      become: true
+      listen: docker_changed
+      ansible.builtin.service:
+        name: docker.service
+        state: restarted
+      failed_when: false
+      when: not (is_wsl | bool)
   tasks:
     - name: Verify running on Arch Linux
       ansible.builtin.assert:
@@ -27,12 +42,13 @@
         fail_msg: "This playbook requires Arch Linux (detected: {{ ansible_facts['distribution'] }})"
         success_msg: "Arch Linux confirmed"
     # CONFIG - Pacman
-    - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists # , and NoExtract fix for warnings
+    - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, PrettyProgressBar # , and NoExtract fix for warnings
       become: true
       ansible.builtin.lineinfile:
         path: /etc/pacman.conf
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
+        insertafter: "{{ item.insertafter | default(omit) }}"
       loop:
         # this one removes warnings but may break something, you are free to comment it
         - {regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
@@ -40,6 +56,8 @@
         - {regexp: "^#?ParallelDownloads.*$", line: "ParallelDownloads = 16"}
         - {regexp: "^#ILoveCandy$", line: "ILoveCandy"}
         - {regexp: "^#VerbosePkgLists$", line: "VerbosePkgLists"}
+        # PrettyProgressBar is CachyOS-patched-pacman only; anchor insert so stock Arch doesn't land it past the last [repo]
+        - {regexp: "^#?PrettyProgressBar$", line: "PrettyProgressBar", insertafter: "^ParallelDownloads"}
       loop_control:
         label: "{{ item.line }}"
     # CONFIG - nano
@@ -84,6 +102,7 @@
           - lld # Linking at the speed of thought
           - openmp # Parallel processing? Yes, please
           - ccache # Cache your builds
+          - ananicy-cpp # Auto-nice daemon - snappier foreground apps
           # Development Arsenal - Tools of the Trade
           - docker # Containers
           - docker-compose # Orchestra conductor for your containers
@@ -106,6 +125,7 @@
           - networkmanager # Network whisperer
           - python3 # The snake that powers everything
           - reflector # Mirror optimization magic
+          - pacman-contrib # paccache, pactree, checkupdates and friends
           # Quality of Life - Because life's too short for bad tools
           - ripgrep # grep at speed
           - fzf # Fuzzy finding
@@ -173,6 +193,7 @@
         - {key: "net.core.somaxconn", value: "8192"}
         - {key: "net.ipv4.tcp_fastopen", value: "3"}
         - {key: "kernel.nmi_watchdog", value: "0"}
+        - {key: "kernel.split_lock_mitigate", value: "0"} # Let split-lock programs run instead of killing them
         - {key: "net.core.default_qdisc", value: "fq"}
         - {key: "net.ipv4.tcp_congestion_control", value: "bbr"}
         - {key: "net.ipv4.tcp_max_syn_backlog", value: "8192"}
@@ -231,6 +252,8 @@
       loop:
         - reflector.timer
         - docker.socket
+        - paccache.timer # weekly pacman cache trim, keeps last 3 versions
+        - ananicy-cpp.service # auto-nice for responsiveness
     - name: Blacklist unnecessary modules
       become: true
       when: not (is_wsl | bool)
@@ -383,6 +406,72 @@
           options iwlmvm power_scheme=1
         mode: '0644'
       when: not (is_wsl | bool)
+
+    # systemd-resolved: tune TLS/DNSSEC/cache only; leave servers to NM per-connection
+    - name: Ensure systemd-resolved drop-in directory exists
+      become: true
+      ansible.builtin.file:
+        path: /etc/systemd/resolved.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: not (is_wsl | bool)
+
+    - name: Configure systemd-resolved - DoT, DNSSEC, cache
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/systemd/resolved.conf.d/10-dns.conf
+        content: |
+          [Resolve]
+          DNSOverTLS=opportunistic
+          DNSSEC=allow-downgrade
+          Cache=yes
+        owner: root
+        group: root
+        mode: '0644'
+      when: not (is_wsl | bool)
+      notify: resolved_changed
+
+    # NVIDIA container runtime: detect GPU first so non-NVIDIA hosts skip cleanly
+    - name: Detect NVIDIA GPU via PCI vendor ID
+      ansible.builtin.command:
+        cmd: "lspci -d 10de::"
+      register: nvidia_gpu_detect
+      changed_when: false
+      check_mode: false
+      when: not (is_wsl | bool)
+
+    - name: Install nvidia-container-toolkit when NVIDIA GPU is present
+      become: true
+      community.general.pacman:
+        name:
+          - nvidia-container-toolkit
+        state: present
+      when:
+        - not (is_wsl | bool)
+        - nvidia_gpu_detect.stdout | default('') | length > 0
+
+    - name: Read current docker daemon.json (if any)
+      ansible.builtin.slurp:
+        src: /etc/docker/daemon.json
+      register: docker_daemon_raw
+      failed_when: false
+      check_mode: false
+      when:
+        - not (is_wsl | bool)
+        - nvidia_gpu_detect.stdout | default('') | length > 0
+
+    - name: Register NVIDIA runtime with docker (nvidia-ctk merges into daemon.json)
+      become: true
+      ansible.builtin.command:
+        cmd: nvidia-ctk runtime configure --runtime=docker
+      changed_when: true
+      when:
+        - not (is_wsl | bool)
+        - nvidia_gpu_detect.stdout | default('') | length > 0
+        - "'nvidia' not in (docker_daemon_raw.content | default('') | b64decode)"
+      notify: docker_changed
 
     - name: Configure journald - limit log storage
       become: true
