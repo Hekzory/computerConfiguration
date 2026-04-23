@@ -35,6 +35,12 @@
         state: restarted
       failed_when: false
       when: not (is_wsl | bool)
+    - name: Regenerate initramfs
+      become: true
+      listen: initramfs_changed
+      ansible.builtin.command: mkinitcpio -P
+      changed_when: true
+      when: not (is_wsl | bool)
   tasks:
     - name: Verify running on Arch Linux
       ansible.builtin.assert:
@@ -407,6 +413,19 @@
           options iwlmvm power_scheme=1
         mode: '0644'
       when: not (is_wsl | bool)
+
+    - name: Disable NVMe APST (avoid deep power-state stalls/disconnects)
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/modprobe.d/nvme.conf
+        content: |
+          # Cap NVMe power-state transition latency at 0us, which forbids the
+          # driver from selecting any non-operational (low-power) state via APST.
+          # Trades idle power for stability and consistent latency.
+          options nvme_core default_ps_max_latency_us=0
+        mode: '0644'
+      when: not (is_wsl | bool)
+      notify: initramfs_changed
 
     # systemd-resolved: tune TLS/DNSSEC/cache only; leave servers to NM per-connection
     - name: Ensure systemd-resolved drop-in directory exists
