@@ -1,0 +1,246 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "proxy": "",
+  "ui_font_family": ".ZedSans",
+  "colorize_brackets": false,
+  "gutter": {
+    "bookmarks": true,
+    "breakpoints": false
+  },
+  "semantic_tokens": "combined",
+  "use_smartcase_search": true,
+  "window_decorations": "client",
+  "tabs": {
+    "show_diagnostics": "off",
+    "close_position": "right",
+    "file_icons": false,
+    "git_status": false
+  },
+  "tab_bar": {
+    "show_pinned_tabs_in_separate_row": false,
+    "show_tab_bar_buttons": true,
+    "show": true
+  },
+  "title_bar": {
+    "button_layout": "platform_default",
+    "show_menus": true,
+    "show_user_picture": true,
+    "show_user_menu": true,
+    "show_sign_in": true,
+    "show_branch_name": true,
+    "show_branch_status_icon": false
+  },
+  "debugger": {
+    "button": false
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "button": false
+  },
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "theme": "Tokyo Night Storm",
+  "icon_theme": "Zed (Default)",
+
+  "buffer_font_family": "FiraCode Nerd Font Mono",
+  "buffer_font_size": 14,
+  "ui_font_size": 16,
+
+  "autosave": { "after_delay": { "milliseconds": 1000 } },
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "format_on_save": "off",
+  "preferred_line_length": 120,
+
+  "indent_guides": {
+    "enabled": true,
+    "coloring": "indent_aware"
+  },
+  "show_whitespaces": "boundary",
+
+  "restore_on_startup": "last_session",
+  "session": {
+    "trust_all_worktrees": true,
+    "restore_unsaved_buffers": true
+  },
+  "confirm_quit": true,
+
+  "git_panel": { "show_count_badge": false,
+                 "folder_icons": false,
+                 "file_icons": false,
+                 "fallback_branch_name": "master",
+                 "dock": "left" },
+  "project_panel": {
+    "sort_order": "unicode",
+    "hide_hidden": false,
+    "hide_root": false,
+    "git_status_indicator": true,
+    "diagnostic_badges": false,
+    "bold_folder_labels": false,
+    "indent_size": 15.0,
+    "git_status": true,
+    "folder_icons": false,
+    "file_icons": true,
+    "entry_spacing": "standard",
+    "dock": "left",
+    "hide_gitignore": false
+  },
+
+  "hidden_files": [
+    ".pytest_cache/**",
+    ".ruff_cache/**"
+  ],
+
+  "telemetry": {
+    "diagnostics": true,
+    "metrics": false
+  },
+
+  "edit_predictions": {
+    "provider": "codestral"
+  },
+  "show_edit_predictions": true,
+
+  "git": {
+    "gutter_debounce": 5,
+    "git_gutter": "tracked_files",
+    "inline_blame": {
+      "enabled": true,
+      "delay_ms": 600
+    }
+  },
+
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": true,
+    "show_parameter_hints": true,
+    "show_other_hints": true
+  },
+
+  "diagnostics": {
+    "inline": {
+      "enabled": true,
+      "update_debounce_ms": 200
+    }
+  },
+
+  "terminal": {
+    "show_count_badge": true,
+    "shell": {
+      "program": "fish"
+    },
+    "font_family": "FiraCode Nerd Font Mono",
+    "font_size": 13.0,
+    "blinking": "on",
+    "max_scroll_history_lines": 100000,
+    "copy_on_select": false
+  },
+
+  "languages": {
+    "Python": {
+      "language_servers": ["pyright", "ruff", "!pylsp"],
+      "format_on_save": "off",
+      "formatter": [
+        { "code_action": "source.organizeImports.ruff" },
+        { "language_server": { "name": "ruff" } }
+      ]
+    },
+    "YAML": {
+      "tab_size": 2,
+      "format_on_save": "on",
+      "formatter": "language_server"
+    },
+    "Go": {
+      "format_on_save": "off",
+      "formatter": "language_server"
+    },
+    "Dockerfile": {
+      "tab_size": 2
+    },
+    "TOML": {
+      "format_on_save": "off"
+    },
+    "JSON": {
+      "tab_size": 2,
+      "format_on_save": "off"
+    },
+    "Markdown": {
+      "preferred_line_length": 100,
+      "soft_wrap": "prefer_line"
+    }
+  },
+
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "analysis": {
+            "autoImportCompletions": true,
+            "inlayHints": {
+              "callArgumentNames": "partial",
+              "functionReturnTypes": true,
+              "variableTypes": false
+            },
+            "typeEvaluation": {
+              "deprecateTypingAliases": true,
+              "strictDictionaryInference": true,
+              "strictListInference": true,
+              "strictSetInference": true
+            }
+          }
+        }
+      }
+    },
+    "ruff": {
+      "initialization_options": {
+        "settings": {
+          "lineLength": 120,
+          "format": { "preview": true },
+          "lint": { "preview": true }
+        }
+      }
+    },
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "customTags": ["!reference sequence"],
+          "maxItemsComputed": 16000,
+          "schemas": {
+            "https://json.schemastore.org/github-workflow.json": [
+              ".github/workflows/*.yml",
+              ".github/workflows/*.yaml"
+            ],
+            "https://json.schemastore.org/github-action.json": [
+              ".github/action.yml",
+              ".github/action.yaml",
+              "action.yml",
+              "action.yaml"
+            ],
+            "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": [
+              "docker-compose*.yml",
+              "docker-compose*.yaml",
+              "compose*.yml",
+              "compose*.yaml"
+            ],
+            "https://json.schemastore.org/gitlab-ci.json": [
+              ".gitlab-ci.yml",
+              ".gitlab-ci.yaml"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
