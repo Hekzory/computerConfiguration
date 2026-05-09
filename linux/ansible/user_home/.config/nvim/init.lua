@@ -534,16 +534,11 @@ require("lazy").setup({
 
 vim.g.suda_smart_edit = 1
 
-local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
-vim.lsp.config("gopls", {
-	capabilities = capabilities,
-})
-vim.lsp.config("ruff", {
-	capabilities = capabilities,
+-- '*' is a global config merged into every server's resolved config.
+vim.lsp.config("*", {
+	capabilities = require("cmp_nvim_lsp").default_capabilities(),
 })
 
-vim.lsp.enable("gopls")
-vim.lsp.enable("ruff")
+vim.lsp.enable({ "gopls", "ruff" })
 
 vim.keymap.set("n", "<F3>", "<cmd>Trouble diagnostics toggle focus=false filter.buf=0<CR>")
