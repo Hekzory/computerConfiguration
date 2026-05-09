@@ -183,6 +183,8 @@ set -g fish_pager_color_description $comment
 set -g fish_pager_color_selected_background --background=$selection
 
 
+fish_add_path -g $HOME/.local/bin
+
 # pnpm
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 fish_add_path -g $PNPM_HOME
