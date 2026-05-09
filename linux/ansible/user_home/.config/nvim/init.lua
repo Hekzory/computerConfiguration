@@ -22,6 +22,21 @@ vim.opt.expandtab = true -- Use spaces instead of tabs
 
 -- Editor Behavior
 vim.opt.clipboard = "unnamedplus"
+-- Over SSH there's no DISPLAY/Wayland, so xsel/wl-copy can't reach a clipboard.
+-- Route the + register through OSC 52 instead, letting the local terminal write
+-- to its host clipboard. Paste falls back to the unnamed register because
+-- Windows Terminal supports OSC 52 write but not read (would otherwise hang).
+if vim.env.SSH_TTY then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  local function paste_unnamed()
+    return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
+  end
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = paste_unnamed, ["*"] = paste_unnamed },
+  }
+end
 vim.opt.wrap = false -- No wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
 vim.opt.incsearch = true -- Incremental search
