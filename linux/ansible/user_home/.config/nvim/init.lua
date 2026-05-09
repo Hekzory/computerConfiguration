@@ -27,15 +27,15 @@ vim.opt.clipboard = "unnamedplus"
 -- to its host clipboard. Paste falls back to the unnamed register because
 -- Windows Terminal supports OSC 52 write but not read (would otherwise hang).
 if vim.env.SSH_TTY then
-  local osc52 = require("vim.ui.clipboard.osc52")
-  local function paste_unnamed()
-    return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
-  end
-  vim.g.clipboard = {
-    name = "OSC 52",
-    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
-    paste = { ["+"] = paste_unnamed, ["*"] = paste_unnamed },
-  }
+	local osc52 = require("vim.ui.clipboard.osc52")
+	local function paste_unnamed()
+		return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
+	end
+	vim.g.clipboard = {
+		name = "OSC 52",
+		copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+		paste = { ["+"] = paste_unnamed, ["*"] = paste_unnamed },
+	}
 end
 vim.opt.wrap = false -- No wrap lines
 vim.opt.hlsearch = false -- Don't highlight search results
@@ -58,8 +58,21 @@ vim.opt.smoothscroll = true
 vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
 
+vim.api.nvim_create_autocmd("BufWritePre", {
+	desc = "Auto-create parent directory on save",
+	callback = function(args)
+		if vim.bo[args.buf].buftype ~= "" then
+			return
+		end
+		local dir = vim.fn.fnamemodify(args.file, ":p:h")
+		if vim.fn.isdirectory(dir) == 0 then
+			vim.fn.mkdir(dir, "p")
+		end
+	end,
+})
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
 	vim.fn.system({
 		"git",
 		"clone",
@@ -104,10 +117,6 @@ require("lazy").setup({
 				damping_insert_mode = 0.8,
 				legacy_computing_symbols_support = true,
 			},
-		},
-		{
-			"mateuszwieloch/automkdir.nvim",
-			opts = {},
 		},
 		{
 			"hrsh7th/nvim-cmp",
@@ -262,12 +271,15 @@ require("lazy").setup({
 			},
 		},
 		{
+			-- The `main` branch is a full rewrite (repo archived 2026-04-03 but stable).
+			-- API is install()-based, no setup opts. Highlighting is enabled per-buffer
+			-- via vim.treesitter.start() in a FileType autocmd.
 			"nvim-treesitter/nvim-treesitter",
 			lazy = false,
-			build = ":TSUpdate",
 			branch = "main",
-			opts = {
-				ensure_installed = {
+			build = ":TSUpdate",
+			config = function()
+				require("nvim-treesitter").install({
 					"lua",
 					"vim",
 					"vimdoc",
@@ -302,7 +314,6 @@ require("lazy").setup({
 					"java",
 					"javascript",
 					"json5",
-					"jsonc",
 					"proto",
 					"regex",
 					"ssh_config",
@@ -316,13 +327,12 @@ require("lazy").setup({
 					"passwd",
 					"requirements",
 					"tsx",
-				},
-				sync_install = true,
-				auto_install = true,
-				highlight = { enable = true },
-			},
-			config = function(_, opts)
-				require("nvim-treesitter").setup(opts)
+				})
+				vim.api.nvim_create_autocmd("FileType", {
+					callback = function(args)
+						pcall(vim.treesitter.start, args.buf)
+					end,
+				})
 			end,
 		},
 		{
@@ -458,10 +468,6 @@ require("lazy").setup({
 				telescope.setup(opts)
 				pcall(telescope.load_extension, "fzf")
 			end,
-		},
-		{
-			"numToStr/Comment.nvim",
-			opts = { padding = true },
 		},
 		{
 			"akinsho/toggleterm.nvim",
