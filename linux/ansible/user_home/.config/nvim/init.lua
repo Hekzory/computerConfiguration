@@ -58,6 +58,9 @@ vim.opt.smoothscroll = true
 vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
 
+-- gopls advertises `gotmpl` as a filetype but Neovim has no builtin detection rule.
+vim.filetype.add({ extension = { gotmpl = "gotmpl", tmpl = "gotmpl" } })
+
 vim.api.nvim_create_autocmd("BufWritePre", {
 	desc = "Auto-create parent directory on save",
 	callback = function(args)
