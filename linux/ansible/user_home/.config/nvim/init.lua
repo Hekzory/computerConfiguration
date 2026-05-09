@@ -98,8 +98,22 @@ require("lazy").setup({
 			end,
 		},
 		{
+			-- Icon provider. Replaces nvim-web-devicons everywhere via the
+			-- documented mock_nvim_web_devicons() shim (same pattern LazyVim uses).
+			-- Any require("nvim-web-devicons") call transparently returns mini.icons.
+			"echasnovski/mini.icons",
+			lazy = true,
+			opts = {},
+			init = function()
+				package.preload["nvim-web-devicons"] = function()
+					require("mini.icons").mock_nvim_web_devicons()
+					return package.loaded["nvim-web-devicons"]
+				end
+			end,
+		},
+		{
 			"nvim-lualine/lualine.nvim",
-			dependencies = { "nvim-tree/nvim-web-devicons" },
+			dependencies = { "echasnovski/mini.icons" },
 			lazy = false,
 			opts = {
 				options = { theme = "tokyonight-moon", globalstatus = true },
@@ -341,7 +355,7 @@ require("lazy").setup({
 			branch = "v3.x",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
-				"nvim-tree/nvim-web-devicons",
+				"echasnovski/mini.icons",
 				"MunifTanjim/nui.nvim",
 			},
 			keys = {
@@ -499,7 +513,7 @@ require("lazy").setup({
 			"romgrk/barbar.nvim",
 			dependencies = {
 				"lewis6991/gitsigns.nvim",
-				"nvim-tree/nvim-web-devicons",
+				"echasnovski/mini.icons",
 			},
 			init = function()
 				vim.g.barbar_auto_setup = false
