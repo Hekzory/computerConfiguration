@@ -356,6 +356,8 @@
         mode: '0755'
       loop:
         - "{{ user_home }}/.config/fish"
+        - "{{ user_home }}/.config/fish/conf.d"
+        - "{{ user_home }}/.config/fish/completions"
         - "{{ user_home }}/.config/fastfetch"
         - "{{ user_home }}/.config/btop"
         - "{{ user_home }}/.config/xdg-desktop-portal"
@@ -372,6 +374,9 @@
       loop:
         - tokyofine.omp.toml
         - .config/fish/config.fish
+        - .config/fish/conf.d/git-helpers.fish
+        - .config/fish/completions/gbr.fish
+        - .config/fish/completions/gswitch.fish
         - .config/fastfetch/config.jsonc
         - .config/btop/btop.conf
         - .config/xdg-desktop-portal/portals.conf
