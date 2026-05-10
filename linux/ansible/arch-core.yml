@@ -41,6 +41,11 @@
       ansible.builtin.command: mkinitcpio -P
       changed_when: true
       when: not (is_wsl | bool)
+    - name: Reload systemd
+      become: true
+      listen: systemd_reload
+      ansible.builtin.systemd:
+        daemon_reload: true
   tasks:
     - name: Verify running on Arch Linux
       ansible.builtin.assert:
@@ -140,6 +145,7 @@
           - tree-sitter-cli # AST manipulation
           - fd # fast find alternative
           - zoxide # smart cd that learns frequent dirs
+          - tealdeer # tldr in rust - usage examples without the man-page slog
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -364,7 +370,6 @@
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
       loop:
-        # - .zshrc
         - tokyofine.omp.toml
         - .config/fish/config.fish
         - .config/fastfetch/config.jsonc
@@ -387,8 +392,61 @@
         containers: true
         images: true
         networks: true
-        volumes: true
         builder_cache: true
+    # SCHEDULED docker hygiene - light prune between playbook runs
+    # The aggressive prune above runs only when ansible runs; this timer
+    # picks up the slack on weeks where the playbook isn't touched.
+    # Intentionally NO -a and NO --volumes here: weekly auto-volume nuking is a footgun.
+    - name: Install docker-prune.service - weekly light prune
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker-prune.service
+        content: |
+          [Unit]
+          Description=Light prune of unused Docker resources
+          Documentation=man:docker-system-prune(1)
+          After=docker.service
+          Requires=docker.service
+          ConditionPathExists=/var/run/docker.sock
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/docker system prune -f
+        owner: root
+        group: root
+        mode: '0644'
+      when: not (is_wsl | bool)
+      notify: systemd_reload
+    - name: Install docker-prune.timer - weekly trigger
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker-prune.timer
+        content: |
+          [Unit]
+          Description=Weekly Docker prune timer
+
+          [Timer]
+          OnCalendar=weekly
+          Persistent=true
+          RandomizedDelaySec=30min
+          Unit=docker-prune.service
+
+          [Install]
+          WantedBy=timers.target
+        owner: root
+        group: root
+        mode: '0644'
+      when: not (is_wsl | bool)
+      notify: systemd_reload
+    - name: Flush handlers so the new units are visible before enable
+      ansible.builtin.meta: flush_handlers
+    - name: Enable docker-prune.timer
+      become: true
+      ansible.builtin.service:
+        name: docker-prune.timer
+        state: started
+        enabled: true
+      when: not (is_wsl | bool)
     # CONFIG - pnpm
     - name: Install global pnpm packages
       # ignore_errors: true
