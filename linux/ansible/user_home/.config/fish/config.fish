@@ -9,7 +9,10 @@ if test "$TERM" = "xterm-kitty"
     set -gx TERM xterm-256color
 end
 
-if test (tput colors) -lt 256
+# tput fails (empty stdout, non-zero exit) when $TERM is unset — happens on some
+# non-interactive SSH/agent invocations. Treat "unknown" as low-color.
+set -l _colors (tput colors 2>/dev/null)
+if test -z "$_colors"; or test "$_colors" -lt 256
     set -gx LOW_COLOR_SUPPORT 1
 end
 
@@ -21,6 +24,7 @@ if status is-interactive
         test "$TERMINAL_EMULATOR" = JetBrains-JediTerm; and return
         set -q CLAUDECODE; and return
         set -q CURSOR_TRACE_ID; and return
+        test -z "$TERM"; and return
         test "$TERM" = dumb; and return
         test "$SHLVL" -gt 1; and return
 
