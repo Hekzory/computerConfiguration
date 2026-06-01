@@ -1,0 +1,6 @@
+# SATA Active Link Power Management
+# Managed by Ansible — edit templates/50-sata.rules.j2
+# Laptop relaxes ALPM (med_power_with_dipm) for idle battery savings; everything
+# else keeps max_performance.
+
+ACTION=="add", SUBSYSTEM=="scsi_host", KERNEL=="host*", ATTR{link_power_management_supported}=="1", ATTR{link_power_management_policy}="{{ 'med_power_with_dipm' if is_laptop else 'max_performance' }}"

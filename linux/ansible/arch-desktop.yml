@@ -77,16 +77,5 @@
         groups:
           - realtime
         append: true
-    # CONFIG - dotfiles
-    - name: Copy desktop dotfiles
-      ansible.builtin.copy:
-        src: "user_home/{{ item }}"
-        dest: "{{ user_home }}/{{ item }}"
-        force: true
-        owner: "{{ the_user }}"
-        group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
-      loop:
-        - .config/kitty/
-        - .config/zed/
-        - .config/chrome-beta-flags.conf
+    # NOTE: desktop dotfiles (kitty, zed, chrome flags) are deployed by the
+    # auto-discovery task in arch-core.yml, which walks the whole user_home/ tree.

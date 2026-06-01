@@ -52,6 +52,23 @@
         that: ansible_facts['distribution'] == "Archlinux"
         fail_msg: "This playbook requires Arch Linux (detected: {{ ansible_facts['distribution'] }})"
         success_msg: "Arch Linux confirmed"
+    # MACHINE CLASS - two profiles: laptop (battery-aware) vs not (performance-first).
+    # Auto-detected from battery presence; override with -e is_laptop=true|false.
+    # Mirrors the is_wsl pattern. Only settings whose sole justification is raw
+    # performance flip on laptops; stability-motivated ones (NVMe APST, NVMe
+    # runtime PM) stay on for every machine.
+    - name: Detect battery (laptop heuristic)
+      ansible.builtin.find:
+        paths: /sys/class/power_supply
+        patterns: 'BAT*'
+        file_type: any
+      register: battery_scan
+      changed_when: false
+      check_mode: false
+    - name: Set is_laptop fact
+      ansible.builtin.set_fact:
+        # | bool so an -e is_laptop=false override (a string) isn't treated as truthy
+        is_laptop: "{{ (is_laptop | default((battery_scan.matched | int) > 0)) | bool }}"
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, PrettyProgressBar # , and NoExtract fix for warnings
       become: true
@@ -180,7 +197,7 @@
       when: not (is_wsl | bool)
       ansible.builtin.replace:
         path: /etc/fstab
-        regexp: "\brelatime\b"
+        regexp: '\brelatime\b'  # single quotes: keep literal \b word-boundaries (double quotes make YAML emit a backspace byte)
         replace: "noatime"
         backup: true
     - name: Ensure file exists
@@ -290,29 +307,44 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       loop:
-        - { regexp: '^#?MAKEFLAGS=', line: 'MAKEFLAGS="-j$(nproc)"' }
+        # -l caps parallelism by load so memory-bound builds (llvm/rust/chromium) back off instead of OOMing
+        - { regexp: '^#?MAKEFLAGS=', line: 'MAKEFLAGS="-j$(nproc) -l$(nproc)"' }
+        # enable ccache (default BUILDENV ships it off via !ccache) so AUR rebuilds reuse object cache
+        - { regexp: '^#?BUILDENV=', line: 'BUILDENV=(!distcc color ccache check !sign)' }
         - { regexp: '^COMPRESSGZ=', line: 'COMPRESSGZ=(pigz -c -f -n)' }
         - { regexp: '^COMPRESSBZ2=', line: 'COMPRESSBZ2=(pbzip2 -c -f)' }
         - { regexp: '^COMPRESSXZ=', line: 'COMPRESSXZ=(xz -c -z --threads=0 -)' }
         - { regexp: '^COMPRESSZST=', line: 'COMPRESSZST=(zstd -c -z -q --threads=0 -)' }
       loop_control:
         label: "{{ item.line }}"
-    # CONFIG - udev
-    - name: Udev settings - change for better performance
+    - name: Set ccache maximum size
+      ansible.builtin.command: ccache --max-size=10G
+      changed_when: false
+    # CONFIG - udev (static rules with no per-class delta)
+    - name: Udev settings - static performance rules
       become: true
       when: not (is_wsl | bool)
       ansible.builtin.copy:
-        src: "etc/udev/rules.d/{{ item }}"
-        dest: "/etc/udev/rules.d/{{ item }}"
+        src: "etc/udev/rules.d/60-ioschedulers.rules" # ioscheduler + NVMe runtime PM (kept on for stability)
+        dest: "/etc/udev/rules.d/60-ioschedulers.rules"
         force: true
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
+    # CONFIG - udev (class-aware: laptop relaxes SATA/USB/net power for battery)
+    - name: Udev settings - class-aware power rules
+      become: true
+      when: not (is_wsl | bool)
+      ansible.builtin.template:
+        src: "templates/{{ item }}.j2"
+        dest: "/etc/udev/rules.d/{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
       loop:
-        - 60-ioschedulers.rules # ioscheduler settings - change for better performance
-        - 50-sata.rules # sata power settings - change for better performance
-        - 70-usb.rules # disable usb autosuspend
-        - 71-net.rules # same for net
+        - 50-sata.rules # ALPM: max_performance, or med_power_with_dipm on laptop
+        - 70-usb.rules # autosuspend: off, or on (minus HID/audio) on laptop
+        - 71-net.rules # ethernet power: on, or auto on laptop
     - name: Check if yay is installed
       ansible.builtin.stat:
         path: /usr/bin/yay
@@ -348,39 +380,33 @@
       ansible.builtin.user:
         shell: /bin/fish
         name: "{{ the_user }}"
-    - name: Ensure config directories exist
+    # CONFIG - shell/editor configs setup
+    # Auto-discovered from user_home/ via filetree — add a dotfile by dropping it
+    # in the tree, no playbook edit needed. Covers desktop-only configs too (kitty,
+    # zed, chrome flags); harmless on non-desktop since the apps aren't installed.
+    - name: Create dotfile directory tree under $HOME
       ansible.builtin.file:
-        path: "{{ item }}"
-        recurse: true
+        path: "{{ user_home }}/{{ item.path }}"
         state: directory
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
         mode: '0755'
-      loop:
-        - "{{ user_home }}/.config/fish"
-        - "{{ user_home }}/.config/fish/conf.d"
-        - "{{ user_home }}/.config/fish/completions"
-        - "{{ user_home }}/.config/fastfetch"
-        - "{{ user_home }}/.config/btop"
-        - "{{ user_home }}/.config/xdg-desktop-portal"
-        - "{{ user_home }}/.config/nvim"
-    # CONFIG - shell configs setup
-    - name: Copy config files + themes
+      loop: "{{ lookup('community.general.filetree', 'user_home/') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: item.state == 'directory'
+    - name: Deploy dotfiles
       ansible.builtin.copy:
-        src: "user_home/{{ item }}"
-        dest: "{{ user_home }}/{{ item }}"
+        src: "{{ item.src }}"
+        dest: "{{ user_home }}/{{ item.path }}"
         force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
         mode: u+rw,g+r,o--
-      loop:
-        - tokyofine.omp.toml
-        - .config/fish/config.fish
-        - .config/fish/conf.d/git-helpers.fish
-        - .config/fish/completions/gbr.fish
-        - .config/fish/completions/gswitch.fish
-        - .config/fastfetch/config.jsonc
-        - .config/btop/btop.conf
-        - .config/xdg-desktop-portal/portals.conf
-        - .config/nvim/init.lua
+      loop: "{{ lookup('community.general.filetree', 'user_home/') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: item.state == 'file'
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
@@ -465,15 +491,9 @@
 
     - name: Configure WiFi power saving and optimization
       become: true
-      ansible.builtin.copy:
+      ansible.builtin.template:
+        src: templates/iwlwifi.conf.j2  # power_save flips on laptop; everything else stays performance-first
         dest: /etc/modprobe.d/iwlwifi.conf
-        content: |
-          # Disable power saving for better performance
-          options iwlwifi power_save=0
-          # Disable software crypto for better performance
-          options iwlwifi swcrypto=0
-          # Set power scheme to performance
-          options iwlmvm power_scheme=1
         mode: '0644'
       when: not (is_wsl | bool)
 

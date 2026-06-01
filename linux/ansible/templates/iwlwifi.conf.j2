@@ -1,0 +1,16 @@
+# Managed by Ansible (arch-core.yml) — edit templates/iwlwifi.conf.j2, not this file.
+{% if is_laptop %}
+# Laptop: enable WiFi power saving for battery life
+options iwlwifi power_save=1
+# Use hardware crypto offload (software crypto disabled) — good for perf AND power
+options iwlwifi swcrypto=0
+# Balanced power scheme on battery
+options iwlmvm power_scheme=2
+{% else %}
+# Disable power saving for better performance
+options iwlwifi power_save=0
+# Disable software crypto for better performance
+options iwlwifi swcrypto=0
+# Set power scheme to performance
+options iwlmvm power_scheme=1
+{% endif %}

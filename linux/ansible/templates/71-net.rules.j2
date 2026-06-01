@@ -1,0 +1,3 @@
+# Ethernet power management — managed by Ansible (templates/71-net.rules.j2)
+# Laptop allows the NIC to autosuspend (auto); everything else keeps it on.
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|enp*", TEST=="power/control", ATTR{power/control}="{{ 'auto' if is_laptop else 'on' }}"

@@ -2,7 +2,7 @@
 
 [![ansible-lint](https://github.com/Hekzory/computerConfiguration/actions/workflows/ansible-lint.yml/badge.svg?event=push)](https://github.com/Hekzory/computerConfiguration/actions/workflows/ansible-lint.yml)
 
-Personal infrastructure-as-code for keeping my Linux and Windows machines consistent. Single-user, single-machine class — no inventory, no fleet management.
+Personal infrastructure-as-code for keeping my Linux and Windows machines consistent. Single user, run locally on each machine — no inventory, no fleet management. Two hardware profiles, laptop (battery-aware) vs not (performance-first), are selected automatically: a laptop is detected from battery presence (`is_laptop`), and the battery-hostile-for-no-reason tweaks (WiFi power saving, SATA/USB/ethernet link power) relax accordingly.
 
 ## Layout
 
@@ -30,7 +30,7 @@ It validates the playbook name, installs galaxy collections, and runs `ansible-p
 
 ### Dotfiles
 
-User-level dotfiles live under `linux/ansible/user_home/` mirroring `$HOME` layout (e.g. `user_home/.config/fish/config.fish` → `~/.config/fish/config.fish`). The "Copy config files + themes" task in `arch-core.yml` deploys the core set; `arch-desktop.yml` handles the desktop-only ones (kitty, zed, chrome flags).
+User-level dotfiles live under `linux/ansible/user_home/` mirroring `$HOME` layout (e.g. `user_home/.config/fish/config.fish` → `~/.config/fish/config.fish`). The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree (via `community.general.filetree`) and deploys it — adding a dotfile is just dropping the file under `user_home/`, no playbook edit needed.
 
 ### Requirements
 
