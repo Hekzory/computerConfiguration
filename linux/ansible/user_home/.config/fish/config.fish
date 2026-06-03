@@ -182,7 +182,8 @@ fish_add_path -g $HOME/.local/bin
 
 # pnpm
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
-fish_add_path -g $PNPM_HOME
+# $PNPM_HOME holds the pnpm binary; $PNPM_HOME/bin is where pnpm 11+ links global package bins
+fish_add_path -g $PNPM_HOME $PNPM_HOME/bin
 # pnpm end
 
 # Load custom.fish config if it exists

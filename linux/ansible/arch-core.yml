@@ -480,7 +480,11 @@
       when: not (is_wsl | bool)
     # CONFIG - pnpm
     - name: Install global pnpm packages
-      # ignore_errors: true
+      # pnpm 11 links global bins into ~/.local/share/pnpm/bin and refuses to install
+      # unless that dir is on PATH; inject it so this works regardless of the calling shell
+      environment:
+        PNPM_HOME: "{{ ansible_env.HOME }}/.local/share/pnpm"
+        PATH: "{{ ansible_env.HOME }}/.local/share/pnpm/bin:{{ ansible_env.PATH }}"
       community.general.pnpm:
         name: "{{ item }}"
         state: latest
