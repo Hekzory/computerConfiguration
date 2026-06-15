@@ -163,6 +163,7 @@
           - fd # fast find alternative
           - zoxide # smart cd that learns frequent dirs
           - tealdeer # tldr in rust - usage examples without the man-page slog
+          - jq # parse json easily
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
