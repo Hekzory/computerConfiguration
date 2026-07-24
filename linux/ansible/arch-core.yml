@@ -256,7 +256,7 @@
         and 'Could not find the requested service' not in service_command_output.msg
       loop:
         - ModemManager.service # Not needed by most people, so disable by default
-    - name: Manage hardware-dependent services (disabled on WSL)
+    - name: Manage host-only services (disabled on WSL)
       become: true
       ansible.builtin.service:
         name: "{{ item }}"
@@ -265,6 +265,7 @@
       loop:
         - fstrim.timer
         - fwupd-refresh.timer
+        - ananicy-cpp.service # no rules package under WSL, so it just scans and applies nothing
     - name: Copy reflector config - to setup proper mirror update
       become: true
       ansible.builtin.copy:
@@ -284,7 +285,6 @@
         - reflector.timer
         - docker.socket
         - paccache.timer # weekly pacman cache trim, keeps last 3 versions
-        - ananicy-cpp.service # auto-nice for responsiveness
     - name: Blacklist unnecessary modules
       become: true
       when: not (is_wsl | bool)
@@ -322,9 +322,10 @@
       ansible.builtin.command: ccache --max-size=10G
       changed_when: false
     # CONFIG - udev (static rules with no per-class delta)
+    # Not WSL-gated: the NVMe rules are inert without NVMe, and the file carries
+    # the Hyper-V virtual disk scheduler fix that WSL specifically needs.
     - name: Udev settings - static performance rules
       become: true
-      when: not (is_wsl | bool)
       ansible.builtin.copy:
         src: "etc/udev/rules.d/60-ioschedulers.rules" # ioscheduler + NVMe runtime PM (kept on for stability)
         dest: "/etc/udev/rules.d/60-ioschedulers.rules"
@@ -592,3 +593,13 @@
         - { regexp: '^#?SystemMaxFileSize=', line: 'SystemMaxFileSize=32M' }
       loop_control:
         label: "{{ item.line }}"
+    # WSL never persists journald's offline state on shutdown, so every boot
+    # abandons an 8M file and starts a fresh one. Bare metal shuts down cleanly
+    # and doesn't leak files like this, so the cap stays WSL-only.
+    - name: Configure journald - cap leaked file count on WSL
+      become: true
+      when: is_wsl | bool
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/journald.conf
+        regexp: '^#?SystemMaxFiles='
+        line: 'SystemMaxFiles=8'

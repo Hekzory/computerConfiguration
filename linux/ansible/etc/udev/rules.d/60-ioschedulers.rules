@@ -11,3 +11,9 @@ ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/rotational}=="0", TEST=="
 ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL=="nvme[0-9]*n[0-9]*", TEST=="queue/rq_affinity", ATTR{queue/rq_affinity}="2"
 # Keep NVMe controllers out of runtime suspend
 ACTION=="add", SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", TEST=="power/control", ATTR{power/control}="on"
+
+# Hyper-V virtual disks (WSL2, and any Hyper-V guest)
+# hv_storvsc reports these as rotational, so the HDD rule above puts BFQ and its
+# seek-oriented idling on top of what is really a file on an NVMe SSD. Must stay
+# below the HDD rule: both match, and the last write is the one that sticks.
+ACTION=="add|change", SUBSYSTEM=="block", KERNEL=="sd[a-z]*", ATTRS{vendor}=="Msft*", ATTRS{model}=="Virtual Disk*", ATTR{queue/rotational}="0", TEST=="queue/scheduler", ATTR{queue/scheduler}="none"

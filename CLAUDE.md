@@ -35,7 +35,7 @@ Existing event names: `sysctl_changed`, `networkmanager_changed`, `resolved_chan
 ## Conventions
 
 - **Packages**: official-repo first (`community.general.pacman`), AUR via `kewlfft.aur.aur` with `use: yay`. Group with header comments matching the existing style.
-- **WSL gating**: hardware/firmware/kernel tasks use `when: not (is_wsl | bool)`. Honor this on additions.
+- **WSL gating**: hardware/firmware/kernel tasks use `when: not (is_wsl | bool)`. Honor this on additions. `60-ioschedulers.rules` is the deliberate exception — it ships everywhere, since its NVMe rules are inert without NVMe and it carries the scheduler fix for Hyper-V virtual disks that WSL needs.
 - **Machine-class gating**: battery-sensitive hardware settings vary on the `is_laptop` fact (auto-detected from `/sys/class/power_supply/BAT*`, overridable with `-e is_laptop=...`). These ship as `templates/*.j2` parameterized on `is_laptop` (iwlwifi, SATA/USB/net udev rules). Settings kept for *stability* rather than performance (NVMe APST `default_ps_max_latency_us=0`, NVMe runtime PM in `60-ioschedulers.rules`) are deliberately NOT class-gated — they apply everywhere.
 - **Comment tone in YAML**: match what's already there. No corporate-speak.
 - **Aliases vs functions vs abbreviations** in fish (`user_home/.config/fish/config.fish`):
