@@ -284,7 +284,15 @@ require("lazy").setup({
 					bash = { "shfmt" },
 					sh = { "shfmt" },
 				},
-				format_on_save = { timeout_ms = 500, lsp_format = "fallback" },
+				-- Markdown is exempt: prettier rewrites list markers/wrapping and the global
+				-- trim_whitespace eats the trailing double-space hard breaks. Still formats
+				-- on demand via :ConformInfo/require("conform").format().
+				format_on_save = function(bufnr)
+					if vim.bo[bufnr].filetype == "markdown" then
+						return nil
+					end
+					return { timeout_ms = 500, lsp_format = "fallback" }
+				end,
 			},
 		},
 		{
