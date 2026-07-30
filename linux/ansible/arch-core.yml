@@ -46,6 +46,12 @@
       listen: systemd_reload
       ansible.builtin.systemd:
         daemon_reload: true
+    - name: Reexec systemd
+      become: true
+      listen: watchdog_changed
+      # daemon-reload does NOT re-read [Manager] watchdog settings, only reexec does
+      ansible.builtin.systemd:
+        daemon_reexec: true
   tasks:
     - name: Verify running on Arch Linux
       ansible.builtin.assert:
@@ -69,6 +75,20 @@
       ansible.builtin.set_fact:
         # | bool so an -e is_laptop=false override (a string) isn't treated as truthy
         is_laptop: "{{ (is_laptop | default((battery_scan.matched | int) > 0)) | bool }}"
+    # Headless vs desktop: a machine with a display manager enabled is a desktop.
+    # Auto-detected; override with -e is_headless=true|false. WSL has no DM and
+    # lands "headless", which is fine - everything gated on it is also WSL-gated.
+    # Headless boxes keep the hardware watchdog: it's the only thing that reboots
+    # them when the kernel wedges (o-srv hung deaf for 4h on 2026-07-30).
+    - name: Detect display manager (headless heuristic)
+      ansible.builtin.stat:
+        path: /etc/systemd/system/display-manager.service
+      register: display_manager_scan
+      check_mode: false
+    - name: Set is_headless fact
+      ansible.builtin.set_fact:
+        # | bool so an -e is_headless=false override (a string) isn't treated as truthy
+        is_headless: "{{ (is_headless | default(not display_manager_scan.stat.exists)) | bool }}"
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, PrettyProgressBar # , and NoExtract fix for warnings
       become: true
@@ -223,7 +243,16 @@
       loop:
         - {key: "net.core.somaxconn", value: "8192"}
         - {key: "net.ipv4.tcp_fastopen", value: "3"}
-        - {key: "kernel.nmi_watchdog", value: "0"}
+        # desktops: off, frees a PMU counter; headless: on, feeds the hardlockup detector
+        - {key: "kernel.nmi_watchdog", value: "{{ '1' if (is_headless | bool) else '0' }}"}
+        # Lockup self-reboot (headless): a CPU stuck >26s in kernel space panics the box and
+        # kernel.panic reboots it 10s later, so a wedged server is back in ~2min instead of
+        # hanging deaf until someone notices (o-srv 2026-07-30: one dead core, 4h down).
+        # Desktops keep the defaults (0 = log and keep hanging): a human sees the trace
+        # on screen and presses reset themselves.
+        - {key: "kernel.softlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}"}
+        - {key: "kernel.hardlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}"}
+        - {key: "kernel.panic", value: "{{ '10' if (is_headless | bool) else '0' }}"} # seconds from panic to reboot
         - {key: "kernel.split_lock_mitigate", value: "0"} # Let split-lock programs run instead of killing them
         - {key: "net.core.default_qdisc", value: "fq"}
         - {key: "net.ipv4.tcp_congestion_control", value: "bbr"}
@@ -295,12 +324,51 @@
         - pcspkr # motherboard speaker, useless
         - snd_pcsp # motherboard speaker, useless
         - eeepc_wmi # useless errors/warnings for many pcs, not useful unless you have eeepc laptop
-        - iTCO_wdt # watchdog timer, small performance improvement
-        - sp5100_tco # watchdog timer, small performance improvement
         - floppy # useless, also bad for security
         - parport # parallel port support, rarely used nowadays
         - ppdev # parallel port device support, rarely used
         - legion_laptop # should used by legion laptops, but wrongly loaded by every device i have
+    # Watchdog modules: desktops blacklist them (small perf win, a human presses reset anyway);
+    # headless boxes need them loaded so a wedged kernel gets rebooted instead of hanging deaf.
+    - name: Blacklist watchdog modules (desktops only)
+      become: true
+      when: not (is_wsl | bool) and not (is_headless | bool)
+      community.general.kernel_blacklist:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - iTCO_wdt # watchdog timer, small performance improvement
+        - sp5100_tco # watchdog timer, small performance improvement
+    - name: Allow watchdog modules (headless)
+      become: true
+      when: not (is_wsl | bool) and (is_headless | bool)
+      community.general.kernel_blacklist:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - iTCO_wdt
+        - sp5100_tco
+    - name: Arm systemd hardware watchdog (headless only)
+      become: true
+      when: not (is_wsl | bool) and (is_headless | bool)
+      ansible.builtin.copy:
+        content: |
+          # Managed by ansible (arch-core.yml). systemd pets the hardware watchdog;
+          # if petting stops (kernel wedged), the chipset resets the box.
+          [Manager]
+          RuntimeWatchdogSec=2min
+          RebootWatchdogSec=10min
+        dest: /etc/systemd/system.conf.d/10-watchdog.conf
+        owner: root
+        group: root
+        mode: u+rw,g+r,o+r
+      notify: watchdog_changed
+    - name: Disarm systemd hardware watchdog (desktops)
+      become: true
+      when: not (is_wsl | bool) and not (is_headless | bool)
+      ansible.builtin.file:
+        path: /etc/systemd/system.conf.d/10-watchdog.conf
+        state: absent
     - name: Optimize makepkg - parallel builds and compression
       become: true
       ansible.builtin.lineinfile:
