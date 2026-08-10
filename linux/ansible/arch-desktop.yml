@@ -33,6 +33,7 @@
           - jdk22-graalvm-ee-bin # Yesterday's Java
           - jdk21-graalvm-ee-bin # Ancient Java (meanwhile, java 8 users...)
           - ttf-fira-code # already used, but without nerd patches
+          - zed # never got used; ~/.config/zed stays deployed in case it comes back
         state: absent
 
     # PACKAGES - Official repos desktop packages setup
@@ -56,7 +57,7 @@
           - mpv # Video playback ascended
           - realtime-privileges
           - kitty # Terminal emulation evolved
-          - zed
+          - claude-code # Pair programming, terminal-side
           - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
 

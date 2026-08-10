@@ -14,15 +14,26 @@ Personal infrastructure-as-code for keeping Linux (Arch + CachyOS) and Windows m
 Three layered playbooks, each importing the previous:
 
 - `arch-core.yml` — base system: pacman config, packages, sysctl, gitconfig, fish + dotfiles, docker, NVIDIA detect, journald, systemd-resolved
-- `arch-desktop.yml` — fonts, kitty, zed, chrome (asserts NOT WSL)
+- `arch-desktop.yml` — fonts, kitty, claude-code, chrome (asserts NOT WSL)
 - `arch-home.yml` — personal apps (telegram, qbittorrent, vesktop, gaming group)
 
 Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The wrapper validates args, installs galaxy reqs, and prompts for sudo. Don't invoke `ansible-playbook` directly.
 
 ### Dotfiles
-Live under `linux/ansible/user_home/` mirroring `$HOME` layout. The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree via `community.general.filetree` — to add a dotfile, just drop it under `user_home/`; no playbook edit needed. Desktop-only configs (kitty, zed, chrome flags) ship on every machine this way too; that's harmless since the apps themselves are still desktop-gated.
+Live under `linux/ansible/user_home/` mirroring `$HOME` layout. The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree via `community.general.filetree` — to add a dotfile, just drop it under `user_home/`; no playbook edit needed. Desktop-only configs (kitty, chrome flags) ship on every machine this way too; that's harmless since the apps themselves are still desktop-gated.
 
-Currently shipped: fish, fastfetch, btop, nvim, kitty, zed, oh-my-posh theme, xdg-desktop-portal, chrome flags.
+Currently shipped: fish, fastfetch, btop, nvim, kitty, zed, oh-my-posh theme, xdg-desktop-portal, chrome flags, claude (statusline + commit-attribution guard).
+
+The zed config is deliberately orphaned — the editor was dropped from `arch-desktop.yml` (and is uninstalled by its cleanup task), but the config stays deployed in case it comes back. Don't "fix" the mismatch by deleting one or restoring the other.
+
+Files ending in `.sh` land as `0750` instead of the usual read-only mode — helper scripts other tools shell out to are useless without `+x`.
+
+### Claude Code
+Split in two on purpose: the helper scripts are dotfiles under `user_home/.claude/`, the settings that point at them are a *policy* drop-in at `/etc/claude-code/managed-settings.d/10-claude-personal.json` (rendered from `templates/`).
+
+`~/.claude/settings.json` is never touched — it holds API tokens and proxy env on work machines and must stay out of git. Policy settings outrank user and project ones, so `attribution` (empty = no Co-Authored-By, no PR trailer, no session link) can't be flipped by a per-repo settings file. Model and effort deliberately stay out of the policy file so `/model` and `/effort` keep working.
+
+Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 
 ### Roles
 - `roles/requirements.yml` — galaxy collection deps; expand here when new collections are needed.

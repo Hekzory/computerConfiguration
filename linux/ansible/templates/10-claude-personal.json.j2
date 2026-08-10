@@ -1,0 +1,33 @@
+{# Personal Claude Code policy, shipped as a managed-settings.d drop-in.
+   Deliberately NOT ~/.claude/settings.json: that file holds API tokens and proxy
+   env, so it stays off git entirely. Policy settings outrank user and project
+   ones, so the no-attribution rule can't be flipped by a stray /config or a
+   per-repo settings file. A drop-in rather than managed-settings.json itself so
+   an employer-managed policy file can coexist — Claude reads the base file
+   first, then merges .d/*.json over it in name order.
+   Keep only policy here: model, effort and friends belong in the user file,
+   where /model and /effort can still write to them. #}
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "{{ user_home }}/.claude/statusline.sh"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{ user_home }}/.claude/hooks/git-guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

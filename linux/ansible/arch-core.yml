@@ -472,11 +472,36 @@
         force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
-        mode: u+rw,g+r,o--
+        # .sh gets +x — helper scripts other tools shell out to (Claude statusline,
+        # hooks) are useless at 0640. Everything else stays plain config.
+        mode: "{{ '0750' if item.path.endswith('.sh') else 'u+rw,g+r,o--' }}"
       loop: "{{ lookup('community.general.filetree', 'user_home/') }}"
       loop_control:
         label: "{{ item.path }}"
       when: item.state == 'file'
+    # CONFIG - Claude Code personal policy
+    # Not the user settings file: ~/.claude/settings.json carries API tokens and
+    # proxy env, so it stays out of git. Policy settings outrank user/project ones,
+    # which is what we want for "never attribute commits to the AI". Shipped as a
+    # managed-settings.d drop-in so an employer-managed policy file can coexist.
+    # Ships everywhere, WSL included — inert on machines without claude-code.
+    - name: Create /etc/claude-code/managed-settings.d
+      become: true
+      ansible.builtin.file:
+        path: /etc/claude-code/managed-settings.d
+        state: directory
+        owner: "root"
+        group: "root"
+        mode: '0755'
+    - name: Claude Code policy - no commit attribution, statusline, git guard
+      become: true
+      ansible.builtin.template:
+        src: templates/10-claude-personal.json.j2
+        dest: /etc/claude-code/managed-settings.d/10-claude-personal.json
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
