@@ -626,8 +626,8 @@
         dest: /etc/systemd/resolved.conf.d/10-dns.conf
         content: |
           [Resolve]
-          DNSOverTLS=opportunistic
-          DNSSEC=allow-downgrade
+          DNSOverTLS=no
+          DNSSEC=no
           Cache=yes
         owner: root
         group: root
