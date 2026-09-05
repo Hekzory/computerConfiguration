@@ -26,7 +26,7 @@
       ansible.builtin.service:
         name: systemd-resolved
         state: restarted
-      when: not (is_wsl | bool)
+      when: resolved_enabled | default(false) | bool
     - name: Restart docker
       become: true
       listen: docker_changed
@@ -46,6 +46,13 @@
       listen: systemd_reload
       ansible.builtin.systemd:
         daemon_reload: true
+    - name: Restart ananicy-cpp
+      become: true
+      listen: ananicy_changed
+      ansible.builtin.service:
+        name: ananicy-cpp.service
+        state: restarted
+      when: not (is_wsl | bool)
     - name: Reexec systemd
       become: true
       listen: watchdog_changed
@@ -168,7 +175,6 @@
           - yamlfmt # yaml formatter
           # System Essentials - The Foundation
           - fwupd # Firmware: the forgotten update
-          - amd-ucode # AMD microcode - because bare metal matters
           - linux-firmware # The kernel's wardrobe
           - networkmanager # Network whisperer
           - python3 # The snake that powers everything
@@ -184,6 +190,19 @@
           - zoxide # smart cd that learns frequent dirs
           - tealdeer # tldr in rust - usage examples without the man-page slog
           - jq # parse json easily
+        state: present
+    # CPU microcode, picked by vendor. It used to be a flat amd-ucode in the list
+    # above, which left the Intel laptop with no microcode at all. The other
+    # vendor's package is deliberately not removed: a boot entry may still name
+    # its .img, and a missing initrd is a boot failure.
+    - name: Detect CPU vendor
+      ansible.builtin.set_fact:
+        cpu_vendor: "{{ 'intel' if 'GenuineIntel' in ansible_facts['processor'] else ('amd' if 'AuthenticAMD' in ansible_facts['processor'] else 'unknown') }}"
+    - name: Install CPU microcode for the detected vendor
+      become: true
+      when: not (is_wsl | bool) and cpu_vendor != 'unknown'
+      community.general.pacman:
+        name: "{{ cpu_vendor }}-ucode"
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -294,7 +313,7 @@
       loop:
         - fstrim.timer
         - fwupd-refresh.timer
-        - ananicy-cpp.service # no rules package under WSL, so it just scans and applies nothing
+        - ananicy-cpp.service # auto-nicing is pointless under WSL
     - name: Copy reflector config - to setup proper mirror update
       become: true
       ansible.builtin.copy:
@@ -444,6 +463,19 @@
           - oh-my-posh-bin # most stable one
         use: yay
         state: present
+    # ananicy-cpp ships zero rules, so until now the daemon scanned and applied
+    # nothing. cachyos-ananicy-rules is the maintained set (CachyOS/ananicy-rules
+    # upstream, same maintainer in the cachyos repo and in AUR); yay takes the repo
+    # build where the cachyos repo is configured and builds from AUR otherwise.
+    # Not ananicy-rules-git: that's a 2022 snapshot of a different upstream and
+    # it's gone from AUR. Rules load at daemon start, hence the restart.
+    - name: Install ananicy rules
+      kewlfft.aur.aur:
+        name: cachyos-ananicy-rules
+        use: yay
+        state: present
+      when: not (is_wsl | bool)
+      notify: ananicy_changed
     # CONFIG - change shell
     - name: Change shell to fish
       become: true
@@ -609,7 +641,16 @@
       when: not (is_wsl | bool)
       notify: initramfs_changed
 
-    # systemd-resolved: tune TLS/DNSSEC/cache only; leave servers to NM per-connection
+    # systemd-resolved: tune TLS/DNSSEC/cache only; leave servers to NM per-connection.
+    # Only where it's enabled: o-srv keeps it off because AdGuardHome owns port 53,
+    # and a `restarted` handler on a disabled unit would quietly start it.
+    - name: Collect service facts (resolved gating below)
+      ansible.builtin.service_facts:
+      when: not (is_wsl | bool)
+    - name: Set resolved_enabled fact
+      ansible.builtin.set_fact:
+        resolved_enabled: "{{ not (is_wsl | bool) and (ansible_facts.services['systemd-resolved.service'].status | default('')) == 'enabled' }}"
+
     - name: Ensure systemd-resolved drop-in directory exists
       become: true
       ansible.builtin.file:
@@ -618,7 +659,7 @@
         owner: root
         group: root
         mode: '0755'
-      when: not (is_wsl | bool)
+      when: resolved_enabled | bool
 
     - name: Configure systemd-resolved - DoT, DNSSEC, cache
       become: true
@@ -632,7 +673,7 @@
         owner: root
         group: root
         mode: '0644'
-      when: not (is_wsl | bool)
+      when: resolved_enabled | bool
       notify: resolved_changed
 
     # NVIDIA container runtime: detect GPU first so non-NVIDIA hosts skip cleanly

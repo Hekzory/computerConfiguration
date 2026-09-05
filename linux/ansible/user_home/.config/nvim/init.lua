@@ -55,6 +55,16 @@ vim.opt.sidescrolloff = 8
 vim.opt.showmode = false
 vim.opt.smoothscroll = true
 
+-- 0.11 turned virtual_text off by default, so LSP errors showed up as a bare
+-- sign in the gutter with no message. Put the text back inline, worst severity
+-- first, and give the float the same border as the cmp windows.
+vim.diagnostic.config({
+	virtual_text = true,
+	severity_sort = true,
+	float = { border = "rounded", source = true },
+	jump = { float = true },
+})
+
 vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" })
 
@@ -466,7 +476,7 @@ require("lazy").setup({
 				{
 					"<leader>ff",
 					function()
-						require("telescope.builtin").find_files({ hidden = true })
+						require("telescope.builtin").find_files()
 					end,
 					desc = "Find files",
 				},
@@ -486,7 +496,14 @@ require("lazy").setup({
 				},
 			},
 			opts = {
-				pickers = { find_files = { hidden = true } },
+				pickers = {
+					find_files = {
+						hidden = true,
+						-- hidden alone drags .git/objects into the list; fd's exclude
+						-- keeps dotfiles visible and the repo internals out
+						find_command = { "fd", "--type", "f", "--exclude", ".git" },
+					},
+				},
 			},
 			config = function(_, opts)
 				local telescope = require("telescope")

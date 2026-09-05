@@ -66,59 +66,72 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ]
     set -gx ELM_ENGINE wayland_egl
 end
 
-# Fish command history — preserve $argv so `history search`, `history delete`, etc. still work
-function history --wraps history --description "history with timestamps"
-    builtin history --show-time='%F %T ' $argv
+# Interactive-only sugar: wrapped commands, aliases, key binds.
+# Kept out of non-interactive shells on purpose. fish sources config.fish for
+# `ssh host cmd`, scripts and cron too, and there `pacman` turning into
+# `sudo pacman` or `df` into duf is a trap, not a feature
+# (`ssh o-srv pacman -Q x` used to die on a sudo password prompt).
+if status is-interactive
+    # Fish command history — preserve $argv so `history search`, `history delete`, etc. still work
+    function history --wraps history --description "history with timestamps"
+        builtin history --show-time='%F %T ' $argv
+    end
+
+    # Set personal aliases
+    function make
+        command make -j(nproc) $argv
+    end
+
+    function ninja
+        command ninja -j(nproc) $argv
+    end
+
+    alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
+    alias cmrupd="sudo cachyos-rate-mirrors"
+
+    if type -q bat
+        alias cat='bat --style=auto --paging=never'
+    end
+    if type -q eza
+        alias ls='eza -Ahl --color=auto --icons=auto'
+    end
+    alias rm='rm -i'
+    alias cp='cp -i'
+    alias mv='mv -i'
+    alias less='less -R'
+    alias mkdir="mkdir -pv"
+    alias pacman="sudo pacman"
+    alias sctl="sudo systemctl"
+    alias chown='chown --preserve-root'
+    alias chmod='chmod --preserve-root'
+    alias chgrp='chgrp --preserve-root'
+    alias jerr='journalctl -xb 0 -p 3'
+    alias jwarn='journalctl -xb 0 -p 4'
+    alias wget='wget -c'
+    if type -q duf
+        alias df='duf'
+    end
+    if type -q btop
+        alias top='btop'
+    end
+    alias omp='oh-my-posh'
+
+    if type -q wl-copy  # Wayland
+        alias yank='wl-copy'
+    end
+
+    # grep intentionally left alone — `rg` has different regex/output semantics
+
+    bind \cf 'fzf | read -l result; and commandline -i $result'  # Ctrl+F for fuzzy file search
 end
 
-# Set personal aliases
-function make
-    command make -j(nproc) $argv
-end
-
-function ninja
-    command ninja -j(nproc) $argv
-end
-
-alias mrupd="sudo reflector --verbose -l 25  --sort rate --save /etc/pacman.d/mirrorlist"
-alias cmrupd="sudo cachyos-rate-mirrors"
-
-if type -q bat
-    alias cat='bat --style=auto --paging=never'
-end
-if type -q eza
-    alias ls='eza -Ahl --color=auto --icons=auto'
-end
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-alias less='less -R'
-alias mkdir="mkdir -pv"
-alias pacman="sudo pacman"
-alias sctl="sudo systemctl"
-alias chown='chown --preserve-root'
-alias chmod='chmod --preserve-root'
-alias chgrp='chgrp --preserve-root'
-alias jerr='journalctl -xb 0 -p 3'
-alias jwarn='journalctl -xb 0 -p 4'
-alias wget='wget -c'
-if type -q duf
-    alias df='duf'
-end
-if type -q btop
-    alias top='btop'
-end
-alias omp='oh-my-posh'
-
-if type -q wl-copy  # Wayland
-    alias yank='wl-copy'
-end
-
-# grep intentionally left alone — `rg` has different regex/output semantics
+# Git aliases + functions live in conf.d/git-helpers.fish
 
 # Under an AI agent: drop aliases that stall (interactive -i prompts, sudo prompts,
 # full-screen TUIs) or waste tokens (icons, ANSI, box-drawing). Where the modern
 # tool can be tuned to still beat the classic, keep it; otherwise fall through.
+# Deliberately outside the interactive block: agents drive fish non-interactively,
+# and the tuned ls/mkdir and non-paging env are meant for exactly that shell.
 if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID
     # Bare commands are leanest — no usable tuned variant exists for these
     functions --erase rm cp mv cat df top pacman sctl
@@ -138,8 +151,6 @@ if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID
     set -gx SYSTEMD_PAGER cat
     set -gx MANPAGER 'col -bx'
 end
-
-# Git aliases + functions live in conf.d/git-helpers.fish
 
 # TokyoNight Color Palette
 set -l foreground c8d3f5
@@ -190,5 +201,3 @@ fish_add_path -g $PNPM_HOME $PNPM_HOME/bin
 if test -f ~/.config/fish/custom.fish
     source ~/.config/fish/custom.fish
 end
-
-bind \cf 'fzf | read -l result; and commandline -i $result'  # Ctrl+F for fuzzy file search

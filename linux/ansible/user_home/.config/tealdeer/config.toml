@@ -1,0 +1,5 @@
+# A fresh machine has no page cache, so every `tldr foo` fails until someone
+# remembers `tldr --update`. Let it fetch on first use and refresh itself.
+[updates]
+auto_update = true
+auto_update_interval_hours = 720 # monthly is plenty for tldr pages

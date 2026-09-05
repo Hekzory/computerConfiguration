@@ -93,10 +93,15 @@ final_space = true
     style = 'plain'
 
   [[blocks.segments]]
-    template = 'last commit: {{ .Output }}'
+    # Used to be a `command` segment running `git log -1 --format=%cr`; omp v28
+    # removed that segment type outright, so this had been silent since. HEAD's
+    # timestamp via the git segment is the closest match. The template names only
+    # .Commit, so omp probes just `git log -1` here and leaves the status work
+    # to the git segment on the left.
+    template = '{{ if .Commit.Sha }}last commit: {{ .Commit.Timestamp | date "02 Jan 15:04" }}{{ end }}'
     foreground = 'p:white-blue'
     background = 'transparent'
-    type = 'command'
+    type = 'git'
     style = 'plain'
 
   [[blocks.segments]]
