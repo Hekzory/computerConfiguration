@@ -5,6 +5,7 @@ on:
     paths:
       - 'linux/ansible/**'
       - 'windows/**'
+      - '.github/workflows/**'
   pull_request:
     branches: ["main", "master"]
   workflow_dispatch:
@@ -21,3 +22,30 @@ jobs:
         uses: ansible/ansible-lint@v26.8.0
         with:
           working_directory: "${{ github.workspace }}/linux/ansible"
+
+  # The dotfiles ship to every machine on the next run; a typo in them used to
+  # get caught by the machines. shellcheck comes with the runner image.
+  static:
+    name: Shell, fish, Lua checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: shellcheck the helper scripts
+        run: |
+          shellcheck \
+            linux/ansible/run.sh \
+            linux/ansible/user_home/.claude/statusline.sh \
+            linux/ansible/user_home/.claude/hooks/git-guard.sh
+      - name: Install fish 4 (same major as the machines, ubuntu ships 3.x)
+        run: |
+          sudo add-apt-repository -y ppa:fish-shell/release-4
+          sudo apt-get update
+          sudo apt-get install -y fish
+      - name: fish -n on every shipped fish file
+        run: find linux/ansible/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
+      - name: stylua --check init.lua
+        uses: JohnnyMorganz/stylua-action@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v2.5.2
+          args: --check linux/ansible/user_home/.config/nvim/init.lua

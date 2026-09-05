@@ -19,7 +19,7 @@ readonly NC='\033[0m' # No Color
 die() {
     local msg="$1"
     local code="${2:-1}" # Default to 1 if not provided
-    printf "${RED}FATAL: %s${NC}\n" "$msg" >&2
+    printf '%sFATAL: %s%s\n' "$RED" "$msg" "$NC" >&2
     exit "$code"
 }
 
@@ -69,7 +69,7 @@ main() {
     check_command ansible-galaxy
     check_command ansible-playbook
 
-    printf "${BLUE}Installing requirements...${NC}\n"
+    printf '%sInstalling requirements...%s\n' "$BLUE" "$NC"
     if ! ansible-galaxy install -r "$REQUIREMENTS_FILE"; then
         die "Failed to install Ansible requirements"
     fi
@@ -79,7 +79,7 @@ main() {
         die "Playbook execution failed"
     fi
 
-    printf "${GREEN}Playbook executed successfully${NC}\n"
+    printf '%sPlaybook executed successfully%s\n' "$GREEN" "$NC"
 }
 
 # Trap ctrl-c and call cleanup

@@ -61,6 +61,16 @@
           - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
 
+    # VA-API: chrome-beta-flags already ask for hardware video decode, but without
+    # a driver they're dead flags and YouTube decodes on the CPU. Intel and NVIDIA
+    # need a package each (cpu_vendor / has_nvidia come from arch-core); AMD needs
+    # nothing, mesa carries libva-mesa-driver. libva-utils gives `vainfo` to check.
+    - name: Install VA-API drivers for the GPU at hand
+      become: true
+      community.general.pacman:
+        name: "{{ ['libva-utils'] + (['intel-media-driver'] if cpu_vendor == 'intel' else []) + (['libva-nvidia-driver'] if (has_nvidia | bool) else []) }}"
+        state: present
+
     # PACKAGES - AUR desktop packages setup
     - name: Install packages from AUR using yay
       kewlfft.aur.aur:

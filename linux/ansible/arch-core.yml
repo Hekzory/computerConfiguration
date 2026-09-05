@@ -54,6 +54,12 @@
         name: ananicy-cpp.service
         state: restarted
       when: not (is_wsl | bool)
+    - name: Restart journald
+      become: true
+      listen: journald_changed
+      ansible.builtin.service:
+        name: systemd-journald
+        state: restarted
     - name: Reexec systemd
       become: true
       listen: watchdog_changed
@@ -174,10 +180,7 @@
           - ruff # Python's new best friend
           - shfmt # Because shell scripts deserve love too
           - yamlfmt # yaml formatter
-          # System Essentials - The Foundation
-          - fwupd # Firmware: the forgotten update
-          - linux-firmware # The kernel's wardrobe
-          - networkmanager # Network whisperer
+          # System Essentials - The Foundation (hardware-facing ones are a separate, non-WSL task below)
           - python3 # The snake that powers everything
           - reflector # Mirror optimization magic
           - pacman-contrib # paccache, pactree, checkupdates and friends
@@ -204,6 +207,18 @@
       when: not (is_wsl | bool) and cpu_vendor != 'unknown'
       community.general.pacman:
         name: "{{ cpu_vendor }}-ucode"
+        state: present
+    # Hardware-facing packages: pointless under WSL, where Windows owns firmware
+    # and networking, and linux-firmware alone is ~400 MiB that gets re-downloaded
+    # every few weeks.
+    - name: Install hardware-facing packages (not WSL)
+      become: true
+      when: not (is_wsl | bool)
+      community.general.pacman:
+        name:
+          - fwupd # Firmware: the forgotten update
+          - linux-firmware # The kernel's wardrobe
+          - networkmanager # Network whisperer
         state: present
     # CONFIG - GIT
     - name: Set gitconfig to personal preference at ~/.gitconfig
@@ -336,6 +351,17 @@
         - reflector.timer
         - docker.socket
         - paccache.timer # weekly pacman cache trim, keeps last 3 versions
+    # Socket activation alone doesn't bring containers back after a reboot: dockerd
+    # starts on the first API call, so restart-policies sit waiting for someone to
+    # run `docker ps`. Headless boxes want the daemon up at boot (o-srv had this
+    # enabled by hand; a reinstall would have lost it).
+    - name: Start docker at boot on headless machines
+      become: true
+      when: not (is_wsl | bool) and (is_headless | bool)
+      ansible.builtin.service:
+        name: docker.service
+        state: started
+        enabled: true
     - name: Blacklist unnecessary modules
       become: true
       when: not (is_wsl | bool)
@@ -725,24 +751,23 @@
         - "'nvidia' not in (docker_daemon_raw.content | default('') | b64decode)"
       notify: docker_changed
 
+    # journald limits as a drop-in rather than edits to the stock file: the stock
+    # file stays pristine and stops turning into a .pacnew on every systemd
+    # release that touches a default. WSL-only file cap lives in the template.
+    - name: Ensure journald drop-in directory exists
+      become: true
+      ansible.builtin.file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
     - name: Configure journald - limit log storage
       become: true
-      ansible.builtin.lineinfile:
-        path: /etc/systemd/journald.conf
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
-      loop:
-        - { regexp: '^#?SystemMaxUse=', line: 'SystemMaxUse=256M' }
-        - { regexp: '^#?SystemMaxFileSize=', line: 'SystemMaxFileSize=32M' }
-      loop_control:
-        label: "{{ item.line }}"
-    # WSL never persists journald's offline state on shutdown, so every boot
-    # abandons an 8M file and starts a fresh one. Bare metal shuts down cleanly
-    # and doesn't leak files like this, so the cap stays WSL-only.
-    - name: Configure journald - cap leaked file count on WSL
-      become: true
-      when: is_wsl | bool
-      ansible.builtin.lineinfile:
-        path: /etc/systemd/journald.conf
-        regexp: '^#?SystemMaxFiles='
-        line: 'SystemMaxFiles=8'
+      ansible.builtin.template:
+        src: templates/10-journald-limits.conf.j2
+        dest: /etc/systemd/journald.conf.d/10-limits.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: journald_changed
