@@ -67,6 +67,7 @@
         name:
           - google-chrome-beta # Web browsing on the somewhat-bleeding edge
           - jdk24-graalvm-ee-bin # newer one
+          - visual-studio-code-bin # the actual daily editor. MS build: marketplace + settings sync; extra/code is the OSS build without either
         use: yay
         state: present
 

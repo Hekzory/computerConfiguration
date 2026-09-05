@@ -30,11 +30,12 @@
     - name: Restart docker
       become: true
       listen: docker_changed
+      # WSL included: a fresh nvidia runtime in daemon.json needs the restart there
+      # too. failed_when covers WSL setups that have no docker.service at all.
       ansible.builtin.service:
         name: docker.service
         state: restarted
       failed_when: false
-      when: not (is_wsl | bool)
     - name: Regenerate initramfs
       become: true
       listen: initramfs_changed
@@ -229,6 +230,8 @@
         - {name: "core.untrackedCache", value: "true"}
         - {name: "help.autocorrect", value: "20"}  # auto-correct typos after 2 sec
         - {name: "rerere.enabled", value: "true"} # smarter conflict resolution
+        - {name: "branch.sort", value: "-committerdate"}  # git branch: last touched first, not alphabetical
+        - {name: "column.ui", value: "auto"}  # branch/tag/status lists in columns when stdout is a tty
       loop_control:
         label: "{{ item.name }}"
     # CONFIG - OPTIMIZATION AND COMPATIBILITY
@@ -676,7 +679,9 @@
       when: resolved_enabled | bool
       notify: resolved_changed
 
-    # NVIDIA container runtime: detect GPU first so non-NVIDIA hosts skip cleanly
+    # NVIDIA container runtime. Bare metal: the GPU sits on the PCI bus. WSL: no
+    # PCI passthrough, the Windows driver shows up as /usr/lib/wsl/lib instead
+    # and the toolkit knows to mount it. Non-NVIDIA hosts skip the whole block.
     - name: Detect NVIDIA GPU via PCI vendor ID
       ansible.builtin.command:
         cmd: "lspci -d 10de::"
@@ -684,6 +689,15 @@
       changed_when: false
       check_mode: false
       when: not (is_wsl | bool)
+    - name: Detect NVIDIA driver surfaced by WSL
+      ansible.builtin.stat:
+        path: /usr/lib/wsl/lib/nvidia-smi
+      register: nvidia_wsl_detect
+      check_mode: false
+      when: is_wsl | bool
+    - name: Set has_nvidia fact
+      ansible.builtin.set_fact:
+        has_nvidia: "{{ (nvidia_gpu_detect.stdout | default('') | length > 0) or (nvidia_wsl_detect.stat.exists | default(false)) }}"
 
     - name: Install nvidia-container-toolkit when NVIDIA GPU is present
       become: true
@@ -691,9 +705,7 @@
         name:
           - nvidia-container-toolkit
         state: present
-      when:
-        - not (is_wsl | bool)
-        - nvidia_gpu_detect.stdout | default('') | length > 0
+      when: has_nvidia | bool
 
     - name: Read current docker daemon.json (if any)
       ansible.builtin.slurp:
@@ -701,9 +713,7 @@
       register: docker_daemon_raw
       failed_when: false
       check_mode: false
-      when:
-        - not (is_wsl | bool)
-        - nvidia_gpu_detect.stdout | default('') | length > 0
+      when: has_nvidia | bool
 
     - name: Register NVIDIA runtime with docker (nvidia-ctk merges into daemon.json)
       become: true
@@ -711,8 +721,7 @@
         cmd: nvidia-ctk runtime configure --runtime=docker
       changed_when: true
       when:
-        - not (is_wsl | bool)
-        - nvidia_gpu_detect.stdout | default('') | length > 0
+        - has_nvidia | bool
         - "'nvidia' not in (docker_daemon_raw.content | default('') | b64decode)"
       notify: docker_changed
 

@@ -383,10 +383,15 @@ require("lazy").setup({
 				{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle Explorer" },
 			},
 			init = function()
+				-- Tree on a bare `nvim` or `nvim <dir>`. A quick `nvim /etc/foo.conf`
+				-- gets the file and nothing else; <leader>e is still there.
 				vim.api.nvim_create_autocmd("VimEnter", {
 					once = true,
 					callback = function()
-						vim.cmd("Neotree action=show toggle=true")
+						local first = vim.fn.argv(0)
+						if vim.fn.argc() == 0 or (type(first) == "string" and vim.fn.isdirectory(first) == 1) then
+							vim.cmd("Neotree action=show toggle=true")
+						end
 					end,
 				})
 			end,
