@@ -103,6 +103,17 @@
       ansible.builtin.set_fact:
         # | bool so an -e is_headless=false override (a string) isn't treated as truthy
         is_headless: "{{ (is_headless | default(not display_manager_scan.stat.exists)) | bool }}"
+    # CONFIG - sudo
+    # user-wide ticket so run.sh's single `sudo -v` covers the whole play (see the file)
+    - name: Sudo - one ticket per user, not per terminal
+      become: true
+      ansible.builtin.copy:
+        src: etc/sudoers.d/10-timestamp-global
+        dest: /etc/sudoers.d/10-timestamp-global
+        owner: root
+        group: root
+        mode: "0440"
+        validate: visudo -cf %s
     # CONFIG - Pacman
     - name: Pacman - Enable color, ParallelDownloads, ILoveCandy, VerbosePkgLists, PrettyProgressBar # , and NoExtract fix for warnings
       become: true

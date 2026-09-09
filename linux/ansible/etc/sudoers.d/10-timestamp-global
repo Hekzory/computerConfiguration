@@ -1,0 +1,5 @@
+# One sudo ticket per user instead of per terminal. Ansible's worker processes
+# setsid() away from the terminal, so with the default tty-keyed ticket every
+# become task would re-authenticate (and, with pam_fprintd, wait for a finger).
+# run.sh relies on this: it does `sudo -v` once and the playbook runs on that.
+Defaults timestamp_type=global

@@ -73,8 +73,14 @@ main() {
     # Authenticate once up front (fingerprint or password) and keep the sudo
     # ticket alive in the background. Ansible then runs plain `sudo -n`, which
     # never touches PAM -- with pam_fprintd in the sudo stack, every become
-    # task would otherwise sit waiting for a finger.
+    # task would otherwise sit waiting for a finger. Needs the global ticket
+    # from etc/sudoers.d/10-timestamp-global, see the comment there.
     sudo -v || die "sudo authentication failed"
+    # Bootstrap: the playbook ships this too, but the very first run needs it
+    # already in place or every task would fail with "a password is required".
+    if [[ ! -f /etc/sudoers.d/10-timestamp-global ]]; then
+        sudo install -m 0440 etc/sudoers.d/10-timestamp-global /etc/sudoers.d/ || die "Failed to install sudoers drop-in"
+    fi
     ( while sudo -n -v 2>/dev/null; do sleep 60; done ) &
     sudo_refresh_pid=$!
 
