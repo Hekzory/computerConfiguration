@@ -85,7 +85,9 @@ main() {
     sudo_refresh_pid=$!
 
     printf '%sInstalling requirements...%s\n' "$BLUE" "$NC"
-    if ! ansible-galaxy install -r "$REQUIREMENTS_FILE"; then
+    # --upgrade: plain install never bumps an already-present collection, and
+    # stale ones keep tripping ansible-core deprecation warnings
+    if ! ansible-galaxy collection install -r "$REQUIREMENTS_FILE" --upgrade; then
         die "Failed to install Ansible requirements"
     fi
 
