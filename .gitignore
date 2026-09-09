@@ -1,2 +1,6 @@
 # Sometimes open it in ide, to prevent from extra files to be added to commit
 **/.idea/
+
+# python bytecode from the callback plugin
+__pycache__/
+*.pyc
