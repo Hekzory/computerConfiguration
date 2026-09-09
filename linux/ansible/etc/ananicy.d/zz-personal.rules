@@ -1,0 +1,66 @@
+# Overrides on top of cachyos-ananicy-rules. Deployed everywhere by arch-core.yml.
+#
+# ananicy-cpp matches on the basename of /proc/pid/exe, applies a rule once at
+# exec and never re-applies it. A rule with the same name replaces the upstream
+# one wholesale: only the fields listed here apply. Files load in readdir
+# order, not alphabetical, so a duplicate name across files is a coin toss —
+# ananicy-mask-upstream comments the upstream twin out (and a pacman hook
+# redoes that after every rules upgrade). After editing this file rerun
+# ananicy-mask-upstream, restart ananicy-cpp and check a live process.
+#
+# Machine-local additions go in another top-level /etc/ananicy.d/*.rules file
+# with names that don't repeat these; the mask script warns on overlap.
+
+# --- 1. Drop sched:idle where the process isn't background ----------------
+# BG_CPUIO sets SCHED_IDLE (task weight 3 vs 1024 for a normal one). The
+# policy is inherited by children, so it leaked out of sshd into the login
+# shell, out of curl/wget into whatever a script forks, out of node into
+# child processes.
+{ "name": "node", "nice": 0 }
+{ "name": "curl", "nice": 0 }
+{ "name": "wget", "nice": 0 }
+{ "name": "sshd", "nice": 0 }
+{ "name": "sshd-session", "nice": 0 }
+{ "name": "ssh-agent", "nice": 0 }
+
+# System daemons. nice barely matters for them in system.slice — every unit
+# sits alone in its own cpu cgroup with nothing to compete against; we only
+# drop SCHED_IDLE, which made them sluggish under load.
+{ "name": "NetworkManager", "nice": 0 }
+{ "name": "chronyd", "nice": 0 }
+{ "name": "bluetoothd", "nice": 0 }
+{ "name": "power-profiles-daemon", "nice": 0 }
+
+# Interactive tools upstream marks as background.
+{ "name": "meld", "nice": 0 }
+{ "name": "ark", "nice": 0 }
+{ "name": "clang-tidy", "nice": 0 }
+{ "name": "cmake-gui", "nice": 0 }
+
+# Upstream rule was written for Proton Mail Bridge but matches bridge(8) from
+# iproute2 — name match only, the path isn't checked.
+{ "name": "bridge", "nice": 0 }
+
+# --- 2. Lift the desktop control plane -------------------------------------
+# session.slice is a flat nice pool (the cpu controller isn't delegated in
+# it). The session bus and portals sat at nice 10 (weight 110) against
+# pipewire at -12 (weight 14949), and kded6/ksmserver were outright
+# SCHED_IDLE (weight 3).
+{ "name": "kded6", "nice": 0 }
+{ "name": "ksmserver", "nice": 0 }
+{ "name": "kaccess", "nice": 0 }
+{ "name": "dbus-broker", "nice": 0 }
+{ "name": "dbus-broker-launch", "nice": 0 }
+{ "name": "dbus-daemon", "nice": 0 }
+{ "name": "xdg-desktop-portal", "nice": 0 }
+{ "name": "xdg-desktop-portal-gtk", "nice": 0 }
+{ "name": "xdg-desktop-portal-kde", "nice": 0 }
+{ "name": "xdg-document-portal", "nice": 0 }
+{ "name": "xdg-permission-store", "nice": 0 }
+
+# --- 3. Take the -12 skew off audio ----------------------------------------
+# The latency-critical part of pipewire/wireplumber already runs SCHED_FIFO
+# 88/83 via rtkit; -12 on the main thread only skewed the session pool.
+{ "name": "pipewire", "nice": -4 }
+{ "name": "pipewire-pulse", "nice": -4 }
+{ "name": "wireplumber", "nice": -4 }

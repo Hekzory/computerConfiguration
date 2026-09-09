@@ -1,0 +1,13 @@
+# A rules upgrade brings the upstream twins of our overrides back; mask them
+# again before the daemon picks up the new set. ananicy-cpp only reads rules
+# at start, hence the restart.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = cachyos-ananicy-rules
+
+[Action]
+Description = Masking upstream ananicy rules overridden in /etc/ananicy.d/*.rules...
+When = PostTransaction
+Exec = /bin/sh -c '/usr/local/bin/ananicy-mask-upstream && systemctl try-restart ananicy-cpp.service'

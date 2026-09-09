@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Comment out upstream ananicy rules (00-default/) whose name is redefined in a
+# top-level /etc/ananicy.d/*.rules file, and put back the ones no longer
+# overridden. Needed because ananicy-cpp loads files in readdir order and the
+# last definition of a name wins — without this, which rule applies is random.
+# Runs from arch-core.yml and from a pacman hook after every rules upgrade.
+# Prints one line per changed file; silent when nothing changed. Takes an
+# alternative rules dir as $1 (for testing on a copy).
+set -euo pipefail
+
+dir=${1:-/etc/ananicy.d}
+upstream="$dir/00-default"
+[[ -d "$upstream" ]] || { echo "$upstream: not found, nothing to mask" >&2; exit 0; }
+
+# name<TAB>file for every rule in top-level files. Rules are one JSON object
+# per line; "name" may have spaces around the colon.
+names=$(mktemp)
+trap 'rm -f "$names"' EXIT
+for f in "$dir"/*.rules; do
+    [[ -e "$f" ]] || continue
+    awk -v src="$(basename "$f")" '
+        match($0, /^[[:space:]]*\{.*"name"[[:space:]]*:[[:space:]]*"[^"]+"/) {
+            n = substr($0, RSTART, RLENGTH)
+            sub(/.*"name"[[:space:]]*:[[:space:]]*"/, "", n); sub(/"$/, "", n)
+            print n "\t" src
+        }' "$f"
+done | sort -u > "$names"
+
+# Same name in two override files is the same coin toss we are fixing here.
+cut -f1 "$names" | uniq -d | while IFS= read -r dup; do
+    echo "warning: '$dup' defined in more than one top-level file, which one wins is random:" >&2
+    awk -F'\t' -v n="$dup" '$1 == n { print "  " $2 }' "$names" >&2
+done
+
+find "$upstream" -type f -name '*.rules' -print0 | while IFS= read -r -d '' file; do
+    tmp=$(mktemp)
+    awk -v names="$names" -v out="$tmp" '
+        BEGIN { while ((getline l < names) > 0) { split(l, a, "\t"); src[a[1]] = a[2] } }
+        function rule_name(s,    n) {
+            if (!match(s, /^[[:space:]]*\{.*"name"[[:space:]]*:[[:space:]]*"[^"]+"/)) return ""
+            n = substr(s, RSTART, RLENGTH)
+            sub(/.*"name"[[:space:]]*:[[:space:]]*"/, "", n); sub(/"$/, "", n)
+            return n
+        }
+        {
+            if (match($0, /^# \[overridden by [^]]*\] /)) {
+                orig = substr($0, RLENGTH + 1)
+                if (rule_name(orig) in src) print $0 > out
+                else print orig > out
+            } else {
+                n = rule_name($0)
+                if (n != "" && n in src) print "# [overridden by " src[n] "] " $0 > out
+                else print $0 > out
+            }
+        }' "$file"
+    # awk always terminates the last line; keep the file byte-identical when
+    # upstream shipped it without a trailing newline, or it shows up as changed
+    [[ -n "$(tail -c1 "$file")" ]] && truncate -s -1 "$tmp"
+    # cat > keeps the upstream file's owner and mode; mv would bring mktemp's 0600
+    if cmp -s "$file" "$tmp"; then rm -f "$tmp"; else cat "$tmp" > "$file"; rm -f "$tmp"; echo "updated: $file"; fi
+done

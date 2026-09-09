@@ -114,6 +114,10 @@
       loop:
         # this one removes warnings but may break something, you are free to comment it
         - {regexp: '^#NoExtract', line: 'NoExtract = usr/lib/security/pam_systemd_home.so' }
+        # ~5k game rules (steam, wine, every .exe under the sun) — none of them worth
+        # the scan time or the SCHED_IDLE leaks; the dir is also dropped below on
+        # machines that already had it extracted
+        - {regexp: '^NoExtract = etc/ananicy.d/', line: 'NoExtract = etc/ananicy.d/00-default/Games/*', insertafter: '^NoExtract = usr/lib/security'}
         - {regexp: "^#Color$", line: "Color"}
         - {regexp: "^#?ParallelDownloads.*$", line: "ParallelDownloads = 16"}
         - {regexp: "^#ILoveCandy$", line: "ILoveCandy"}
@@ -503,6 +507,69 @@
         name: cachyos-ananicy-rules
         use: yay
         state: present
+      when: not (is_wsl | bool)
+      notify: ananicy_changed
+    # NoExtract in pacman.conf only stops future extraction; this clears what an
+    # earlier install already put there. Upstream never touches the dir again.
+    - name: Ananicy - drop the Games ruleset
+      become: true
+      ansible.builtin.file:
+        path: /etc/ananicy.d/00-default/Games
+        state: absent
+      when: not (is_wsl | bool)
+      notify: ananicy_changed
+    # Personal overrides on top of the upstream set (sshd/curl/node out of
+    # SCHED_IDLE, desktop control plane out of the nice-10 pit, audio off -12).
+    # Same names as upstream rules, and ananicy-cpp loads files in readdir order
+    # with last-definition-wins, so a duplicate name is a coin toss: the mask
+    # script comments the upstream twins out and a pacman hook redoes that after
+    # every rules upgrade. Machine-local extras go in another top-level
+    # /etc/ananicy.d/*.rules with non-overlapping names.
+    - name: Ananicy - personal rule overrides
+      become: true
+      ansible.builtin.copy:
+        src: "etc/ananicy.d/zz-personal.rules"
+        dest: "/etc/ananicy.d/zz-personal.rules"
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      when: not (is_wsl | bool)
+      notify: ananicy_changed
+    - name: Ananicy - install upstream mask script
+      become: true
+      ansible.builtin.copy:
+        src: "usr/local/bin/ananicy-mask-upstream"
+        dest: "/usr/local/bin/ananicy-mask-upstream"
+        force: true
+        owner: "root"
+        group: "root"
+        mode: '0755'
+      when: not (is_wsl | bool)
+    - name: Create /etc/pacman.d/hooks
+      become: true
+      ansible.builtin.file:
+        path: /etc/pacman.d/hooks
+        state: directory
+        owner: "root"
+        group: "root"
+        mode: '0755'
+      when: not (is_wsl | bool)
+    - name: Ananicy - re-mask after rules upgrades
+      become: true
+      ansible.builtin.copy:
+        src: "etc/pacman.d/hooks/ananicy-mask-upstream.hook"
+        dest: "/etc/pacman.d/hooks/ananicy-mask-upstream.hook"
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      when: not (is_wsl | bool)
+    - name: Ananicy - mask overridden upstream rules
+      become: true
+      ansible.builtin.command: /usr/local/bin/ananicy-mask-upstream
+      register: ananicy_mask
+      changed_when: ananicy_mask.stdout | length > 0
       when: not (is_wsl | bool)
       notify: ananicy_changed
     # CONFIG - change shell
