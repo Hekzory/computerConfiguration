@@ -92,7 +92,7 @@ main() {
     fi
 
     echo "Running playbook..."
-    if ! ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook -v "$PLAYBOOK_FILE"; then
+    if ! ansible-playbook -v "$PLAYBOOK_FILE"; then
         die "Playbook execution failed"
     fi
 

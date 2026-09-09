@@ -38,6 +38,9 @@ Skills and MCP config are not shipped: the ones on the work laptop are all corpo
 ### Ananicy
 `cachyos-ananicy-rules` is the upstream set; personal overrides live in `etc/ananicy.d/zz-personal.rules` (same rule names, different values). ananicy-cpp loads files in readdir order and the last definition wins, so `usr/local/bin/ananicy-mask-upstream` comments the upstream twins out; the playbook runs it and a pacman hook reruns it after every rules upgrade. To change an override, edit the rules file and rerun the playbook — never edit files under `00-default/` by hand and never pin them with `NoUpgrade` (the hook would have nothing to re-mask). The upstream `Games/` ruleset is dropped everywhere (`NoExtract` in pacman.conf plus removal of the already-extracted dir). Machine-local extras go in another top-level `/etc/ananicy.d/*.rules` with non-overlapping names, outside the repo.
 
+### Output
+`run.sh` runs with `-v`; the stdout callback is the repo's `callback_plugins/quiet_ok.py` (ansible.posix `debug` with the result dump muted for unchanged tasks, wired in `ansible.cfg`). Changed/failed/skipped still print in full, so command stdout and diffs stay visible where they matter. Don't add `no_log` just to quiet a noisy task.
+
 ### Roles
 - `roles/requirements.yml` — galaxy collection deps; expand here when new collections are needed.
 
