@@ -10,11 +10,11 @@ readonly REQUIREMENTS_FILE="roles/requirements.yml"
 sudo_refresh_pid=""
 
 # Colors for better output
-readonly GREEN='\033[0;32m'
-readonly RED='\033[0;31m'
-readonly YELLOW='\033[0;33m'
-readonly BLUE='\033[0;34m'
-readonly NC='\033[0m' # No Color
+readonly GREEN=$'\033[0;32m'
+readonly RED=$'\033[0;31m'
+readonly YELLOW=$'\033[0;33m'
+readonly BLUE=$'\033[0;34m'
+readonly NC=$'\033[0m' # No Color
 
 # --- Error Handling: with a hint of theatrical flair ---
 die() {
@@ -92,7 +92,7 @@ main() {
 }
 
 # Trap ctrl-c and call cleanup
-trap 'echo -e "${YELLOW}Exiting...${NC}"; exit 130' INT
+trap 'echo "${YELLOW}Exiting...${NC}"; exit 130' INT
 trap 'kill "$sudo_refresh_pid" 2>/dev/null || true' EXIT
 
 # Execute main function
