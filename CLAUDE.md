@@ -17,7 +17,7 @@ Three layered playbooks, each importing the previous:
 - `arch-desktop.yml` — fonts, kitty, claude-code, chrome (asserts NOT WSL)
 - `arch-home.yml` — personal apps (telegram, qbittorrent, vesktop, gaming group)
 
-Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The wrapper validates args, installs galaxy reqs, and prompts for sudo. Don't invoke `ansible-playbook` directly.
+Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The wrapper validates args, installs galaxy reqs, and authenticates sudo once up front (`sudo -v`, kept alive in the background) — ansible itself runs `sudo -n`, so PAM (and pam_fprintd on laptops) is hit once per run, not once per task. Don't invoke `ansible-playbook` directly and don't bring back `--ask-become-pass`.
 
 ### Dotfiles
 Live under `linux/ansible/user_home/` mirroring `$HOME` layout. The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree via `community.general.filetree` — to add a dotfile, just drop it under `user_home/`; no playbook edit needed. Desktop-only configs (kitty, chrome flags) ship on every machine this way too; that's harmless since the apps themselves are still desktop-gated.

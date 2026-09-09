@@ -7,6 +7,7 @@ IFS=$'\n\t'
 # Constants - uppercase by convention
 readonly VALID_PLAYBOOKS=("arch-core" "arch-desktop" "arch-home")
 readonly REQUIREMENTS_FILE="roles/requirements.yml"
+sudo_refresh_pid=""
 
 # Colors for better output
 readonly GREEN='\033[0;32m'
@@ -69,13 +70,21 @@ main() {
     check_command ansible-galaxy
     check_command ansible-playbook
 
+    # Authenticate once up front (fingerprint or password) and keep the sudo
+    # ticket alive in the background. Ansible then runs plain `sudo -n`, which
+    # never touches PAM -- with pam_fprintd in the sudo stack, every become
+    # task would otherwise sit waiting for a finger.
+    sudo -v || die "sudo authentication failed"
+    ( while sudo -n -v 2>/dev/null; do sleep 60; done ) &
+    sudo_refresh_pid=$!
+
     printf '%sInstalling requirements...%s\n' "$BLUE" "$NC"
     if ! ansible-galaxy install -r "$REQUIREMENTS_FILE"; then
         die "Failed to install Ansible requirements"
     fi
 
     echo "Running playbook..."
-    if ! ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook -v --ask-become-pass "$PLAYBOOK_FILE"; then
+    if ! ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook -v "$PLAYBOOK_FILE"; then
         die "Playbook execution failed"
     fi
 
@@ -84,6 +93,7 @@ main() {
 
 # Trap ctrl-c and call cleanup
 trap 'echo -e "${YELLOW}Exiting...${NC}"; exit 130' INT
+trap 'kill "$sudo_refresh_pid" 2>/dev/null || true' EXIT
 
 # Execute main function
 main
