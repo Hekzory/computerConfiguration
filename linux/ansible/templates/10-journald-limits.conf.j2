@@ -6,5 +6,5 @@ SystemMaxFileSize=32M
 # WSL never persists journald's offline state on shutdown, so every boot
 # abandons an 8M file and starts a fresh one. Bare metal shuts down cleanly
 # and doesn't leak files like this, so the cap stays WSL-only.
-SystemMaxFiles=8
+SystemMaxFiles=32
 {% endif %}

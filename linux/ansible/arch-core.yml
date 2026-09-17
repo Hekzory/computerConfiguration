@@ -292,19 +292,24 @@
         sysctl_file: "/etc/sysctl.d/99-sysctl.conf"
         state: present
         reload: false
+      when: not ((item.skip_wsl | default(false)) and (is_wsl | bool))
       loop:
         - {key: "net.core.somaxconn", value: "8192"}
         - {key: "net.ipv4.tcp_fastopen", value: "3"}
         # desktops: off, frees a PMU counter; headless: on, feeds the hardlockup detector
-        - {key: "kernel.nmi_watchdog", value: "{{ '1' if (is_headless | bool) else '0' }}"}
+        - {key: "kernel.nmi_watchdog", value: "{{ '1' if (is_headless | bool) else '0' }}", skip_wsl: true}
         # Lockup self-reboot (headless): a CPU stuck >26s in kernel space panics the box and
         # kernel.panic reboots it 10s later, so a wedged server is back in ~2min instead of
         # hanging deaf until someone notices (o-srv 2026-07-30: one dead core, 4h down).
         # Desktops keep the defaults (0 = log and keep hanging): a human sees the trace
         # on screen and presses reset themselves.
-        - {key: "kernel.softlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}"}
-        - {key: "kernel.hardlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}"}
-        - {key: "kernel.panic", value: "{{ '10' if (is_headless | bool) else '0' }}"} # seconds from panic to reboot
+        # WSL has no display manager, so it counts as headless; it keeps the kernel's own
+        # lockup settings instead.
+        - {key: "kernel.softlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}", skip_wsl: true}
+        - {key: "kernel.hardlockup_panic", value: "{{ '1' if (is_headless | bool) else '0' }}", skip_wsl: true}
+        # seconds from panic to reboot; WSL: -1 = reboot at once, same as WSL's own
+        # panic=-1 boot flag and CONFIG_PANIC_TIMEOUT=-1
+        - {key: "kernel.panic", value: "{{ '-1' if (is_wsl | bool) else ('10' if (is_headless | bool) else '0') }}"}
         - {key: "kernel.split_lock_mitigate", value: "0"} # Let split-lock programs run instead of killing them
         - {key: "net.core.default_qdisc", value: "fq"}
         - {key: "net.ipv4.tcp_congestion_control", value: "bbr"}
