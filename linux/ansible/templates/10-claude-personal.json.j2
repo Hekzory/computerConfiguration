@@ -9,7 +9,9 @@
    where /model and /effort can still write to them.
    Prompt suggestions are policy too: each one is an extra request on the main
    model over the whole context, after every turn, billed to the subscription,
-   and it's rarely worth the Tab. Here /config can't quietly turn them back on. #}
+   and it's rarely worth the Tab. Here /config can't quietly turn them back on.
+   Session recap is the same kind of hidden request, fired on every return after
+   a few minutes away. #}
 {
   "attribution": {
     "commit": "",
@@ -17,6 +19,7 @@
     "sessionUrl": false
   },
   "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
   "statusLine": {
     "type": "command",
     "command": "{{ user_home }}/.claude/statusline.sh"

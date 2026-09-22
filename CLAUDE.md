@@ -31,7 +31,7 @@ Files ending in `.sh` land as `0750` instead of the usual read-only mode — hel
 ### Claude Code
 Split in two on purpose: the helper scripts are dotfiles under `user_home/.claude/`, the settings that point at them are a *policy* drop-in at `/etc/claude-code/managed-settings.d/10-claude-personal.json` (rendered from `templates/`).
 
-`~/.claude/settings.json` is never touched — it holds API tokens and proxy env on work machines and must stay out of git. Policy settings outrank user and project ones, so `attribution` (empty = no Co-Authored-By, no PR trailer, no session link) can't be flipped by a per-repo settings file. Same for `promptSuggestionEnabled: false`: every suggestion is a hidden main-model request over the whole context. Model and effort deliberately stay out of the policy file so `/model` and `/effort` keep working.
+`~/.claude/settings.json` is never touched — it holds API tokens and proxy env on work machines and must stay out of git. Policy settings outrank user and project ones, so `attribution` (empty = no Co-Authored-By, no PR trailer, no session link) can't be flipped by a per-repo settings file. Same for `promptSuggestionEnabled` and `awaySummaryEnabled` (both `false`): every suggestion and recap is a hidden main-model request over the whole context. Model and effort deliberately stay out of the policy file so `/model` and `/effort` keep working.
 
 Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 

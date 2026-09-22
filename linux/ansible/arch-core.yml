@@ -637,7 +637,7 @@
         owner: "root"
         group: "root"
         mode: '0755'
-    - name: Claude Code policy - no commit attribution, no prompt suggestions, statusline, git guard
+    - name: Claude Code policy - no commit attribution, no suggestions or recap, statusline, git guard
       become: true
       ansible.builtin.template:
         src: templates/10-claude-personal.json.j2
