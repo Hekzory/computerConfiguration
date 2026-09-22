@@ -6,13 +6,17 @@
    an employer-managed policy file can coexist — Claude reads the base file
    first, then merges .d/*.json over it in name order.
    Keep only policy here: model, effort and friends belong in the user file,
-   where /model and /effort can still write to them. #}
+   where /model and /effort can still write to them.
+   Prompt suggestions are policy too: each one is an extra request on the main
+   model over the whole context, after every turn, billed to the subscription,
+   and it's rarely worth the Tab. Here /config can't quietly turn them back on. #}
 {
   "attribution": {
     "commit": "",
     "pr": "",
     "sessionUrl": false
   },
+  "promptSuggestionEnabled": false,
   "statusLine": {
     "type": "command",
     "command": "{{ user_home }}/.claude/statusline.sh"
