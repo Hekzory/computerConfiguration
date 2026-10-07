@@ -439,6 +439,22 @@
         - archlinux-keyring-wkd-sync.timer
         - man-db.timer
       notify: systemd_reload
+    # Mirrored networking sends 127.0.0.1 to the host, which drops SYNs to closed
+    # ports, so dirmngr's Tor probe on :9050 hangs ~2 min. The VPN adapter also
+    # mirrors a ::/0 route that goes nowhere. Together that made wkd-sync take
+    # ~15 s to 2.5 min per key, and dirmngr held shutdown past WSL's 10 s.
+    - name: Keep pacman's dirmngr off Tor probing and IPv6 (WSL)
+      become: true
+      when: is_wsl | bool
+      ansible.builtin.copy:
+        content: |
+          # Managed by ansible (arch-core.yml)
+          no-use-tor
+          disable-ipv6
+        dest: /etc/pacman.d/gnupg/dirmngr.conf
+        owner: root
+        group: root
+        mode: '0644'
     # Socket activation alone doesn't bring containers back after a reboot: dockerd
     # starts on the first API call, so restart-policies sit waiting for someone to
     # run `docker ps`. Headless boxes want the daemon up at boot (o-srv had this
