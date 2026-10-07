@@ -368,9 +368,77 @@
         state: started
         enabled: true
       loop:
-        - reflector.timer
         - docker.socket
         - paccache.timer # weekly pacman cache trim, keeps last 3 versions
+    # Mirror ranking: reflector by default, but where cachyos-rate-mirrors is
+    # installed it owns the job. It ranks the arch list and the cachyos ones, and
+    # two rankers just keep overwriting each other's /etc/pacman.d/mirrorlist.
+    - name: Check for cachyos-rate-mirrors
+      ansible.builtin.stat:
+        path: /usr/bin/cachyos-rate-mirrors
+      register: cachyos_rate_mirrors_bin
+    - name: Enable reflector.timer unless cachyos-rate-mirrors ranks the mirrors
+      become: true
+      ansible.builtin.service:
+        name: reflector.timer
+        state: "{{ 'stopped' if cachyos_rate_mirrors_bin.stat.exists else 'started' }}"
+        enabled: "{{ not cachyos_rate_mirrors_bin.stat.exists }}"
+    # Its Persistent catch-up otherwise fires right at boot: ~70 s and ~650 MB of
+    # test downloads, and on WSL that holds is-system-running at "starting" until
+    # WSL gives up waiting for boot.
+    - name: Create cachyos-rate-mirrors.timer drop-in directory
+      become: true
+      when: cachyos_rate_mirrors_bin.stat.exists
+      ansible.builtin.file:
+        path: /etc/systemd/system/cachyos-rate-mirrors.timer.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Move the cachyos-rate-mirrors catch-up off the boot path
+      become: true
+      when: cachyos_rate_mirrors_bin.stat.exists
+      ansible.builtin.copy:
+        content: |
+          # Managed by ansible (arch-core.yml)
+          [Timer]
+          RandomizedDelaySec=30min
+        dest: /etc/systemd/system/cachyos-rate-mirrors.timer.d/10-delay.conf
+        owner: root
+        group: root
+        mode: u+rw,g+r,o+r
+      notify: systemd_reload
+    # WSL sessions last an hour or two, so a week- or half-day-long random delay
+    # never runs out and the catch-up never happens: wkd-sync had not run for two
+    # months on WSL when this went in.
+    - name: Create catch-up timer drop-in directories (WSL)
+      become: true
+      when: is_wsl | bool
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}.d"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - archlinux-keyring-wkd-sync.timer
+        - man-db.timer
+    - name: Shorten catch-up timer random delays (WSL)
+      become: true
+      when: is_wsl | bool
+      ansible.builtin.copy:
+        content: |
+          # Managed by ansible (arch-core.yml)
+          [Timer]
+          RandomizedDelaySec=30min
+        dest: "/etc/systemd/system/{{ item }}.d/10-wsl-delay.conf"
+        owner: root
+        group: root
+        mode: u+rw,g+r,o+r
+      loop:
+        - archlinux-keyring-wkd-sync.timer
+        - man-db.timer
+      notify: systemd_reload
     # Socket activation alone doesn't bring containers back after a reboot: dockerd
     # starts on the first API call, so restart-policies sit waiting for someone to
     # run `docker ps`. Headless boxes want the daemon up at boot (o-srv had this
@@ -815,6 +883,19 @@
           - nvidia-container-toolkit
         state: present
       when: has_nvidia | bool
+    # nvidia-cdi-refresh runs at every boot and nvidia-ctk logs each file it
+    # picks up, ~150 info lines per boot. Errors still get through.
+    - name: Quiet nvidia-ctk in nvidia-cdi-refresh.service
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/nvidia-container-toolkit/nvidia-cdi-refresh.env
+        regexp: '^NVIDIA_CTK_QUIET='
+        line: NVIDIA_CTK_QUIET=true
+        create: true
+        owner: root
+        group: root
+        mode: u+rw,g+r,o+r
+      when: has_nvidia | bool
 
     - name: Read current docker daemon.json (if any)
       ansible.builtin.slurp:
@@ -836,7 +917,7 @@
 
     # journald limits as a drop-in rather than edits to the stock file: the stock
     # file stays pristine and stops turning into a .pacnew on every systemd
-    # release that touches a default. WSL-only file cap lives in the template.
+    # release that touches a default.
     - name: Ensure journald drop-in directory exists
       become: true
       ansible.builtin.file:
