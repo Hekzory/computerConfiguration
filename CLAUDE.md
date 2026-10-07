@@ -14,7 +14,7 @@ Personal infrastructure-as-code for keeping Linux (Arch + CachyOS) and Windows m
 Three layered playbooks, each importing the previous:
 
 - `arch-core.yml` — base system: pacman config, packages, sysctl, gitconfig, fish + dotfiles, docker, NVIDIA detect, journald, systemd-resolved
-- `arch-desktop.yml` — fonts, kitty, claude-code, chrome (asserts NOT WSL)
+- `arch-desktop.yml` — fonts, kitty, mpv, claude-code, chrome (asserts NOT WSL)
 - `arch-home.yml` — personal apps (telegram, qbittorrent, vesktop, gaming group)
 
 Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The wrapper validates args, installs galaxy reqs, and authenticates sudo once up front (`sudo -v`, kept alive in the background) — ansible itself runs `sudo -n`, so PAM (and pam_fprintd on laptops) is hit once per run, not once per task. That only works with the user-wide sudo ticket from `etc/sudoers.d/10-timestamp-global` (ansible workers `setsid()` away from the terminal), which run.sh bootstraps and the playbook manages. Don't invoke `ansible-playbook` directly and don't bring back `--ask-become-pass`.
@@ -22,7 +22,9 @@ Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The
 ### Dotfiles
 Live under `linux/ansible/user_home/` mirroring `$HOME` layout. The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree via `community.general.filetree` — to add a dotfile, just drop it under `user_home/`; no playbook edit needed. Desktop-only configs (kitty, chrome flags) ship on every machine this way too; that's harmless since the apps themselves are still desktop-gated.
 
-Currently shipped: fish, fastfetch, btop, nvim, kitty, zed, oh-my-posh theme, xdg-desktop-portal, chrome flags, claude (statusline + commit-attribution guard).
+Currently shipped: fish, fastfetch, btop, nvim, kitty, mpv (uosc UI), zed, oh-my-posh theme, xdg-desktop-portal, chrome flags, claude (statusline + commit-attribution guard).
+
+The mpv config in the repo is only what suits every machine. Anything tuned to one box (scalers and shaders for a weak iGPU, panel bit depth, stream height cap, hwdec order for a specific driver) goes into `~/.config/mpv/local.conf` on that machine, outside the repo: `mpv.conf` includes it at the end of its top-level section, and `arch-desktop.yml` seeds an empty one.
 
 The zed config is deliberately orphaned — the editor was dropped from `arch-desktop.yml` (and is uninstalled by its cleanup task), but the config stays deployed in case it comes back. Don't "fix" the mismatch by deleting one or restoring the other.
 

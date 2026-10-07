@@ -55,6 +55,8 @@
           - ttf-jetbrains-mono-nerd
           # Core Experience
           - mpv # Video playback ascended
+          - mpv-mpris # media keys and the Plasma player widget
+          - yt-dlp # mpv opens URLs through it; without it a YouTube link just fails
           - realtime-privileges
           - kitty # Terminal emulation evolved
           - claude-code # Pair programming, terminal-side
@@ -78,6 +80,8 @@
           - google-chrome-beta # Web browsing on the somewhat-bleeding edge
           - jdk24-graalvm-ee-bin # newer one
           - visual-studio-code-bin # the actual daily editor. MS build: marketplace + settings sync; extra/code is the OSS build without either
+          - mpv-uosc # mpv UI; lands outside mpv's search path, mpv.conf loads it by path
+          - mpv-thumbfast-git # seekbar thumbnails, uosc picks them up on its own
         use: yay
         state: present
 
@@ -89,5 +93,16 @@
         groups:
           - realtime
         append: true
-    # NOTE: desktop dotfiles (kitty, zed, chrome flags) are deployed by the
+    # mpv.conf includes ~~/local.conf for per-machine tuning that stays out of
+    # git. mpv prints an error on every start when it's missing, so seed an
+    # empty one; force: false never touches a file that's already there.
+    - name: Seed empty mpv local.conf
+      ansible.builtin.copy:
+        content: ""
+        dest: "{{ user_home }}/.config/mpv/local.conf"
+        force: false
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: "u+rw,g+r,o--"
+    # NOTE: desktop dotfiles (kitty, mpv, zed, chrome flags) are deployed by the
     # auto-discovery task in arch-core.yml, which walks the whole user_home/ tree.
