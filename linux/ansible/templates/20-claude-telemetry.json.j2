@@ -1,0 +1,24 @@
+{# Claude Code usage metrics from every machine into one Grafana dashboard.
+   OTLP/HTTP to the ingest endpoint, which checks the token and hands the data
+   to the metrics store behind it. Metrics only: no logs or traces, so no prompt,
+   command or file name ever leaves the machine, just counters (tokens, cost at
+   API prices, active time, sessions, lines, commits) labelled with model,
+   session id and this host.
+   The token is not here: this file is world-readable and its env reaches every
+   command Claude runs. The header helper reads it from ~/.claude/otel-token.
+   Per-signal endpoint and protocol, not the generic OTEL_EXPORTER_OTLP_*, so
+   nothing else is pinned: a session can still point traces or logs elsewhere.
+   Delta temporality (Claude's default) stays: every process starts its own
+   counters, and the store sums deltas as is.
+   No account uuid/id labels: user.email already tells accounts apart. #}
+{
+  "otelHeadersHelper": "{{ user_home }}/.claude/otel-headers.sh",
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": "{{ claude_otel_endpoint }}",
+    "OTEL_RESOURCE_ATTRIBUTES": "host.name={{ claude_otel_host }}",
+    "OTEL_METRICS_INCLUDE_ACCOUNT_UUID": "false"
+  }
+}

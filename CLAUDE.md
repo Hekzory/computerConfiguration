@@ -22,7 +22,7 @@ Run via `./run.sh <arch-core|arch-desktop|arch-home>` from `linux/ansible/`. The
 ### Dotfiles
 Live under `linux/ansible/user_home/` mirroring `$HOME` layout. The "Deploy dotfiles" task in `arch-core.yml` auto-discovers the whole tree via `community.general.filetree` — to add a dotfile, just drop it under `user_home/`; no playbook edit needed. Desktop-only configs (kitty, chrome flags) ship on every machine this way too; that's harmless since the apps themselves are still desktop-gated.
 
-Currently shipped: fish, fastfetch, btop, nvim, kitty, mpv (uosc UI), zed, oh-my-posh theme, xdg-desktop-portal, chrome flags, claude (statusline + commit-attribution guard).
+Currently shipped: fish, fastfetch, btop, nvim, kitty, mpv (uosc UI), zed, oh-my-posh theme, xdg-desktop-portal, chrome flags, claude (statusline, commit-attribution guard, metrics header helper).
 
 The mpv config in the repo is only what suits every machine. Anything tuned to one box (scalers and shaders for a weak iGPU, panel bit depth, stream height cap, hwdec order for a specific driver) goes into `~/.config/mpv/local.conf` on that machine, outside the repo: `mpv.conf` includes it at the end of its top-level section, and `arch-desktop.yml` seeds an empty one.
 
@@ -34,6 +34,15 @@ Files ending in `.sh` land as `0750` instead of the usual read-only mode — hel
 Split in two on purpose: the helper scripts are dotfiles under `user_home/.claude/`, the settings that point at them are a *policy* drop-in at `/etc/claude-code/managed-settings.d/10-claude-personal.json` (rendered from `templates/`).
 
 `~/.claude/settings.json` is never touched — it holds API tokens and proxy env on work machines and must stay out of git. Policy settings outrank user and project ones, so `attribution` (empty = no Co-Authored-By, no PR trailer, no session link) can't be flipped by a per-repo settings file. Same for `promptSuggestionEnabled` and `awaySummaryEnabled` (both `false`): every suggestion and recap is a hidden main-model request over the whole context. Model and effort deliberately stay out of the policy file so `/model` and `/effort` keep working.
+
+Usage metrics are a second drop-in, `20-claude-telemetry.json`: OTLP metrics (no logs, no traces) to `https://otel.tsv.one/v1/metrics`, which lands in VictoriaMetrics on o-srv and the "Claude Code" dashboard on grafana.tsv.one, one instance per `host.name` (`claude_otel_host`: the hostname, `-wsl` appended under WSL). It is opt-in per machine: the drop-in ships only where `~/.claude/otel-token` exists, and is removed everywhere else. The token never enters git or `/etc` — `otel-headers.sh` (the `otelHeadersHelper`) reads it at runtime, so it also stays out of the env every Claude command inherits. The playbook also leaves telemetry off when any managed or user settings file already mentions `OTEL_`/telemetry: a later drop-in overrides an employer policy key by key and would silently steal the employer's telemetry. Server side (token check, the store, the dashboard) lives in the private nginx-gateway and monitoring repos.
+
+To turn metrics on for a machine (`<o-srv>` = the home server, kept out of this public repo):
+```fish
+ssh <o-srv> make -sC nginx-gateway otel-token | install -m600 /dev/stdin ~/.claude/otel-token
+./run.sh arch-core
+```
+Running sessions keep their old settings; new ones export. Delete the token file and rerun to turn it off.
 
 Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 

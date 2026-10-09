@@ -7,6 +7,11 @@
     is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | lower) }}"
     pacman_parallel_downloads: 16
     suppress_pam_systemd_home_warning: true
+    # Claude Code usage metrics, see the "Claude Code metrics" tasks. The host
+    # label is the instance on the dashboard; WSL gets a suffix so it doesn't
+    # merge with the Windows side of the same box (WSL takes the Windows name).
+    claude_otel_endpoint: https://otel.tsv.one/v1/metrics
+    claude_otel_host: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | bool) else '') }}"
   handlers:
     - name: Apply sysctl
       become: true
@@ -730,6 +735,53 @@
         owner: "root"
         group: "root"
         mode: u+rw,g+r,o+r
+    # CONFIG - Claude Code usage metrics -> otel.tsv.one -> Grafana "Claude Code".
+    # Opt-in per machine: it turns on where ~/.claude/otel-token exists (the
+    # ingest token, never in git; README says where to get it). And it stays off
+    # where anything else already sets telemetry up: a later drop-in overrides an
+    # employer policy key by key, and a work machine's telemetry must keep going
+    # to the employer's collector, not here.
+    - name: Claude Code metrics - look for the ingest token
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.claude/otel-token"
+      register: claude_otel_token
+    - name: Claude Code metrics - look for telemetry set up by someone else
+      ansible.builtin.find:
+        paths:
+          - /etc/claude-code
+          - /etc/claude-code/managed-settings.d
+          - "{{ user_home }}/.claude"
+        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$', '^settings(\.local)?\.json$']
+        excludes: ['^20-claude-telemetry\.json$']
+        use_regex: true
+        contains: 'OTEL_|CLAUDE_CODE_ENABLE_TELEMETRY|otelHeadersHelper'
+        read_whole_file: true
+      register: claude_otel_foreign
+    - name: Claude Code metrics - keep the token private
+      ansible.builtin.file:
+        path: "{{ user_home }}/.claude/otel-token"
+        mode: '0600'
+      when: claude_otel_token.stat.exists
+    - name: Claude Code metrics - policy drop-in where the token is and nothing else claims telemetry
+      become: true
+      ansible.builtin.template:
+        src: templates/20-claude-telemetry.json.j2
+        dest: /etc/claude-code/managed-settings.d/20-claude-telemetry.json
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      when: claude_otel_token.stat.exists and claude_otel_foreign.matched == 0
+    - name: Claude Code metrics - off elsewhere
+      become: true
+      ansible.builtin.file:
+        path: /etc/claude-code/managed-settings.d/20-claude-telemetry.json
+        state: absent
+      when: not (claude_otel_token.stat.exists and claude_otel_foreign.matched == 0)
+    - name: Claude Code metrics - say why they stay off despite the token
+      ansible.builtin.debug:
+        msg: "Telemetry is already configured in {{ claude_otel_foreign.files | map(attribute='path') | join(', ') }}; not overriding it"
+      when: claude_otel_token.stat.exists and claude_otel_foreign.matched > 0
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true

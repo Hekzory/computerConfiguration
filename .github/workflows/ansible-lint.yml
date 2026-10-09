@@ -35,6 +35,7 @@ jobs:
           shellcheck \
             linux/ansible/run.sh \
             linux/ansible/user_home/.claude/statusline.sh \
+            linux/ansible/user_home/.claude/otel-headers.sh \
             linux/ansible/user_home/.claude/hooks/git-guard.sh
       - name: Install fish 4 (same major as the machines, ubuntu ships 3.x)
         run: |
