@@ -355,8 +355,16 @@
         enabled: "{{ not (is_wsl | bool) }}"
       loop:
         - fstrim.timer
-        - fwupd-refresh.timer
         - ananicy-cpp.service # auto-nicing is pointless under WSL
+    # fwupd itself isn't installed on WSL (hardware-facing packages above), so
+    # there's no timer to stop there - the service module fails on a missing unit.
+    - name: Enable fwupd refresh timer (not WSL)
+      become: true
+      when: not (is_wsl | bool)
+      ansible.builtin.service:
+        name: fwupd-refresh.timer
+        state: started
+        enabled: true
     - name: Copy reflector config - to setup proper mirror update
       become: true
       ansible.builtin.copy:
