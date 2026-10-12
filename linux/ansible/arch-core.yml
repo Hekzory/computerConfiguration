@@ -71,6 +71,28 @@
       # daemon-reload does NOT re-read [Manager] watchdog settings, only reexec does
       ansible.builtin.systemd:
         daemon_reexec: true
+    # sshd: reloaded only where it runs (desktops and WSL mostly don't), and only
+    # once the whole config parses: a reload on a broken file takes the listener down.
+    - name: Look up sshd
+      become: true
+      listen: sshd_changed
+      ansible.builtin.systemd:
+        name: sshd.service
+      register: sshd_unit
+      failed_when: false
+    - name: Check the sshd config
+      become: true
+      listen: sshd_changed
+      ansible.builtin.command: sshd -t
+      changed_when: false
+      when: (sshd_unit.status | default({})).ActiveState | default('') == 'active'
+    - name: Reload sshd
+      become: true
+      listen: sshd_changed
+      ansible.builtin.systemd:
+        name: sshd.service
+        state: reloaded
+      when: (sshd_unit.status | default({})).ActiveState | default('') == 'active'
   tasks:
     - name: Verify running on Arch Linux
       ansible.builtin.assert:
@@ -720,6 +742,32 @@
       loop_control:
         label: "{{ item.path }}"
       when: item.state == 'file'
+    # CONFIG - ssh
+    # COLORTERM across ssh: the client sends it, sshd keeps it. Without the pair a
+    # remote session falls back to 256 colors even in a 24-bit terminal.
+    - name: Ssh - drop-in directories
+      become: true
+      ansible.builtin.file:
+        path: "/etc/ssh/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - ssh_config.d
+        - sshd_config.d
+    - name: Ssh - pass COLORTERM on to remote hosts
+      become: true
+      ansible.builtin.copy:
+        src: "etc/ssh/{{ item }}"
+        dest: "/etc/ssh/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - ssh_config.d/30-colorterm.conf
+        - sshd_config.d/30-colorterm.conf
+      notify: sshd_changed
     # CONFIG - Claude Code personal policy
     # Not the user settings file: ~/.claude/settings.json carries API tokens and
     # proxy env, so it stays out of git. Policy settings outrank user/project ones,

@@ -46,6 +46,9 @@ Running sessions keep their old settings; new ones export. Delete the token file
 
 Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 
+### Terminal colors
+Programs decide on 24-bit color from `COLORTERM=truecolor`, and Windows Terminal never sets it, so under WT everything (Claude Code included) rounds to 256 colors. `config.fish` sets it when `WT_SESSION` is present (WT forwards that into WSL through `WSLENV`); kitty sets it itself. ssh carries `TERM` but not `COLORTERM`, so `etc/ssh/ssh_config.d/30-colorterm.conf` sends it and `etc/ssh/sshd_config.d/30-colorterm.conf` accepts it. Both halves ship everywhere, and the sshd reload only happens where sshd is running. Remote sessions get 24-bit color only once both ends have run the playbook.
+
 ### Ananicy
 `cachyos-ananicy-rules` is the upstream set; personal overrides live in `etc/ananicy.d/zz-personal.rules` (same rule names, different values). ananicy-cpp loads files in readdir order and the last definition wins, so `usr/local/bin/ananicy-mask-upstream` comments the upstream twins out; the playbook runs it and a pacman hook reruns it after every rules upgrade. To change an override, edit the rules file and rerun the playbook — never edit files under `00-default/` by hand and never pin them with `NoUpgrade` (the hook would have nothing to re-mask). The upstream `Games/` ruleset is dropped everywhere (`NoExtract` in pacman.conf plus removal of the already-extracted dir). Machine-local extras go in another top-level `/etc/ananicy.d/*.rules` with non-overlapping names, outside the repo.
 
@@ -58,7 +61,7 @@ Skills and MCP config are not shipped: the ones on the work laptop are all corpo
 The `roles/` directory is otherwise empty — most config still lives inline in playbooks. New cross-cutting concerns are candidates for becoming roles, but don't refactor existing tasks into roles speculatively.
 
 ### Handlers (in `arch-core.yml`)
-Existing event names: `sysctl_changed`, `networkmanager_changed`, `resolved_changed`, `docker_changed`, `initramfs_changed`, `systemd_reload`, `ananicy_changed`, `journald_changed`, `watchdog_changed`. Reuse before inventing new ones.
+Existing event names: `sysctl_changed`, `networkmanager_changed`, `resolved_changed`, `docker_changed`, `initramfs_changed`, `systemd_reload`, `ananicy_changed`, `journald_changed`, `watchdog_changed`, `sshd_changed`. Reuse before inventing new ones.
 
 ## Conventions
 

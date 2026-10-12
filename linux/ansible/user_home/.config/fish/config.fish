@@ -9,6 +9,15 @@ if test "$TERM" = "xterm-kitty"
     set -gx TERM xterm-256color
 end
 
+# Windows Terminal draws 24-bit color but never says so: TERM is xterm-256color
+# and COLORTERM is unset, so Claude Code, bat, nvim and friends round every color
+# to the 256-color palette (Claude's orange comes out pink). WT_SESSION reaches
+# WSL through WSLENV and marks it. kitty sets COLORTERM on its own, and ssh hands
+# it on to hosts that take it (etc/ssh/*_config.d/30-colorterm.conf).
+if set -q WT_SESSION; and not set -q COLORTERM
+    set -gx COLORTERM truecolor
+end
+
 # tput fails (empty stdout, non-zero exit) when $TERM is unset — happens on some
 # non-interactive SSH/agent invocations. Treat "unknown" as low-color.
 set -l _colors (tput colors 2>/dev/null)
