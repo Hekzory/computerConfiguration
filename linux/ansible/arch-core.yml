@@ -838,6 +838,55 @@
       ansible.builtin.debug:
         msg: "Telemetry is already configured in {{ claude_otel_foreign.files | map(attribute='path') | join(', ') }}; not overriding it"
       when: claude_otel_token.stat.exists and claude_otel_foreign.matched > 0
+    # CONFIG - Claude Code spend meter (github.com/Hekzory/spend-meter), installed
+    # and kept up to date by policy. Two kinds of machine keep their own instead:
+    # one that runs the mod from a working copy (a folder marketplace of that name
+    # in ~/.claude/settings.json), which this would switch over to GitHub; and one
+    # whose policy allows only listed marketplaces, an employer's call.
+    - name: Claude Code spend meter - read the user settings
+      ansible.builtin.slurp:
+        src: "{{ user_home }}/.claude/settings.json"
+      register: claude_user_settings
+      failed_when: false
+    - name: Claude Code spend meter - look for a marketplace allowlist set by someone else
+      ansible.builtin.find:
+        paths:
+          - /etc/claude-code
+          - /etc/claude-code/managed-settings.d
+        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$']
+        excludes: ['^30-claude-spend-meter\.json$']
+        use_regex: true
+        contains: 'strictKnownMarketplaces'
+        read_whole_file: true
+      register: claude_marketplace_allowlist
+    - name: Claude Code spend meter - decide
+      ansible.builtin.set_fact:
+        spend_meter_working_copy: >-
+          {{ ((claude_user_settings.content | default('e30=') | b64decode | from_json).extraKnownMarketplaces | default({}))
+             .get('spend-meter', {}).get('source', {}).get('source', '') == 'directory' }}
+    - name: Claude Code spend meter - policy drop-in
+      become: true
+      ansible.builtin.template:
+        src: templates/30-claude-spend-meter.json.j2
+        dest: /etc/claude-code/managed-settings.d/30-claude-spend-meter.json
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      when: not (spend_meter_working_copy | bool) and claude_marketplace_allowlist.matched == 0
+    - name: Claude Code spend meter - left out here
+      become: true
+      ansible.builtin.file:
+        path: /etc/claude-code/managed-settings.d/30-claude-spend-meter.json
+        state: absent
+      when: (spend_meter_working_copy | bool) or claude_marketplace_allowlist.matched > 0
+    - name: Claude Code spend meter - say why it is left out
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'spend-meter runs from a working copy here (a folder marketplace in ~/.claude/settings.json); not switching it to GitHub'
+             if (spend_meter_working_copy | bool) else
+             'Marketplaces are allowlisted in ' ~ (claude_marketplace_allowlist.files | map(attribute='path') | join(', ')) ~ '; not adding spend-meter' }}
+      when: (spend_meter_working_copy | bool) or claude_marketplace_allowlist.matched > 0
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true

@@ -1,0 +1,20 @@
+{# spend-meter (github.com/Hekzory/spend-meter): a pane docked at the right with
+   what the session costs, subagents and workflows included. Declared here so
+   every machine installs it, and with autoUpdate on, since Claude Code updates
+   plugins from marketplaces other than Anthropic's own only when told to: each
+   new version arrives when a session starts. The playbook leaves it out where
+   the mod runs from a working copy or a policy allows only listed marketplaces. #}
+{
+  "extraKnownMarketplaces": {
+    "spend-meter": {
+      "source": {
+        "source": "github",
+        "repo": "Hekzory/spend-meter"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "spend-meter@spend-meter": true
+  }
+}

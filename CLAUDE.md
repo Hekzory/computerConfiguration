@@ -44,6 +44,8 @@ ssh <o-srv> make -sC nginx-gateway otel-token | install -m600 /dev/stdin ~/.clau
 ```
 Running sessions keep their old settings; new ones export. Delete the token file and rerun to turn it off.
 
+The spend meter (github.com/Hekzory/spend-meter, a pane with the session's cost) is a third drop-in, `30-claude-spend-meter.json`: it declares the plugin's GitHub marketplace with `autoUpdate: true` and enables the plugin, so every machine installs it and picks up each release on startup (Claude Code auto-updates only Anthropic's own marketplaces by default). It is left out, and removed, on a machine that runs the mod from a working copy (a folder marketplace named `spend-meter` in `~/.claude/settings.json`), which policy would otherwise switch to GitHub, and on one whose policy sets `strictKnownMarketplaces`. Drop-ins deep-merge, so its `extraKnownMarketplaces` entry adds to an employer's rather than replacing them.
+
 Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 
 ### Terminal colors
