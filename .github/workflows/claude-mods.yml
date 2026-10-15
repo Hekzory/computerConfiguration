@@ -1,0 +1,61 @@
+name: Claude Code mods
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - 'linux/ansible/etc/claude-code/**'
+      - 'linux/ansible/templates/*claude*'
+      - '.github/workflows/claude-mods.yml'
+  pull_request:
+    branches: ["main", "master"]
+  # A new Claude Code can rename or reword what a rule of lean-harness names. The `latest` leg
+  # says so within a week, before the machines update to it.
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lean-harness:
+    name: lean-harness on Claude Code ${{ matrix.claude }}
+    # The self-hosted runner named by the repo variable CI_RUNNER takes the
+    # owner's and Dependabot's own branches; everything else, pull requests
+    # from forks included, runs on GitHub's runners, and so does every job
+    # while CI_RUNNER is unset.
+    runs-on: ${{ (github.actor == github.repository_owner || github.actor == 'dependabot[bot]') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # `fixtures`: the newest version tests/fixtures holds a capture of; `latest`: what npm has now.
+        claude: [fixtures, latest]
+    defaults:
+      run:
+        working-directory: linux/ansible/etc/claude-code/mods
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Install Claude Code
+        run: |
+          version='${{ matrix.claude }}'
+          if [ "$version" = fixtures ]; then
+            version=$(find plugins/lean-harness/tests/fixtures -name 'v*.ts' -printf '%f\n' | sed 's/^v//; s/\.ts$//' | sort -V | tail -1)
+          fi
+          # The package's postinstall fetches the native binary; npm 12 runs it only when allowed.
+          npm install -g --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$version"
+          claude --version || node "$(npm root -g)/@anthropic-ai/claude-code/install.cjs"
+          claude --version
+      - name: Validate the marketplace and its plugins
+        run: |
+          claude plugin validate .
+          claude plugin validate plugins/lean-harness
+          claude plugin validate plugins/lean-harness/tests/live/probe
+          claude plugin validate plugins/lean-harness/tests/live/userkit
+      - name: Unit tests on the captured fixtures
+        run: claude plugin test plugins/lean-harness
+      - name: The real Claude Code against a stand-in API, as shipped and with the mod
+        run: node plugins/lean-harness/tests/live/check.mjs

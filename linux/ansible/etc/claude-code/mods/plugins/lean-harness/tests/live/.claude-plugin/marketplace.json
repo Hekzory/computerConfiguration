@@ -1,0 +1,9 @@
+{
+  "name": "lean-harness-tests",
+  "owner": { "name": "Oleg" },
+  "description": "Test plugins for lean-harness: a probe of what Claude Code composes, and stand-ins for things added on a machine",
+  "plugins": [
+    { "name": "probe", "source": "./probe", "description": "Writes what Claude Code composes, offers and lists to $PROBE_OUT" },
+    { "name": "userkit", "source": "./userkit", "description": "A plugin skill, agent and MCP server named like the things lean-harness trims" }
+  ]
+}

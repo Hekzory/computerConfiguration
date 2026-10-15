@@ -1,0 +1,25 @@
+{# lean-harness (etc/claude-code/mods/plugins/lean-harness): trims what every Claude Code
+   request carries, by rewriting parts of the prompt. Only a plugin that policy seats may
+   do that: on a machine with managed settings the built-in sec-default keeps those events
+   away from anything a user installs. So this file declares the folder marketplace the
+   playbook copies to {{ claude_mods_dir }}, enables the mod and seats it first.
+   prependPlugins replaces Claude Code's default list instead of adding to it, so it has
+   to name sec-default again; for the same reason the playbook leaves this file out where
+   another policy sets the tier lists or allowlists marketplaces. #}
+{
+  "extraKnownMarketplaces": {
+    "computerconfiguration": {
+      "source": {
+        "source": "directory",
+        "path": "{{ claude_mods_dir }}"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "lean-harness@computerconfiguration": true
+  },
+  "prependPlugins": [
+    "lean-harness@computerconfiguration",
+    "sec-default@builtin"
+  ]
+}

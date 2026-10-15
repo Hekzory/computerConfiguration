@@ -1,0 +1,14 @@
+{
+  "name": "computerconfiguration",
+  "owner": {
+    "name": "Oleg"
+  },
+  "description": "computerConfiguration's Claude Code mods, loaded by policy from /etc/claude-code/mods",
+  "plugins": [
+    {
+      "name": "lean-harness",
+      "source": "./plugins/lean-harness",
+      "description": "Trims what every Claude Code request carries; loaded by policy"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "lean-harness",
+  "version": "0.1.0",
+  "description": "Trims what every Claude Code request carries: rarely used tools behind ToolSearch, product blurbs and the idle token budget out of the prompt, unused built-in and claude.ai skills out of the listing. Never touches what was added on the machine.",
+  "author": { "name": "Oleg" }
+}
