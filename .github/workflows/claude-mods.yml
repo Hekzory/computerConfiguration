@@ -45,10 +45,14 @@ jobs:
           if [ "$version" = fixtures ]; then
             version=$(find plugins/lean-harness/tests/fixtures -name 'v*.ts' -printf '%f\n' | sed 's/^v//; s/\.ts$//' | sort -V | tail -1)
           fi
-          # The package's postinstall fetches the native binary; npm 12 runs it only when allowed.
-          npm install -g --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$version"
-          claude --version || node "$(npm root -g)/@anthropic-ai/claude-code/install.cjs"
-          claude --version
+          # A folder of this job's own: self-hosted runners share one Node tool cache, and both legs
+          # installing into it at once break each other. The package's postinstall fetches the
+          # native binary; npm 12 runs it only when allowed.
+          prefix="$RUNNER_TEMP/claude-code"
+          npm install -g --prefix "$prefix" --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$version"
+          "$prefix/bin/claude" --version || node "$prefix/lib/node_modules/@anthropic-ai/claude-code/install.cjs"
+          "$prefix/bin/claude" --version
+          echo "$prefix/bin" >> "$GITHUB_PATH"
       - name: Validate the marketplace and its plugins
         run: |
           claude plugin validate .
