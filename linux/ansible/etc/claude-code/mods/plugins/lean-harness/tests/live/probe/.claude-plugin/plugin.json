@@ -1,0 +1,1 @@
+{ "name": "probe", "version": "0.1.0", "description": "Writes what Claude Code composes, offers and lists to $PROBE_OUT", "author": { "name": "Oleg" } }

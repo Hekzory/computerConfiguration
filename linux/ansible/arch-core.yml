@@ -12,6 +12,8 @@
     # merge with the Windows side of the same box (WSL takes the Windows name).
     claude_otel_endpoint: https://otel.tsv.one/v1/metrics
     claude_otel_host: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | bool) else '') }}"
+    # Claude Code mods loaded by policy (a folder marketplace), see the "Claude Code lean-harness" tasks.
+    claude_mods_dir: /etc/claude-code/mods
   handlers:
     - name: Apply sysctl
       become: true
@@ -782,7 +784,7 @@
         owner: "root"
         group: "root"
         mode: '0755'
-    - name: Claude Code policy - no commit attribution, no suggestions or recap, statusline, git guard
+    - name: Claude Code policy - no commit attribution, no suggestions or recap, no Claude Docs connector, skill overrides, statusline, git guard
       become: true
       ansible.builtin.template:
         src: templates/10-claude-personal.json.j2
@@ -887,6 +889,70 @@
              if (spend_meter_working_copy | bool) else
              'Marketplaces are allowlisted in ' ~ (claude_marketplace_allowlist.files | map(attribute='path') | join(', ')) ~ '; not adding spend-meter' }}
       when: (spend_meter_working_copy | bool) or claude_marketplace_allowlist.matched > 0
+    # CONFIG - Claude Code lean-harness (etc/claude-code/mods/plugins/lean-harness): trims what
+    # every request carries, never anything added on the machine. A folder marketplace under /etc,
+    # root-owned so no session can edit what shapes its own prompt, and seated by policy, since
+    # only a plugin policy seats may rewrite the prompt. Its tests stay in the repo, CI runs them.
+    # The seat is left out, and removed, where another policy sets the tier lists or allowlists
+    # marketplaces: prependPlugins replaces Claude Code's list instead of adding to it.
+    - name: Claude Code lean-harness - folders
+      become: true
+      ansible.builtin.file:
+        path: "{{ claude_mods_dir }}/{{ item }}"
+        state: directory
+        owner: "root"
+        group: "root"
+        mode: '0755'
+      loop:
+        - .claude-plugin
+        - plugins/lean-harness/.claude-plugin
+        - plugins/lean-harness/hooks
+    - name: Claude Code lean-harness - the mod, manifests and hooks
+      become: true
+      ansible.builtin.copy:
+        src: "etc/claude-code/mods/{{ item }}"
+        dest: "{{ claude_mods_dir }}/{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      loop:
+        - .claude-plugin/marketplace.json
+        - plugins/lean-harness/.claude-plugin/plugin.json
+        - plugins/lean-harness/hooks/hooks.json
+        - plugins/lean-harness/hooks/register.js
+    - name: Claude Code lean-harness - look for tier lists or a marketplace allowlist set by someone else
+      ansible.builtin.find:
+        paths:
+          - /etc/claude-code
+          - /etc/claude-code/managed-settings.d
+        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$']
+        excludes: ['^40-claude-lean-harness\.json$']
+        use_regex: true
+        contains: 'prependPlugins|appendPlugins|strictKnownMarketplaces'
+        read_whole_file: true
+      register: claude_mod_policy_foreign
+    - name: Claude Code lean-harness - policy drop-in that seats it
+      become: true
+      ansible.builtin.template:
+        src: templates/40-claude-lean-harness.json.j2
+        dest: /etc/claude-code/managed-settings.d/40-claude-lean-harness.json
+        force: true
+        owner: "root"
+        group: "root"
+        mode: u+rw,g+r,o+r
+      when: claude_mod_policy_foreign.matched == 0
+    - name: Claude Code lean-harness - left out here
+      become: true
+      ansible.builtin.file:
+        path: /etc/claude-code/managed-settings.d/40-claude-lean-harness.json
+        state: absent
+      when: claude_mod_policy_foreign.matched > 0
+    - name: Claude Code lean-harness - say why it is left out
+      ansible.builtin.debug:
+        msg: >-
+          Plugin tiers or a marketplace allowlist are set in
+          {{ claude_mod_policy_foreign.files | map(attribute='path') | join(', ') }}; not seating lean-harness
+      when: claude_mod_policy_foreign.matched > 0
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true

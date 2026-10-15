@@ -11,7 +11,19 @@
    model over the whole context, after every turn, billed to the subscription,
    and it's rarely worth the Tab. Here /config can't quietly turn them back on.
    Session recap is the same kind of hidden request, fired on every return after
-   a few minutes away. #}
+   a few minutes away.
+   The Claude Docs connector comes with the claude.ai account and adds its
+   instructions and tools to every request; it is denied by name, so a connector
+   added on claude.ai later still loads. Claude Code joins deniedMcpServers from
+   every policy source, so an employer's list keeps its entries.
+   The skill listing rides on every request too. Built-ins you start yourself
+   (/code-review, /init …) are kept out of the model's view and still run as
+   /name; claude.ai's file-format and research skills are listed by name only;
+   the desktop-app skills, the one-time memory import and docs (it needs the
+   denied connector) are off. skillOverrides is keyed by bare name: a personal or
+   project skill must not reuse one of these names (a plugin's skills are
+   namespaced, plugin:name, and stay untouched). /skills can't flip them: they are
+   policy, changed here. #}
 {
   "attribution": {
     "commit": "",
@@ -20,6 +32,27 @@
   },
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
+  "deniedMcpServers": [
+    { "serverName": "claude.ai Claude Docs" }
+  ],
+  "skillOverrides": {
+    "code-review": "user-invocable-only",
+    "security-review": "user-invocable-only",
+    "simplify": "user-invocable-only",
+    "init": "user-invocable-only",
+    "fewer-permission-prompts": "user-invocable-only",
+    "keybindings-help": "user-invocable-only",
+    "docx": "name-only",
+    "pptx": "name-only",
+    "xlsx": "name-only",
+    "pdf": "name-only",
+    "deep-research": "name-only",
+    "chrome-browser": "name-only",
+    "computer-use": "off",
+    "built-in-browser": "off",
+    "import-memory": "off",
+    "docs": "off"
+  },
   "statusLine": {
     "type": "command",
     "command": "{{ user_home }}/.claude/statusline.sh"
