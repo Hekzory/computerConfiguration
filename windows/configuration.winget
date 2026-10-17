@@ -1,0 +1,391 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.3
+# Apply from any terminal on Windows: winget configure -f windows\configuration.winget
+# Runs on DSC v3 (winget installs it from the Store on first use). Units marked
+# elevated share one UAC prompt, the rest run as the user. $schema has to stay on
+# the 2023/08 document: winget refuses newer DSC schema URIs.
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2023/08/config/document.json
+metadata:
+  winget:
+    processor:
+      identifier: dscv3
+resources:
+  # SETTINGS - system-wide
+  - name: Developer Mode
+    type: Microsoft.Windows/Registry
+    metadata:
+      winget:
+        securityContext: elevated
+    properties:
+      keyPath: HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock
+      valueName: AllowDevelopmentWithoutDevLicense
+      valueData:
+        DWord: 1
+  - name: Long paths
+    type: Microsoft.Windows/Registry
+    metadata:
+      winget:
+        securityContext: elevated
+    properties:
+      keyPath: HKLM\SYSTEM\CurrentControlSet\Control\FileSystem
+      valueName: LongPathsEnabled
+      valueData:
+        DWord: 1
+  # 0 off, 1 in a new window, 2 input disabled, 3 inline
+  - name: Sudo for Windows
+    type: Microsoft.Windows/Registry
+    metadata:
+      winget:
+        securityContext: elevated
+    properties:
+      keyPath: HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Sudo
+      valueName: Enabled
+      valueData:
+        DWord: 1
+
+  # SETTINGS - taskbar and Start. Taskbar labels only change after Explorer
+  # restarts or the next sign-in.
+  - name: Taskbar centered
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: TaskbarAl
+      valueData:
+        DWord: 1
+  - name: Taskbar labels always hidden
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: TaskbarGlomLevel
+      valueData:
+        DWord: 0
+  # 0 hidden, 1 icon, 2 search box, 3 icon and label
+  - name: Taskbar search hidden
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Search
+      valueName: SearchboxTaskbarMode
+      valueData:
+        DWord: 0
+  - name: Taskbar Task View button hidden
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: ShowTaskViewButton
+      valueData:
+        DWord: 0
+  - name: Taskbar widgets button hidden
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: TaskbarDa
+      valueData:
+        DWord: 0
+  - name: End task in the taskbar menu
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings
+      valueName: TaskbarEndTask
+      valueData:
+        DWord: 1
+  - name: Seconds in the clock
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: ShowSecondsInSystemClock
+      valueData:
+        DWord: 1
+  # 0 default, 1 more pins, 2 more recommendations
+  - name: Start more pins
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: Start_Layout
+      valueData:
+        DWord: 1
+  - name: Start recommendations off
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: Start_IrisRecommendations
+      valueData:
+        DWord: 0
+  - name: Start recent files off
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: Start_TrackDocs
+      valueData:
+        DWord: 0
+
+  # SETTINGS - Explorer
+  - name: File extensions shown
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: HideFileExt
+      valueData:
+        DWord: 0
+  - name: Hidden files shown
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: Hidden
+      valueData:
+        DWord: 1
+  - name: Item checkboxes off
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: AutoCheckSelect
+      valueData:
+        DWord: 0
+  # 1 This PC, 2 Home, 3 Downloads
+  - name: Explorer opens This PC
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: LaunchTo
+      valueData:
+        DWord: 1
+  - name: Explorer compact view
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+      valueName: UseCompactMode
+      valueData:
+        DWord: 1
+  - name: Explorer full path in the title
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState
+      valueName: FullPath
+      valueData:
+        DWord: 1
+  # An empty server for the Windows 11 menu's COM class makes Explorer fall back
+  # to the full classic context menu
+  - name: Classic context menu
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32
+      valueName: ''
+      valueData:
+        String: ''
+
+  # SETTINGS - dark mode
+  - name: Dark mode for apps
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize
+      valueName: AppsUseLightTheme
+      valueData:
+        DWord: 0
+  - name: Dark mode for Windows
+    type: Microsoft.Windows/Registry
+    properties:
+      keyPath: HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize
+      valueName: SystemUsesLightTheme
+      valueData:
+        DWord: 0
+
+  # PACKAGES - what is installed here, nothing more. A package that is already
+  # installed counts as done; nothing here upgrades or removes anything.
+  # ESET Security is deliberately missing: it updates itself past winget's
+  # manifest, winget then can't match it by id, and every run would start the
+  # vendor's live installer again.
+
+  # PACKAGES - machine-wide installers, elevated
+  - name: 7-Zip
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: 7zip.7zip, source: winget, acceptAgreements: true }
+  - name: Git
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Git.Git, source: winget, acceptAgreements: true }
+  - name: PowerShell
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.PowerShell, source: winget, acceptAgreements: true }
+  - name: WSL
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.WSL, source: winget, acceptAgreements: true }
+  - name: Google Chrome Beta
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Google.Chrome.Beta, source: winget, acceptAgreements: true }
+  - name: Microsoft 365 Apps
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.Office, source: winget, acceptAgreements: true }
+  - name: AmneziaVPN
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: AmneziaVPN.AmneziaVPN, source: winget, acceptAgreements: true }
+  - name: qBittorrent
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: qBittorrent.qBittorrent, source: winget, acceptAgreements: true }
+  - name: BleachBit
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: BleachBit.BleachBit, source: winget, acceptAgreements: true }
+  - name: Steam
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Valve.Steam, source: winget, acceptAgreements: true }
+  - name: OrcaSlicer
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: SoftFever.OrcaSlicer, source: winget, acceptAgreements: true }
+  - name: GIMP 3
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: GIMP.GIMP.3, source: winget, acceptAgreements: true }
+  - name: Clip Studio Paint
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Celsys.ClipStudioPaint, source: winget, acceptAgreements: true }
+  - name: REAPER
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Cockos.REAPER, source: winget, acceptAgreements: true }
+  - name: LM Studio
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: ElementLabs.LMStudio, source: winget, acceptAgreements: true }
+  - name: Temurin 17 JDK
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: EclipseAdoptium.Temurin.17.JDK, source: winget, acceptAgreements: true }
+  - name: Oracle JDK 25
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Oracle.JDK.25, source: winget, acceptAgreements: true }
+  - name: HWiNFO
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: REALiX.HWiNFO, source: winget, acceptAgreements: true }
+  - name: GPU-Z
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: TechPowerUp.GPU-Z, source: winget, acceptAgreements: true }
+  - name: CPU-Z
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: CPUID.CPU-Z, source: winget, acceptAgreements: true }
+  - name: CrystalDiskInfo
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: CrystalDewWorld.CrystalDiskInfo, source: winget, acceptAgreements: true }
+  - name: AIDA64 Extreme
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: FinalWire.AIDA64.Extreme, source: winget, acceptAgreements: true }
+  - name: Visual C++ 2010 x64
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.VCRedist.2010.x64, source: winget, acceptAgreements: true }
+  - name: Visual C++ 2012 x64
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.VCRedist.2012.x64, source: winget, acceptAgreements: true }
+  - name: Visual C++ 2013 x64
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.VCRedist.2013.x64, source: winget, acceptAgreements: true }
+  - name: Visual C++ 2015-2022 x64
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.VCRedist.2015+.x64, source: winget, acceptAgreements: true }
+  - name: Visual C++ 2015-2022 x86
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.VCRedist.2015+.x86, source: winget, acceptAgreements: true }
+  - name: XNA Framework 4.0
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Microsoft.XNARedist, source: winget, acceptAgreements: true }
+
+  # PACKAGES - drivers and vendor tools for this box's hardware (ADATA SSD,
+  # Aquantia NIC, Focusrite interface, NVIDIA GPU, DualSense). Drop on other hardware.
+  - name: ADATA SSD Toolbox
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: ADATA.SSDToolbox, source: winget, acceptAgreements: true }
+  - name: Marvell AQtion driver
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Marvell.AQtionAqnic650, source: winget, acceptAgreements: true }
+  - name: Focusrite Control
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: FocusriteAudioEngineeringLtd.FocusriteControl, source: winget, acceptAgreements: true }
+  - name: ASIO4ALL
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: MichaelTippach.ASIO4ALL, source: winget, acceptAgreements: true }
+  - name: OpenRGB
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: OpenRGB.OpenRGB, source: winget, acceptAgreements: true }
+  - name: PawnIO
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: namazso.PawnIO, source: winget, acceptAgreements: true }
+  - name: NVIDIA PhysX
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: Nvidia.PhysX, source: winget, acceptAgreements: true }
+  - name: PlayStation Accessories
+    type: Microsoft.WinGet/Package
+    metadata: { winget: { securityContext: elevated } }
+    properties: { id: PlayStation.PlayStationAccessories, source: winget, acceptAgreements: true }
+
+  # PACKAGES - per-user installers, no elevation
+  - name: Windows Terminal Preview
+    type: Microsoft.WinGet/Package
+    properties: { id: Microsoft.WindowsTerminal.Preview, source: winget, acceptAgreements: true }
+  - name: Oh My Posh
+    type: Microsoft.WinGet/Package
+    properties: { id: JanDeDobbeleer.OhMyPosh, source: winget, acceptAgreements: true }
+  - name: fastfetch
+    type: Microsoft.WinGet/Package
+    properties: { id: Fastfetch-cli.Fastfetch, source: winget, acceptAgreements: true }
+  - name: VS Code
+    type: Microsoft.WinGet/Package
+    properties: { id: Microsoft.VisualStudioCode, source: winget, acceptAgreements: true }
+  - name: Obsidian
+    type: Microsoft.WinGet/Package
+    properties: { id: Obsidian.Obsidian, source: winget, acceptAgreements: true }
+  - name: Discord
+    type: Microsoft.WinGet/Package
+    properties: { id: Discord.Discord, source: winget, acceptAgreements: true }
+  # Telegram updates itself; this copy carries no uninstall entry winget can
+  # see, so the first run reinstalls it in place and winget tracks it from then on
+  - name: Telegram Desktop
+    type: Microsoft.WinGet/Package
+    properties: { id: Telegram.TelegramDesktop, source: winget, acceptAgreements: true }
+  - name: Zoom
+    type: Microsoft.WinGet/Package
+    properties: { id: Zoom.Zoom.EXE, source: winget, acceptAgreements: true }
+  - name: mpv
+    type: Microsoft.WinGet/Package
+    properties: { id: mpv-player.mpv-CI.MSVC, source: winget, acceptAgreements: true }
+  # yt-dlp's manifest pulls in Deno and FFmpeg too; listed so they don't
+  # depend on winget resolving that
+  - name: yt-dlp
+    type: Microsoft.WinGet/Package
+    properties: { id: yt-dlp.yt-dlp, source: winget, acceptAgreements: true }
+  - name: Deno
+    type: Microsoft.WinGet/Package
+    properties: { id: DenoLand.Deno, source: winget, acceptAgreements: true }
+  - name: FFmpeg for yt-dlp
+    type: Microsoft.WinGet/Package
+    properties: { id: yt-dlp.FFmpeg, source: winget, acceptAgreements: true }
+  - name: Prism Launcher
+    type: Microsoft.WinGet/Package
+    properties: { id: PrismLauncher.PrismLauncher, source: winget, acceptAgreements: true }
+  - name: Hytale
+    type: Microsoft.WinGet/Package
+    properties: { id: HypixelStudios.Hytale, source: winget, acceptAgreements: true }

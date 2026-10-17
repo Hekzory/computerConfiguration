@@ -3,11 +3,11 @@
 Repo-level guide for agents working in this configuration repo.
 
 ## What this is
-Personal infrastructure-as-code for keeping Linux (Arch + CachyOS) and Windows machines consistent. Linux uses Ansible; Windows uses DSC. Single user, runs locally on each machine — no inventory, no fleet management. Two hardware profiles, `laptop` (battery-aware) vs not (performance-first), selected automatically via the `is_laptop` fact.
+Personal infrastructure-as-code for keeping Linux (Arch + CachyOS) and Windows machines consistent. Linux uses Ansible; Windows uses WinGet Configuration on DSC v3. Single user, runs locally on each machine — no inventory, no fleet management. Two hardware profiles, `laptop` (battery-aware) vs not (performance-first), selected automatically via the `is_laptop` fact.
 
 ## Layout
 - `linux/ansible/` — primary working area: playbooks, roles, dotfiles
-- `windows/configuration.dsc.yaml` — Windows DSC (rarely touched)
+- `windows/configuration.winget` — WinGet Configuration, schema 0.3 on the `dscv3` processor (rarely touched). It mirrors what the Windows box actually has: a package that isn't installed there comes out of the file rather than staying for a fresh install, and settings carry the machine's live values. `winget configure validate`/`test` are read-only; `winget configure export` is not (it installs DSC and PowerShell modules it needs)
 - `vpn-serv/` — separate VPN server configs
 
 ## Linux / Ansible

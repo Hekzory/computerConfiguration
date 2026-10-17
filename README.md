@@ -7,7 +7,7 @@ Personal infrastructure-as-code for keeping my Linux and Windows machines consis
 ## Layout
 
 - `linux/ansible/` — Ansible playbooks and dotfiles for Arch Linux (with CachyOS extras)
-- `windows/configuration.dsc.yaml` — Windows DSC configuration
+- `windows/configuration.winget` — Windows configuration (WinGet Configuration on DSC v3)
 - `vpn-serv/` — VPN server config
 
 ## Linux (Arch / CachyOS)
@@ -40,7 +40,7 @@ User-level dotfiles live under `linux/ansible/user_home/` mirroring `$HOME` layo
 
 ## Windows
 
-Declarative configuration via WinGet Configuration at `windows/configuration.dsc.yaml`. Apply with `winget configure -f windows/configuration.dsc.yaml`. Less actively maintained than the Linux side.
+Declarative configuration via WinGet Configuration at `windows/configuration.winget`, run on DSC v3 (winget installs it from the Store on first use). Apply with `winget configure -f windows/configuration.winget` from any terminal: winget asks for elevation once, for the units marked elevated. `winget configure test -f …` shows what is out of state without changing anything. Less actively maintained than the Linux side.
 
 ## CI
 
