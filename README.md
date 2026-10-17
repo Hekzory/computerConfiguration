@@ -26,7 +26,7 @@ Run via the wrapper from `linux/ansible/`:
 ./run.sh arch-core      # or arch-desktop, or arch-home
 ```
 
-It validates the playbook name, installs galaxy collections, and runs `ansible-playbook --ask-become-pass`.
+It validates the playbook name, installs galaxy collections, and asks for the sudo password once up front, so the run prompts only once (and a fingerprint reader is touched once, not per task).
 
 ### Dotfiles
 
@@ -42,7 +42,7 @@ User-level dotfiles live under `linux/ansible/user_home/` mirroring `$HOME` layo
 
 Declarative configuration via WinGet Configuration at `windows/configuration.winget`, run on DSC v3 (winget installs it from the Store on first use). Apply with `winget configure -f windows/configuration.winget` from any terminal: winget asks for elevation once, for the units marked elevated. `winget configure test -f …` shows what is out of state without changing anything. Less actively maintained than the Linux side.
 
-Windows-side dotfiles (`.wslconfig`, and the oh-my-posh theme shared with Linux) live under `windows/home/` and are deployed from the WSL guest: `./run.sh arch-core` there copies them into the Windows profile.
+Windows-side dotfiles (`.wslconfig`, the PowerShell 7 profile, Windows Terminal's settings, fastfetch's config) live under `windows/home/` and are deployed from the WSL guest: `./run.sh arch-core` there copies them into the Windows profile, together with the oh-my-posh theme it shares with Linux. Terminal's settings UI writes to the same file, so a change made there lasts until the next run; make it in the repo instead.
 
 ## CI
 

@@ -41,6 +41,7 @@
 
 # Copied, not linked: a link to a path inside the distro is a reparse point
 # Windows can't read. Like user_home/, dropping a file in windows/home ships it.
+# The mode only lands in WSL's metadata; the NTFS ACLs stay as they are.
 - name: WSL - Windows-side directories
   ansible.builtin.file:
     path: "{{ wsl_roots[item.path.split('/')[0]] }}/{{ item.path.split('/', 1)[1] }}"

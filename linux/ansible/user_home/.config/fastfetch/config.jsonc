@@ -11,6 +11,7 @@
     "title",
     "os",
     "host",
+    "bios",
     "kernel",
     "uptime",
     "packages",
