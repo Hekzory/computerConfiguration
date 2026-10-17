@@ -187,6 +187,18 @@ resources:
       valueData:
         DWord: 0
 
+  # SETTINGS - winget's own settings.json. Full replaces the whole file, so
+  # settings changed by hand go away on the next run.
+  - name: winget settings
+    type: Microsoft.WinGet/UserSettingsFile
+    properties:
+      action: Full
+      settings:
+        $schema: https://aka.ms/winget-settings.schema.json
+        experimentalFeatures:
+          directMSI: true
+          resume: true
+
   # PACKAGES - what is installed here, nothing more. A package that is already
   # installed counts as done; nothing here upgrades or removes anything.
   # ESET Security is deliberately missing: it updates itself past winget's
@@ -389,3 +401,25 @@ resources:
   - name: Hytale
     type: Microsoft.WinGet/Package
     properties: { id: HypixelStudios.Hytale, source: winget, acceptAgreements: true }
+
+  # FONTS - Nerd Fonts, per user. The test reads the fonts actually registered.
+  # OhMyPosh/Font can't be used on its own: it only remembers what it installed
+  # itself, and every run deletes and rewrites the font files, which fails
+  # silently on fonts Terminal has open. Here it only installs what's missing.
+  - name: Nerd Fonts
+    type: Microsoft.DSC.Transitional/PowerShellScript
+    dependsOn: [ Oh My Posh ]
+    properties:
+      input: [ FiraCode, RobotoMono ]
+      testScript: |
+        param($fonts)
+        $installed = (Get-Item 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts').GetValueNames()
+        -not ($fonts | Where-Object { -not ($installed -like "$_ Nerd Font*") })
+      setScript: |
+        param($fonts)
+        $installed = (Get-Item 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts').GetValueNames()
+        $missing = @($fonts | Where-Object { -not ($installed -like "$_ Nerd Font*") } | ForEach-Object { @{ name = $_ } })
+        if ($missing) {
+          oh-my-posh font dsc set --state (@{ states = $missing } | ConvertTo-Json -Compress)
+          if ($LASTEXITCODE) { throw "oh-my-posh font dsc set exited with $LASTEXITCODE" }
+        }
