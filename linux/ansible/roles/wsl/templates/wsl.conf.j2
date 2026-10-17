@@ -1,0 +1,17 @@
+# Deployed by arch-core under WSL. Read when the distro starts: after a change,
+# run `wsl --shutdown` from Windows. Machine-wide WSL settings live in
+# .wslconfig on the Windows side (windows/home/USERPROFILE/.wslconfig).
+[boot]
+systemd=true
+
+[automount]
+enabled = true
+options = "metadata"
+mountFsTab = true
+
+[network]
+# /etc/resolv.conf is written by hand (home DNS first); WSL would overwrite it
+generateResolvConf = false
+
+[user]
+default={{ the_user }}

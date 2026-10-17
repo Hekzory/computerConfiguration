@@ -749,6 +749,12 @@
       loop_control:
         label: "{{ item.path }}"
       when: item.state == 'file'
+    # CONFIG - WSL: the distro's wsl.conf and the Windows host's dotfiles
+    # (windows/home), see roles/wsl
+    - name: WSL - distro and Windows host config
+      ansible.builtin.include_role:
+        name: wsl
+      when: is_wsl | bool
     # CONFIG - ssh
     # COLORTERM across ssh: the client sends it, sshd keeps it. Without the pair a
     # remote session falls back to 256 colors even in a 24-bit terminal.

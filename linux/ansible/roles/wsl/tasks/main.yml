@@ -1,0 +1,76 @@
+---
+# Everything that exists only because this is WSL: the distro's own wsl.conf,
+# and through interop the files on the Windows host it runs on.
+- name: WSL - distro settings
+  become: true
+  ansible.builtin.template:
+    src: wsl.conf.j2
+    dest: /etc/wsl.conf
+    owner: root
+    group: root
+    mode: '0644'
+  register: wsl_conf
+
+# One powershell.exe call for every root windows/home can use. Documents goes
+# through GetFolderPath because it can be moved (it lives on D: here).
+- name: WSL - find the Windows known folders
+  ansible.builtin.command:
+    argv:
+      - powershell.exe
+      - -NoProfile
+      - -NonInteractive
+      - -Command
+      - >-
+        @{ USERPROFILE = $env:USERPROFILE; APPDATA = $env:APPDATA; LOCALAPPDATA = $env:LOCALAPPDATA;
+        Documents = [Environment]::GetFolderPath('MyDocuments') } | ConvertTo-Json -Compress
+  register: wsl_folders_windows
+  changed_when: false
+  check_mode: false
+- name: WSL - map the known folders to WSL paths
+  ansible.builtin.command:
+    argv: [wslpath, -u, "{{ item.value }}"]
+  loop: "{{ wsl_folders_windows.stdout | from_json | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: wsl_folders_mapped
+  changed_when: false
+  check_mode: false
+- name: WSL - remember the known folders
+  ansible.builtin.set_fact:
+    wsl_roots: "{{ dict(wsl_folders_mapped.results | map(attribute='item.key') | zip(wsl_folders_mapped.results | map(attribute='stdout'))) }}"
+
+# Copied, not linked: a link to a path inside the distro is a reparse point
+# Windows can't read. Like user_home/, dropping a file in windows/home ships it.
+- name: WSL - Windows-side directories
+  ansible.builtin.file:
+    path: "{{ wsl_roots[item.path.split('/')[0]] }}/{{ item.path.split('/', 1)[1] }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ query('community.general.filetree', wsl_windows_home) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.state == 'directory' and '/' in item.path
+- name: WSL - Windows-side files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ wsl_roots[item.path.split('/')[0]] }}/{{ item.path.split('/', 1)[1] }}"
+    force: true
+    mode: '0644'
+  loop: "{{ query('community.general.filetree', wsl_windows_home) + wsl_windows_shared }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.state == 'file'
+  register: wsl_windows_files
+
+# Both files are read only when WSL starts, and this play runs inside it.
+# Reported as a change so the message shows past the quiet callback.
+- name: WSL - restart needed to apply the config
+  vars:
+    wsl_restart_for: >-
+      {{ (['/etc/wsl.conf'] if wsl_conf is changed else [])
+         + (wsl_windows_files.results | selectattr('changed') | selectattr('item.path', 'eq', 'USERPROFILE/.wslconfig')
+            | map(attribute='item.path') | map('regex_replace', '^USERPROFILE/', '') | list) }}
+  ansible.builtin.debug:
+    msg: "{{ wsl_restart_for | join(' and ') }} changed: run `wsl --shutdown` from Windows, then open WSL again"
+  changed_when: true
+  when: wsl_restart_for | length > 0

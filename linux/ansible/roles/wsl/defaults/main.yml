@@ -1,0 +1,10 @@
+---
+# Windows-side files, mirroring the Windows profile with the known folder as the
+# first path segment (USERPROFILE/.wslconfig, Documents/PowerShell/...).
+wsl_windows_home: "{{ playbook_dir }}/../../windows/home"
+# Files Windows takes from user_home/ as they are, instead of a second copy
+# under windows/home that would drift
+wsl_windows_shared:
+  - src: "{{ playbook_dir }}/user_home/tokyofine.omp.toml"
+    path: USERPROFILE/tokyofine.omp.toml
+    state: file

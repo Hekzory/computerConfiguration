@@ -2,6 +2,10 @@ console_title_template = '{{ .Shell }} in {{ .Folder }}{{if .Root}}:: Admin{{end
 terminal_background = 'p:t-background'
 version = 4
 shell_integration = true
+# Windows Terminal opens duplicated tabs and split panes in the directory
+# reported here (OSC 9;9). kitty tracks the directory itself, and WSL would
+# need a Windows path, so only native Windows shells send it.
+pwd = '{{ if eq .OS "windows" }}osc99{{ end }}'
 final_space = true
 
 [palette]
@@ -58,6 +62,10 @@ final_space = true
     type = 'path'
     style = 'plain'
 
+    [blocks.segments.options]
+      style = 'mixed'
+      mixed_threshold = 16
+
   [[blocks.segments]]
     template = '{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}{{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}{{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}{{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}'
     foreground = 'p:light-sky-blue'
@@ -65,6 +73,14 @@ final_space = true
     type = 'git'
     style = 'plain'
     foreground_templates = ['{{ if or (.Working.Changed) (.Staging.Changed) }}p:terminal-red{{ end }}', '{{ if and (gt .Ahead 0) (gt .Behind 0)}}p:light-sky-blue {{ end }}', '{{ if gt .Ahead 0 }}p:terminal-blue{{ end }}', '{{ if gt .Behind 0 }}p:celeste-blue{{ end }}']
+
+    [blocks.segments.options]
+      branch_icon = 'on '
+      commit_icon = '@'
+      # omp's built-in status reader instead of `git status` and friends. It
+      # falls back to the git CLI on its own (sparse/split index, reftables,
+      # submodules). Spawning git.exe is the bulk of a Windows prompt.
+      native_status = true
 
   [[blocks.segments]]
     template = '{{ if .Env.LOW_COLOR_SUPPORT }} X{{ else }} {{ end }} '
@@ -86,7 +102,7 @@ final_space = true
     style = 'plain'
 
   [[blocks.segments]]
-    template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }}ﳑ {{ .Full }}{{ end }}'
+    template = '{{ if .Env.LOW_COLOR_SUPPORT }}go {{ .Full }}{{ else }} {{ .Full }}{{ end }}'
     foreground = 'p:light-sky-blue'
     background = 'transparent'
     type = 'go'
@@ -104,12 +120,18 @@ final_space = true
     type = 'git'
     style = 'plain'
 
+    [blocks.segments.options]
+      native_status = true
+
   [[blocks.segments]]
     template = ' | took: {{ .FormattedMs }}'
     foreground = 'p:white-blue'
     background = 'transparent'
     type = 'executiontime'
     style = 'plain'
+
+    [blocks.segments.options]
+      threshold = 1000
 
 [[blocks]]
   type = 'prompt'

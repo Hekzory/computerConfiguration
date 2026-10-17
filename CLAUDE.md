@@ -8,6 +8,7 @@ Personal infrastructure-as-code for keeping Linux (Arch + CachyOS) and Windows m
 ## Layout
 - `linux/ansible/` — primary working area: playbooks, roles, dotfiles
 - `windows/configuration.winget` — WinGet Configuration, schema 0.3 on the `dscv3` processor (rarely touched). It mirrors what the Windows box actually has: a package that isn't installed there comes out of the file rather than staying for a fresh install, and settings carry the machine's live values. `winget configure validate`/`test` are read-only; `winget configure export` is not (it installs DSC and PowerShell modules it needs)
+- `windows/home/` — Windows-side dotfiles, deployed from WSL by arch-core (see WSL below)
 - `vpn-serv/` — separate VPN server configs
 
 ## Linux / Ansible
@@ -52,6 +53,9 @@ Its tests run in CI (`.github/workflows/claude-mods.yml`) on two versions: the n
 
 Skills and MCP config are not shipped: the ones on the work laptop are all corporate. This repo is public — keep it that way.
 
+### WSL
+`roles/wsl`, included from arch-core when `is_wsl`, owns what exists only because this is WSL: the distro's `/etc/wsl.conf` and, through interop, the Windows host's dotfiles. `windows/home/` mirrors the Windows profile with the known folder as the first path segment (`USERPROFILE/.wslconfig`; `Documents`, `APPDATA` and `LOCALAPPDATA` work the same way). One `powershell.exe` call resolves the folders (Documents is redirected to `D:` on this box) and `wslpath` maps them. As with `user_home/`, dropping a file in ships it. A file Windows shares with Linux, like the oh-my-posh theme, is listed in `wsl_windows_shared` and goes out from `user_home/` instead of a second copy. Everything is copied, never linked: a link from Windows into the distro is a reparse point Windows can't read. `wsl.conf` and `.wslconfig` are read only when WSL starts and the play runs inside it, so a change to either prints a reminder to run `wsl --shutdown` from Windows. `/etc/resolv.conf` is written by hand (home DNS first), which is why `wsl.conf` keeps `generateResolvConf = false`.
+
 ### Terminal colors
 Programs decide on 24-bit color from `COLORTERM=truecolor`, and Windows Terminal never sets it, so under WT everything (Claude Code included) rounds to 256 colors. `config.fish` sets it when `WT_SESSION` is present (WT forwards that into WSL through `WSLENV`); kitty sets it itself. ssh carries `TERM` but not `COLORTERM`, so `etc/ssh/ssh_config.d/30-colorterm.conf` sends it and `etc/ssh/sshd_config.d/30-colorterm.conf` accepts it. Both halves ship everywhere, and the sshd reload only happens where sshd is running. Remote sessions get 24-bit color only once both ends have run the playbook.
 
@@ -64,7 +68,7 @@ Programs decide on 24-bit color from `COLORTERM=truecolor`, and Windows Terminal
 ### Roles
 - `roles/requirements.yml` — galaxy collection deps; expand here when new collections are needed.
 
-The `roles/` directory is otherwise empty — most config still lives inline in playbooks. New cross-cutting concerns are candidates for becoming roles, but don't refactor existing tasks into roles speculatively.
+Apart from `roles/wsl` (see WSL above), most config still lives inline in playbooks. New cross-cutting concerns are candidates for becoming roles, but don't refactor existing tasks into roles speculatively.
 
 ### Handlers (in `arch-core.yml`)
 Existing event names: `sysctl_changed`, `networkmanager_changed`, `resolved_changed`, `docker_changed`, `initramfs_changed`, `systemd_reload`, `ananicy_changed`, `journald_changed`, `watchdog_changed`, `sshd_changed`. Reuse before inventing new ones.
