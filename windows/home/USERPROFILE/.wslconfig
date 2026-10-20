@@ -6,10 +6,7 @@ firewall=false
 # Zen 5 is not affected by SRSO in hardware, but Hyper-V zeroes CPUID
 # Fn8000_0021_EAX so the guest can't see SRSO_NO/IBPB_BRTYPE and applies
 # safe-RET anyway.
-# virtiofs=true makes WSL add swiotlb=force, so every system-disk I/O is
-# bounced (microsoft/WSL#41828). noforce skips the default pool entirely;
-# virtio devices keep their own hv_pci pool. Fallback: swiotlb=262144,force
-kernelCommandLine = spec_rstack_overflow=off swiotlb=noforce
+kernelCommandLine = spec_rstack_overflow=off
 
 [experimental]
 autoMemoryReclaim=gradual
