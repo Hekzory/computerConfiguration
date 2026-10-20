@@ -88,7 +88,12 @@ main() {
     # --upgrade: plain install never bumps an already-present collection, and
     # stale ones keep tripping ansible-core deprecation warnings
     if ! ansible-galaxy collection install -r "$REQUIREMENTS_FILE" --upgrade; then
-        die "Failed to install Ansible requirements"
+        # Galaxy unreachable (offline, or a VPN routing its Cloudflare IPs into
+        # nowhere): collections already on disk are fine, just not the newest.
+        # Without --upgrade, --offline only checks every requirement is met.
+        ansible-galaxy collection install -r "$REQUIREMENTS_FILE" --offline >/dev/null 2>&1 \
+            || die "Failed to install Ansible requirements"
+        printf '%sGalaxy unreachable, going on with the installed collections%s\n' "$YELLOW" "$NC"
     fi
 
     echo "Running playbook..."
