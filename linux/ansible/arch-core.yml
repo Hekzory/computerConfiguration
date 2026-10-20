@@ -223,6 +223,7 @@
           - gopls # Go lsp server
           - ruff # Python's new best friend
           - shfmt # Because shell scripts deserve love too
+          - shellcheck # and a second opinion on them
           - yamlfmt # yaml formatter
           # System Essentials - The Foundation (hardware-facing ones are a separate, non-WSL task below)
           - python3 # The snake that powers everything
