@@ -23,7 +23,16 @@
    denied connector) are off. skillOverrides is keyed by bare name: a personal or
    project skill must not reuse one of these names (a plugin's skills are
    namespaced, plugin:name, and stay untouched). /skills can't flip them: they are
-   policy, changed here. #}
+   policy, changed here.
+   The Bash tool runs bash, not zsh. Without an override Claude Code takes zsh
+   here (the login shell is fish, which it can't drive), and zsh trips on the
+   bash the model writes: an unquoted glob that matches nothing aborts the
+   command, a word starting with = is looked up as a program, an unquoted $var
+   isn't split into words.
+   run-timeout-guard makes a long run pick its time limit before it starts: a
+   test or benchmark runner and any background job need `timeout`, a subagent
+   brief needs a wall-clock budget. It denies with the reason, the model adds the
+   limit and goes on. #}
 {
   "attribution": {
     "commit": "",
@@ -67,7 +76,19 @@
             "command": "{{ user_home }}/.claude/hooks/git-guard.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 {{ user_home }}/.claude/hooks/run-timeout-guard.py"
+          }
+        ]
       }
     ]
+  },
+  "env": {
+    "CLAUDE_CODE_SHELL": "/usr/bin/bash"
   }
 }
