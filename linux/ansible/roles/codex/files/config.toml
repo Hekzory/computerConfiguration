@@ -2,6 +2,9 @@
 # User settings and credentials stay in ~/.codex; these system defaults remain overridable.
 # The hooks enforce the two command policies.
 
+model_reasoning_effort = "high"
+plan_mode_reasoning_effort = "high"
+
 # Reuse Claude project guidance when there is no AGENTS.override.md or AGENTS.md.
 project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]
 
