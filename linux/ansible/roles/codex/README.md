@@ -73,11 +73,17 @@ From `linux/ansible/`:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_codex.py' -v
+python3 -m unittest discover -s tests -p 'test_agent_shells.py' -v
 ```
 
 The existing Python CI job picks these up automatically. Tests run the real scripts
 over the documented JSON hook protocol, without Codex, credentials or network.
 They need Python 3.11+, bash and jq (already shipped by arch-core).
+
+Shell startup tests use fish and PowerShell when installed (including `pwsh.exe`
+under WSL). CI installs fish before running the full Python suite, and runs the
+PowerShell case separately on Windows so neither platform's checks depend on
+an optional interpreter being present on the other runner.
 
 References: [Codex hooks](https://learn.chatgpt.com/docs/hooks),
 [configuration layers](https://learn.chatgpt.com/docs/config-file/config-basic).
