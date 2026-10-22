@@ -1,0 +1,71 @@
+# System defaults and managed hooks, alongside Claude rather than replacing it.
+- name: Codex - inspect the system config
+  ansible.builtin.stat:
+    path: /etc/codex/config.toml
+  register: codex_config_stat
+
+- name: Codex - reject a system config symlink
+  ansible.builtin.assert:
+    that:
+      - not (codex_config_stat.stat.islnk | default(false))
+    fail_msg: /etc/codex/config.toml is a symlink; not replacing it.
+    quiet: true
+
+- name: Codex - read the existing system config
+  ansible.builtin.slurp:
+    src: /etc/codex/config.toml
+  register: codex_config_existing
+  when: codex_config_stat.stat.exists
+  # An existing provider/employer config may contain secrets.
+  no_log: true
+
+- name: Codex - refuse to overwrite another system configuration
+  ansible.builtin.assert:
+    that:
+      - >-
+        not codex_config_stat.stat.exists or
+        (codex_config_existing.content | default('') | b64decode).startswith(
+          '# Managed by computerConfiguration: Codex\n')
+    fail_msg: >-
+      /etc/codex/config.toml is not managed by this role. Review the existing
+      settings before adopting this configuration; nothing has been overwritten.
+    quiet: true
+
+- name: Codex - create system configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /etc/codex
+    - /etc/codex/hooks
+
+- name: Codex - install the commit attribution guard
+  ansible.builtin.copy:
+    src: git-guard.sh
+    dest: /etc/codex/hooks/git-guard.sh
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /usr/bin/bash -n %s
+
+- name: Codex - install the existing SSH-to-fish guard
+  ansible.builtin.copy:
+    # One source of truth, independent installed copies. No Claude installation needed.
+    src: "{{ role_path }}/../../user_home/.claude/hooks/ssh-fish-guard.py"
+    dest: /etc/codex/hooks/ssh-fish-guard.py
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Codex - deploy hooks and the model effort context status line
+  ansible.builtin.copy:
+    src: config.toml
+    dest: /etc/codex/config.toml
+    owner: root
+    group: root
+    mode: '0644'
+    validate: >-
+      /usr/bin/python3 -c 'import sys,tomllib; tomllib.load(open(sys.argv[1], "rb"))' %s

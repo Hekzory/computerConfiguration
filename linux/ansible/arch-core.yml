@@ -787,6 +787,11 @@
         - ssh_config.d/30-colorterm.conf
         - sshd_config.d/30-colorterm.conf
       notify: sshd_changed
+    # CONFIG - native Codex, parallel to Claude Code. Also applies under WSL.
+    - name: Codex - system hooks and status line
+      become: true
+      ansible.builtin.import_role:
+        name: codex
     # Claude Code with ChatGPT subscription OAuth; plain `claude` stays untouched.
     - name: Create ccodex directories
       ansible.builtin.file:
