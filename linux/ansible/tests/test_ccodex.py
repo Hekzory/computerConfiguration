@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ from unittest.mock import MagicMock, patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FISH = shutil.which('fish')
 LOADER = importlib.machinery.SourceFileLoader('ccodex', str(ROOT / 'usr/local/bin/ccodex'))
 SPEC = importlib.util.spec_from_loader(LOADER.name, LOADER)
 ccodex = importlib.util.module_from_spec(SPEC)
@@ -218,6 +220,193 @@ class CcodexTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, 'Router did not start'):
                 router.start()
         self.assertEqual(sleep.call_count, 60)
+
+    def health(self, requests=0):
+        return {'status': 'ok', 'vitals': {'pid': 12345, 'node': 'v26.0.0',
+                'current': {'requests': {'inFlight': requests}, 'sessions': {'running': 2}}}}
+
+    def process(self):
+        return {'uid': os.getuid(), 'args': ['node', str(self.ccr), 'start'],
+                'executable': '/usr/bin/node', 'started': '123'}
+
+    def test_health_distinguishes_stopped_and_invalid_listener(self):
+        router = ccodex.Router()
+        with patch.object(router, 'request', side_effect=ConnectionRefusedError):
+            self.assertIsNone(router.health())
+        for result in ((503, {'error': 'unavailable'}), (200, 'other'), (200, {'status': 'other'})):
+            with self.subTest(result=result), patch.object(router, 'request', return_value=result):
+                with self.assertRaisesRegex(SystemExit, 'Cannot inspect the router'):
+                    router.health()
+        with patch.object(router, 'request', side_effect=TimeoutError):
+            with self.assertRaises(TimeoutError):
+                router.health()
+
+    def test_status_reports_stopped_without_starting(self):
+        router = ccodex.Router()
+        with patch.object(router, 'health', return_value=None), patch.object(router, 'start') as start, \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            router.status()
+        self.assertIn('Router: stopped', output.getvalue())
+        start.assert_not_called()
+
+    def test_status_shows_process_and_requests_without_inference(self):
+        router = ccodex.Router()
+        with patch.object(router, 'request', return_value=(200, self.health(3))) as request, \
+                patch.object(ccodex, 'router_process', return_value=self.process()), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            router.status()
+        text = output.getvalue()
+        for expected in ('PID 12345', str(self.ccr), '/usr/bin/node', 'Installation: current',
+                         'Requests in flight: 3', 'Sessions: 2', 'codex,gpt-6.1-sol'):
+            self.assertIn(expected, text)
+        request.assert_called_once_with('GET', '/health', timeout=1)
+
+    def test_status_marks_different_installation_without_printing_other_arguments(self):
+        router = ccodex.Router()
+        process = {**self.process(), 'args': ['node', '/other/ccr', '--secret=never-print-this']}
+        with patch.object(router, 'health', return_value=self.health()), \
+                patch.object(ccodex, 'router_process', return_value=process), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            router.status()
+        self.assertIn('different installation', output.getvalue())
+        self.assertNotIn('never-print-this', output.getvalue())
+
+    def test_process_ownership_requires_matching_cli_and_user(self):
+        router = ccodex.Router()
+        self.assertTrue(router.owns_process(self.process()))
+        self.assertFalse(router.owns_process({**self.process(), 'uid': os.getuid() + 1}))
+        self.assertFalse(router.owns_process({**self.process(), 'args': ['node', '/other/ccr']}))
+
+    def test_router_process_rejects_invalid_pids(self):
+        for pid in (None, True, 0, 1, -5, '12345'):
+            with self.subTest(pid=pid), self.assertRaisesRegex(SystemExit, 'Cannot identify the router PID'):
+                ccodex.router_process(pid)
+
+    def test_router_process_reads_identity_from_proc(self):
+        root = self.home / 'proc'
+        process = root / '12345'
+        process.mkdir(parents=True)
+        (process / 'cmdline').write_bytes(b'node\0/test/ccr\0start\0')
+        (process / 'exe').symlink_to(sys.executable)
+        (process / 'stat').write_text('12345 (node (test)) S ' + '0 ' * 18 + '98765 0')
+        with patch.object(ccodex, 'Path', return_value=root):
+            result = ccodex.router_process(12345)
+        self.assertEqual(result, {'uid': os.getuid(), 'args': ['node', '/test/ccr', 'start'],
+                                 'executable': str(Path(sys.executable).resolve()), 'started': '98765'})
+
+    def test_restart_starts_stopped_router_without_login(self):
+        router = ccodex.Router()
+        with patch.object(router, 'health', return_value=None), patch.object(router, 'start') as start, \
+                patch.object(ccodex.os, 'kill') as kill, contextlib.redirect_stdout(io.StringIO()):
+            router.restart()
+        start.assert_called_once()
+        kill.assert_not_called()
+        self.assertFalse(self.auth.exists())
+
+    def test_restart_verifies_pid_waits_for_port_and_clears_verified_pid_file(self):
+        router = ccodex.Router()
+        pid_file = self.directory / '.claude-code-router.pid'
+        pid_file.write_text('12345')
+        with patch.object(router, 'health', return_value=self.health()), \
+                patch.object(ccodex, 'router_process', return_value=self.process()) as inspect, \
+                patch.object(ccodex.os, 'kill') as kill, patch.object(ccodex.time, 'sleep') as sleep, \
+                patch.object(router, 'request', side_effect=[(503, {}), ConnectionResetError,
+                             http.client.HTTPException, ConnectionRefusedError]) as request, \
+                patch.object(router, 'start') as start, contextlib.redirect_stdout(io.StringIO()):
+            router.restart()
+        self.assertEqual(inspect.call_count, 2)
+        kill.assert_called_once_with(12345, ccodex.signal.SIGTERM)
+        self.assertEqual(request.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+        self.assertFalse(pid_file.exists())
+        start.assert_called_once()
+
+    def test_restart_refuses_foreign_process_and_busy_or_unknown_requests(self):
+        router = ccodex.Router()
+        cases = [(self.health(), {**self.process(), 'args': ['node', '/other/ccr']}, 'not this installation'),
+                 (self.health(2), self.process(), '2 request'),
+                 (self.health(None), self.process(), 'Cannot verify active requests'),
+                 (self.health(-1), self.process(), 'Cannot verify active requests')]
+        for health, process, error in cases:
+            with self.subTest(error=error), patch.object(router, 'health', return_value=health), \
+                    patch.object(ccodex, 'router_process', return_value=process), \
+                    patch.object(ccodex.os, 'kill') as kill, patch.object(router, 'start') as start:
+                with self.assertRaisesRegex(SystemExit, error):
+                    router.restart()
+                kill.assert_not_called()
+                start.assert_not_called()
+
+    def test_restart_refuses_process_identity_change(self):
+        router = ccodex.Router()
+        with patch.object(router, 'health', return_value=self.health()), \
+                patch.object(ccodex, 'router_process', side_effect=[self.process(),
+                             {**self.process(), 'started': 'different'}]), \
+                patch.object(ccodex.os, 'kill') as kill, patch.object(router, 'start') as start:
+            with self.assertRaisesRegex(SystemExit, 'process changed'):
+                router.restart()
+        kill.assert_not_called()
+        start.assert_not_called()
+
+    def test_restart_never_starts_replacement_while_port_is_occupied(self):
+        router = ccodex.Router()
+        with patch.object(router, 'health', return_value=self.health()), \
+                patch.object(ccodex, 'router_process', return_value=self.process()), \
+                patch.object(ccodex.os, 'kill') as kill, patch.object(ccodex.time, 'sleep'), \
+                patch.object(router, 'request', return_value=(200, {})), patch.object(router, 'start') as start:
+            with self.assertRaisesRegex(SystemExit, 'did not release its port'):
+                router.restart()
+        kill.assert_called_once_with(12345, ccodex.signal.SIGTERM)
+        start.assert_not_called()
+
+    def test_restart_keeps_pid_file_for_unrelated_live_process(self):
+        router = ccodex.Router()
+        pid_file = self.directory / '.claude-code-router.pid'
+        pid_file.write_text(str(os.getpid()))
+        with patch.object(router, 'health', return_value=None), patch.object(router, 'start'), \
+                contextlib.redirect_stdout(io.StringIO()):
+            router.restart()
+        self.assertTrue(pid_file.exists())
+
+    def test_status_and_restart_do_not_require_login_or_send_inference(self):
+        for option, method in (('--status', 'status'), ('--restart', 'restart')):
+            router = self.mock_router()
+            with self.subTest(option=option), patch.object(ccodex, 'Router', return_value=router):
+                ccodex.main([option])
+            getattr(router, method).assert_called_once()
+            router.request.assert_not_called()
+            router.command.assert_not_called()
+
+    @unittest.skipUnless(FISH, 'fish is not installed')
+    def fish_complete(self, line):
+        completion = ROOT / 'user_home/.config/fish/completions/ccodex.fish'
+        result = subprocess.run([FISH, '--no-config', '-c', 'source $argv[1]; complete -C $argv[2]',
+                                 str(completion), line], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, '')
+        return [item.split('\t', 1)[0] for item in result.stdout.splitlines()]
+
+    @unittest.skipUnless(FISH, 'fish is not installed')
+    def test_fish_completes_wrapper_flags_and_claude_arguments(self):
+        self.assertEqual(self.fish_complete('ccodex --sta'), ['--status'])
+        self.assertEqual(self.fish_complete('ccodex --rest'), ['--restart'])
+        self.assertEqual(self.fish_complete('ccodex --effort x'), ['xhigh'])
+        self.assertIn('--resume', self.fish_complete('ccodex --res'))
+        self.assertEqual(self.fish_complete('ccodex --status --'), [])
+
+    @unittest.skipUnless(FISH, 'fish is not installed')
+    def test_fish_completes_local_models_before_router_start(self):
+        self.config['Providers'][0]['models'] = ['private-model', 'gpt-6-astra', 'private-model']
+        self.config_path.write_text(json.dumps(self.config))
+        self.assertEqual(self.fish_complete('ccodex --model '), ['gpt-6-astra', 'private-model'])
+        self.assertEqual(self.fish_complete('ccodex --doctor --model=private'), ['--model=private-model'])
+        self.assertFalse(self.auth.exists())
+
+    @unittest.skipUnless(FISH, 'fish is not installed')
+    def test_fish_completes_seed_models_when_config_is_missing_or_invalid(self):
+        self.config_path.unlink()
+        self.assertIn('gpt-6-astra', self.fish_complete('ccodex --model '))
+        self.config_path.write_text('{invalid')
+        self.assertIn('gpt-6.1-sol', self.fish_complete('ccodex --model '))
 
     def test_sync_reloads_models_after_discovery(self):
         router = ccodex.Router()

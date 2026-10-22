@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -50,6 +51,78 @@ class Router:
         except (OSError, http.client.HTTPException):
             return False
 
+    def health(self):
+        try:
+            status, data = self.request('GET', '/health', timeout=1)
+        except ConnectionRefusedError:
+            return None
+        if status != 200 or not isinstance(data, dict) or data.get('status') != 'ok':
+            sys.exit('Cannot inspect the router: ' + response_error(status, data))
+        return data
+
+    def status(self):
+        health = self.health()
+        print(f'Endpoint: http://127.0.0.1:{self.port}')
+        if health is None:
+            print('Router: stopped')
+            return
+        vitals = health.get('vitals', {})
+        pid = vitals.get('pid')
+        process = router_process(pid)
+        print(f'Router: running (PID {pid})')
+        executable = next((arg for arg in process['args'] if arg.startswith('/')
+                           and Path(arg).name in ('ccr', 'cli.js')), 'unknown')
+        print(f'Router executable: {executable}')
+        print(f"Node: {process['executable']} ({vitals.get('node', 'unknown')})")
+        print('Installation: ' + ('current' if self.owns_process(process) else 'different installation'))
+        current = vitals.get('current', {})
+        print(f"Requests in flight: {current.get('requests', {}).get('inFlight', 'unknown')}")
+        print(f"Sessions: {current.get('sessions', {}).get('running', 'unknown')}")
+        print(f"Default model: {self.config['Router']['default']}")
+
+    def owns_process(self, process):
+        return process['uid'] == os.getuid() and any(
+            Path(arg).resolve() == self.ccr.resolve()
+            for arg in process['args'] if arg.startswith('/'))
+
+    def restart(self):
+        health = self.health()
+        pid = None
+        if health is not None:
+            pid = health.get('vitals', {}).get('pid')
+            process = router_process(pid)
+            if not self.owns_process(process):
+                sys.exit(f'Router PID {pid} is not this installation; stop it explicitly first.')
+            requests = health.get('vitals', {}).get('current', {}).get('requests', {}).get('inFlight')
+            if type(requests) is not int or requests < 0:
+                sys.exit('Cannot verify active requests; router was left running.')
+            if requests:
+                sys.exit(f'Router has {requests} request(s) in flight; retry ccodex --restart when idle.')
+            # Recheck identity immediately before signalling; a PID file alone
+            # is never authority to stop a process.
+            if router_process(pid) != process:
+                sys.exit('Router process changed; refusing to stop it.')
+            os.kill(pid, signal.SIGTERM)
+            for _ in range(80):
+                try:
+                    self.request('GET', '/health', timeout=0.25)
+                except ConnectionRefusedError:
+                    break
+                except (OSError, http.client.HTTPException):
+                    pass
+                time.sleep(0.25)
+            else:
+                sys.exit('Router did not release its port after SIGTERM; no replacement started.')
+        pid_file = self.directory / '.claude-code-router.pid'
+        try:
+            saved_pid = int(pid_file.read_text().strip())
+            if saved_pid == pid or not (Path('/proc') / str(saved_pid)).exists():
+                pid_file.unlink()
+        except (OSError, ValueError):
+            pass
+        self.start()
+        print('Router started.' if pid is None else 'Router restarted.')
+
     def start(self):
         if self.ready():
             return
@@ -86,6 +159,21 @@ class Router:
         result = subprocess.run([str(self.ccr), *args], env=self.env)
         if result.returncode:
             sys.exit(result.returncode)
+
+
+def router_process(pid):
+    if type(pid) is not int or pid <= 1:
+        sys.exit('Cannot identify the router PID from /health.')
+    directory = Path('/proc') / str(pid)
+    try:
+        return {
+            'uid': directory.stat().st_uid,
+            'args': [os.fsdecode(arg) for arg in (directory / 'cmdline').read_bytes().split(b'\0') if arg],
+            'executable': str((directory / 'exe').resolve(strict=True)),
+            'started': (directory / 'stat').read_text().rsplit(')', 1)[1].split()[19],
+        }
+    except (OSError, IndexError) as error:
+        sys.exit(f'Cannot inspect router PID {pid}: {error}')
 
 
 def response_error(status, data):
@@ -154,17 +242,25 @@ def launch_env(router, model, metadata):
 
 
 def main(args):
-    if args == ['--help']:
-        print('Usage: ccodex [--setup | --auth | --doctor] [Claude Code arguments]\n'
-              '  --setup   Fresh browser login, then discover subscription models\n'
-              '  --auth    Fresh browser login without model discovery\n'
-              '  --doctor  Send a small test request through the subscription\n'
+    if args in (['--help'], ['-h']):
+        print('Usage: ccodex [--setup | --auth | --doctor | --restart | --status] [Claude Code arguments]\n'
+              '  --setup    Fresh browser login, then discover subscription models\n'
+              '  --auth     Fresh browser login without model discovery\n'
+              '  --doctor   Send a small test request through the subscription\n'
+              '  --restart  Restart this router when no requests are in flight\n'
+              '  --status   Show the router process and active requests without starting it\n'
               '  --model ID / CCODEX_MODEL selects the model')
         return
     try:
         router = Router()
     except (OSError, ValueError) as error:
         sys.exit(f'Cannot load the router configuration: {error}. Run ./run.sh arch-core first.')
+    if args == ['--status']:
+        router.status()
+        return
+    if args == ['--restart']:
+        router.restart()
+        return
     auth_path = router.directory / 'codex_auth.json'
     if args in (['--setup'], ['--auth']):
         router.start()
