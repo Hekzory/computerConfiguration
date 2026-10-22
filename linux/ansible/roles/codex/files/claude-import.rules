@@ -1,0 +1,34 @@
+# Managed by computerConfiguration: selected Claude command approvals.
+# These approvals apply globally and permit execution outside the sandbox.
+# Rules match argument prefixes, so extra arguments are also permitted.
+
+# From linux/ansible/.claude/settings.local.json.
+prefix_rule(
+    pattern = ["nvim", "--version"],
+    decision = "allow",
+    match = ["nvim --version"],
+    not_match = ["nvim --headless", "nvim --cmd 'echo 1' --version"],
+)
+
+prefix_rule(
+    pattern = ["tree-sitter", "--version"],
+    decision = "allow",
+    match = ["tree-sitter --version"],
+    not_match = ["tree-sitter generate", "tree-sitter build"],
+)
+
+prefix_rule(
+    pattern = ["/bin/ls"],
+    decision = "allow",
+    match = ["/bin/ls /usr/lib", "/bin/ls -la"],
+    not_match = ["rm -rf /tmp/example", "ls /usr/lib"],
+)
+
+# From the website project's .claude/settings.local.json; approved globally.
+# Build scripts execute package-defined commands and may write outside the workspace.
+prefix_rule(
+    pattern = ["pnpm", "build"],
+    decision = "allow",
+    match = ["pnpm build", "pnpm build --verbose"],
+    not_match = ["pnpm install", "pnpm publish", "pnpm run build"],
+)

@@ -18,6 +18,16 @@ and the sandbox does not add credential read restrictions. These are defaults
 for new sessions, subject to higher-precedence settings and managed requirements.
 See [sandbox and approvals](https://learn.chatgpt.com/docs/agent-approvals-security).
 
+The role also installs `~/.codex/rules/claude-import.rules`, a selected global
+import of Claude command approvals: `nvim --version`, `tree-sitter --version`,
+`/bin/ls` and `pnpm build`. Matching commands may run outside the sandbox without
+prompting in any project for this user.
+Rules match argument prefixes, so extra arguments are permitted too. Inline
+`match` and `not_match` examples are checked by Codex when the file loads.
+The `pnpm build` approval permits package-defined build scripts in any repository.
+PowerShell, curl and headless Neovim approvals were deliberately excluded.
+Restart Codex after changing rules. See [command rules](https://learn.chatgpt.com/docs/agent-configuration/rules).
+
 `project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]` reuses existing
 project guidance. In each directory, `AGENTS.override.md` and `AGENTS.md` take
 precedence; Codex reads the first non-empty matching file, not both agents' files.
