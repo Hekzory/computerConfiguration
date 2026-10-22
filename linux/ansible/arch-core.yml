@@ -799,9 +799,9 @@
 
     - name: Install ccodex subscription router
       vars:
-        ccodex_router_version: "3.0.0"
+        ccodex_router_version: "3.0.1"
         ccodex_router_archive: "caeliq-claude-code-router-{{ ccodex_router_version }}.tgz"
-        ccodex_router_sha256: "4ba1b33ed2c87724a5d59105f47907c426e3f03d3d911cad0f10ea8fd759c6ad"
+        ccodex_router_sha256: "6ffc88bebadc495ca2d19ea738a1e8e6a017c390198f78d8e4f5e36461c29e3f"
       block:
         - name: Read installed ccodex router version
           ansible.builtin.command:
