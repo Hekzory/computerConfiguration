@@ -39,7 +39,7 @@ ccodex --doctor        # small inference check; uses subscription quota
 ccodex --model MODEL   # or set CCODEX_MODEL
 ```
 
-Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; model discovery and local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. Use `ccodex --auth` to log in again.
+Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` only if missing from an existing config, without resetting discovered models, credentials, or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. Use `ccodex --auth` to log in again.
 
 ### Dotfiles
 

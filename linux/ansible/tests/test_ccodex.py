@@ -5,6 +5,8 @@ import importlib.util
 import io
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -50,10 +52,52 @@ class CcodexTest(unittest.TestCase):
         self.assertFalse(self.config['LOG'])
         provider, = self.config['Providers']
         self.assertEqual(provider['api_base_url'], 'https://chatgpt.com/backend-api/codex')
+        self.assertEqual(provider['models_api_url'], 'https://chatgpt.com/backend-api/codex/models')
         self.assertEqual(provider['api_key'], 'oauth-placeholder')
         self.assertEqual(provider['transformer']['use'], ['openai-responses', 'codex'])
         for model in self.config['Router'].values():
             self.assertIn(model.removeprefix('codex,'), provider['models'])
+
+    def run_models_api_migration(self):
+        return subprocess.run([sys.executable, str(ROOT / 'files/ensure_ccodex_models_api.py'),
+                               str(self.config_path)], capture_output=True, text=True)
+
+    def test_models_api_migration_keeps_credentials_models_and_permissions(self):
+        codex = {'name': 'codex', 'api_key': 'oauth-placeholder', 'models': ['custom-model']}
+        existing = {'Providers': [{'name': 'other', 'api_key': 'private-secret'}, codex],
+                    'Router': {'default': 'other,local-model'}}
+        self.config_path.write_text(json.dumps(existing))
+        self.config_path.chmod(0o600)
+        first = self.run_models_api_migration()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(first.stdout.strip(), 'updated')
+        updated = json.loads(self.config_path.read_text())
+        self.assertEqual(updated['Providers'][1]['models_api_url'],
+                         'https://chatgpt.com/backend-api/codex/models')
+        self.assertEqual(updated['Providers'][0], existing['Providers'][0])
+        self.assertEqual(updated['Providers'][1]['models'], codex['models'])
+        self.assertEqual(updated['Router'], existing['Router'])
+        self.assertEqual(self.config_path.stat().st_mode & 0o777, 0o600)
+        after_first = self.config_path.read_bytes()
+        second = self.run_models_api_migration()
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(second.stdout.strip(), 'unchanged')
+        self.assertEqual(self.config_path.read_bytes(), after_first)
+
+    def test_models_api_migration_respects_existing_custom_url(self):
+        self.config['Providers'][0]['models_api_url'] = 'https://custom.example/models'
+        original = json.dumps(self.config)
+        self.config_path.write_text(original)
+        result = self.run_models_api_migration()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), 'unchanged')
+        self.assertEqual(self.config_path.read_text(), original)
+
+    def test_models_api_migration_does_not_damage_invalid_json(self):
+        self.config_path.write_text('{invalid json')
+        result = self.run_models_api_migration()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.config_path.read_text(), '{invalid json')
 
     def test_router_rejects_nonlocal_host_and_wrong_port(self):
         for field, value in (('HOST', '0.0.0.0'), ('PORT', 3456)):

@@ -8,10 +8,16 @@
       "name": "codex",
       "api_base_url": "https://chatgpt.com/backend-api/codex",
       "api_key": "oauth-placeholder",
-      "models": ["gpt-6.1-sol"],
+      "models": [
+        "gpt-6.1-sol"
+      ],
       "transformer": {
-        "use": ["openai-responses", "codex"]
-      }
+        "use": [
+          "openai-responses",
+          "codex"
+        ]
+      },
+      "models_api_url": "https://chatgpt.com/backend-api/codex/models"
     }
   ],
   "Router": {
