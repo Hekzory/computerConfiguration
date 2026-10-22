@@ -338,7 +338,7 @@ class CcodexTest(unittest.TestCase):
 
     def test_setup_checks_that_login_completed(self):
         router = self.mock_router()
-        with patch.object(ccodex, 'Router', return_value=router), self.assertRaisesRegex(SystemExit, 'did not complete'):
+        with patch.object(ccodex, 'Router', return_value=router), self.assertRaisesRegex(SystemExit, 'did not update Codex credentials'):
             ccodex.main(['--setup'])
         router.sync_models.assert_not_called()
 
