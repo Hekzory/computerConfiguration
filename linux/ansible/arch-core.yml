@@ -799,9 +799,9 @@
 
     - name: Install ccodex subscription router
       vars:
-        ccodex_router_version: "2.1.16-hekzory.3"
+        ccodex_router_version: "3.0.0"
         ccodex_router_archive: "caeliq-claude-code-router-{{ ccodex_router_version }}.tgz"
-        ccodex_router_sha256: "7a04a5ed3107987c201a2511cf7a1a3575451f643a8cf7d1c44e9638f4440698"
+        ccodex_router_sha256: "4ba1b33ed2c87724a5d59105f47907c426e3f03d3d911cad0f10ea8fd759c6ad"
       block:
         - name: Read installed ccodex router version
           ansible.builtin.command:
@@ -819,7 +819,7 @@
 
         - name: Download verified ccodex router release
           ansible.builtin.get_url:
-            url: "https://github.com/Hekzory/claude-code-router/releases/download/v{{ ccodex_router_version }}/{{ ccodex_router_archive }}"
+            url: "https://github.com/Hekzory/cco-router/releases/download/v{{ ccodex_router_version }}/{{ ccodex_router_archive }}"
             dest: "{{ user_home }}/.local/share/ccodex/{{ ccodex_router_archive }}"
             checksum: "sha256:{{ ccodex_router_sha256 }}"
             mode: "0600"
