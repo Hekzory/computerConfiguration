@@ -16,8 +16,8 @@ Three layered playbooks under `linux/ansible/`, each importing the previous:
 
 | Playbook | What it covers |
 |----------|----------------|
-| `arch-core.yml` | base packages, pacman/sysctl/makepkg tuning, gitconfig, fish + dotfiles, docker (with NVIDIA detection when present), journald, systemd-resolved, udev rules, kernel module blacklist |
-| `arch-desktop.yml` | desktop fonts, kitty, claude-code + ccodex, chrome, realtime audio group (asserts not WSL) |
+| `arch-core.yml` | base packages, pacman/sysctl/makepkg tuning, gitconfig, fish + dotfiles, ccodex, docker (with NVIDIA detection when present), journald, systemd-resolved, udev rules, kernel module blacklist |
+| `arch-desktop.yml` | desktop fonts, kitty, claude-code, chrome, realtime audio group (asserts not WSL) |
 | `arch-home.yml` | personal apps (telegram, qbittorrent, vesktop), gaming group |
 
 Run via the wrapper from `linux/ansible/`:
@@ -30,7 +30,7 @@ It validates the playbook name, installs galaxy collections, and asks for the su
 
 ### ccodex
 
-`arch-desktop` also installs `ccodex`: Claude Code through the third-party [Claude Code Router](https://github.com/oakimov/claude-code-router), using a ChatGPT subscription rather than an OpenAI API key. After applying the playbook:
+`arch-core` also installs `ccodex`: Claude Code through the third-party [Claude Code Router](https://github.com/oakimov/claude-code-router), using a ChatGPT subscription rather than an OpenAI API key. After applying the playbook:
 
 ```bash
 ccodex --setup          # browser OAuth login, then model discovery

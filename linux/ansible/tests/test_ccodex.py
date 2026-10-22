@@ -64,7 +64,7 @@ class CcodexTest(unittest.TestCase):
 
     def test_router_requires_installed_package(self):
         self.ccr.unlink()
-        with self.assertRaisesRegex(SystemExit, 'Run ./run.sh arch-desktop'):
+        with self.assertRaisesRegex(SystemExit, 'Run ./run.sh arch-core'):
             ccodex.Router()
 
     def test_router_commands_use_system_node_and_propagate_exit(self):

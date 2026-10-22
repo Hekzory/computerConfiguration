@@ -63,45 +63,6 @@
           - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
 
-    # Claude Code with ChatGPT subscription OAuth; plain `claude` stays untouched.
-    - name: Create ccodex directories
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        mode: "0700"
-      loop:
-        - "{{ user_home }}/.local/share/ccodex/router"
-        - "{{ user_home }}/.claude-code-router"
-
-    - name: Install ccodex subscription router
-      # npm comes from arch-core. Use system Node, not a shell's older fnm version.
-      environment:
-        PATH: "/usr/bin:{{ ansible_facts['env'].PATH }}"
-      community.general.npm:
-        name: "@caeliq/claude-code-router"
-        version: "2.1.15"
-        path: "{{ user_home }}/.local/share/ccodex/router"
-        state: present
-      timeout: 180
-
-    # Model discovery edits this file; other providers may hold keys. Seed once,
-    # never overwrite it or put the OAuth token file under dotfile management.
-    - name: Seed ccodex router configuration
-      ansible.builtin.copy:
-        src: files/ccodex-router.json
-        dest: "{{ user_home }}/.claude-code-router/config.json"
-        force: false
-        mode: "0600"
-
-    - name: Install ccodex launcher
-      become: true
-      ansible.builtin.copy:
-        src: usr/local/bin/ccodex
-        dest: /usr/local/bin/ccodex
-        owner: root
-        group: root
-        mode: "0755"
-
     # VA-API: chrome-beta-flags already ask for hardware video decode, but without
     # a driver they're dead flags and YouTube decodes on the CPU. Intel and NVIDIA
     # need a package each (cpu_vendor / has_nvidia come from arch-core); AMD needs

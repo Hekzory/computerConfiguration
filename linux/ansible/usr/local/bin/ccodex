@@ -20,7 +20,7 @@ class Router:
             sys.exit('ccodex requires HOST 127.0.0.1 and PORT 1455 in ~/.claude-code-router/config.json.')
         self.ccr = Path.home() / '.local/share/ccodex/router/node_modules/.bin/ccr'
         if not self.ccr.exists():
-            sys.exit('Router is not installed. Run ./run.sh arch-desktop first.')
+            sys.exit('Router is not installed. Run ./run.sh arch-core first.')
         # Use the system Node that Ansible installed, not an older shell version.
         self.env = {**os.environ, 'PATH': '/usr/bin:' + os.environ.get('PATH', '')}
 
@@ -151,7 +151,7 @@ def main(args):
     try:
         router = Router()
     except (OSError, ValueError) as error:
-        sys.exit(f'Cannot load the router configuration: {error}. Run ./run.sh arch-desktop first.')
+        sys.exit(f'Cannot load the router configuration: {error}. Run ./run.sh arch-core first.')
     auth_path = router.directory / 'codex_auth.json'
     if args in (['--setup'], ['--auth']):
         router.start()
