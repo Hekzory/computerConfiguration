@@ -31,6 +31,13 @@ fail instead of waiting for terminal input. Inherited `PATH` must already expose
 the tools you need; new sessions no longer recover paths from login scripts.
 See [shell settings](https://learn.chatgpt.com/docs/config-file/config-reference).
 
+The shared fish and PowerShell configs recognize `CODEX_THREAD_ID` and `CODEX_CI`
+alongside `CLAUDECODE` and `CURSOR_TRACE_ID`. Even an interactive agent shell skips
+banners and theme initialization, disables pagers and avoids Git credential
+prompts. Fish also skips its theme download and interactive aliases, and removes
+the destructive Git wrappers that wait for confirmation. Human terminals retain
+their usual startup and confirmations.
+
 The commit guard applies the existing no-attribution policy to Codex as well:
 Co-Authored-By, generated-with/by/using Claude/Codex/OpenAI/ChatGPT, AI noreply
 addresses and the robot emoji are rejected in explicit `git commit` command text.

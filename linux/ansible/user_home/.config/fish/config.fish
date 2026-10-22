@@ -4,6 +4,15 @@ set -gx PAGER "less -R"
 set -gx MANROFFOPT "-c"
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
+# Codex sets CODEX_THREAD_ID for its commands; CODEX_CI also covers CLI runs.
+set -l _agent_shell 0
+if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID; or set -q CODEX_THREAD_ID; or set -q CODEX_CI
+    set _agent_shell 1
+    function fish_greeting
+        # Even an explicitly interactive agent shell must stay quiet.
+    end
+end
+
 # I use kitty, but can't guarantee that its' terminfo will be present on remote host, so need to be safe
 if test "$TERM" = "xterm-kitty"
     set -gx TERM xterm-256color
@@ -25,14 +34,12 @@ if test -z "$_colors"; or test "$_colors" -lt 256
     set -gx LOW_COLOR_SUPPORT 1
 end
 
-if status is-interactive
+if status is-interactive; and test $_agent_shell -eq 0
     function fish_greeting
         # Skip greeting in editor terminals, AI agent shells, nested shells, and dumb terminals.
         # AI agents parse the banner as wasted tokens; nested shells (nvim :term, `fish` in fish) don't need it.
         test "$TERM_PROGRAM" = vscode; and return
         test "$TERMINAL_EMULATOR" = JetBrains-JediTerm; and return
-        set -q CLAUDECODE; and return
-        set -q CURSOR_TRACE_ID; and return
         test -z "$TERM"; and return
         test "$TERM" = dumb; and return
         test "$SHLVL" -gt 1; and return
@@ -80,7 +87,7 @@ end
 # `ssh host cmd`, scripts and cron too, and there `pacman` turning into
 # `sudo pacman` or `df` into duf is a trap, not a feature
 # (`ssh o-srv pacman -Q x` used to die on a sudo password prompt).
-if status is-interactive
+if status is-interactive; and test $_agent_shell -eq 0
     # Fish command history — preserve $argv so `history search`, `history delete`, etc. still work
     function history --wraps history --description "history with timestamps"
         builtin history --show-time='%F %T ' $argv
@@ -141,7 +148,7 @@ end
 # tool can be tuned to still beat the classic, keep it; otherwise fall through.
 # Deliberately outside the interactive block: agents drive fish non-interactively,
 # and the tuned ls/mkdir and non-paging env are meant for exactly that shell.
-if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID
+if test $_agent_shell -eq 1
     # Bare commands are leanest — no usable tuned variant exists for these
     functions --erase rm cp mv cat df top pacman sctl
     # Destructive git wrappers prompt interactively; would deadlock under agents
@@ -157,8 +164,10 @@ if set -q CLAUDECODE; or set -q CURSOR_TRACE_ID
 
     # Pagers auto-invoke on PTY even in agent sessions — force non-paging output
     set -gx PAGER cat
+    set -gx GIT_PAGER cat
     set -gx SYSTEMD_PAGER cat
     set -gx MANPAGER 'col -bx'
+    set -gx GIT_TERMINAL_PROMPT 0
 end
 
 # TokyoNight Color Palette
