@@ -9,6 +9,14 @@ project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]
 # (including profiles that exec fish), and don't capture a login-shell snapshot.
 allow_login_shell = false
 
+# Keep workspace writes sandboxed, with direct network access and user approvals.
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+approvals_reviewer = "user"
+
+[sandbox_workspace_write]
+network_access = true
+
 [features]
 hooks = true
 shell_snapshot = false

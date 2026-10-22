@@ -90,8 +90,13 @@ class Configuration(unittest.TestCase):
         config = tomllib.loads((ROLE / "files/config.toml").read_text())
         self.assertEqual(set(config), {
             "project_doc_fallback_filenames", "allow_login_shell", "shell_environment_policy",
+            "sandbox_mode", "approval_policy", "approvals_reviewer", "sandbox_workspace_write",
             "features", "tui", "hooks",
         })
+        self.assertEqual(config["sandbox_mode"], "workspace-write")
+        self.assertEqual(config["approval_policy"], "on-request")
+        self.assertEqual(config["approvals_reviewer"], "user")
+        self.assertEqual(config["sandbox_workspace_write"], {"network_access": True})
         self.assertEqual(config["project_doc_fallback_filenames"], ["CLAUDE.md", "claude.md"])
         self.assertEqual(config["features"], {"hooks": True, "shell_snapshot": False})
         self.assertEqual(config["tui"]["status_line"], [

@@ -9,6 +9,14 @@ The role deploys root-owned `/etc/codex/config.toml` and two scripts under
 reasoning level, used context percentage, context window size and current directory.
 No model/effort is pinned and no extra agent instructions are injected.
 
+Commands use `workspace-write` sandboxing with network access enabled. Approvals
+stay `on-request` and go to the user. Downloads and API calls can run inside the
+sandbox; writes outside the workspace and protected paths such as `.git/` still
+need approval. Network access includes uploads and local/private destinations,
+and the sandbox does not add credential read restrictions. These are defaults
+for new sessions, subject to higher-precedence settings and managed requirements.
+See [sandbox and approvals](https://learn.chatgpt.com/docs/agent-approvals-security).
+
 `project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]` reuses existing
 project guidance. In each directory, `AGENTS.override.md` and `AGENTS.md` take
 precedence; Codex reads the first non-empty matching file, not both agents' files.
