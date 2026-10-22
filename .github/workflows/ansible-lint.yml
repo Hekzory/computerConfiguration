@@ -51,9 +51,9 @@ jobs:
             linux/ansible/user_home/.claude/statusline.sh \
             linux/ansible/user_home/.claude/otel-headers.sh \
             linux/ansible/user_home/.claude/hooks/git-guard.sh
-      - name: Test ccodex without an account or network
+      - name: Test Python helpers without an account or network
         working-directory: linux/ansible
-        run: timeout 30s python3 -m unittest discover -s tests -p 'test_ccodex.py' -v
+        run: timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Install fish 4 (same major as the machines, ubuntu ships 3.x)
         # o-srv's runner image has it from the same PPA; GitHub's runners don't
         run: |
