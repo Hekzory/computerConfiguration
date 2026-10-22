@@ -36,10 +36,11 @@ It validates the playbook name, installs galaxy collections, and asks for the su
 ccodex --setup          # browser OAuth login, then model discovery
 ccodex                 # same arguments as claude
 ccodex --doctor        # small inference check; uses subscription quota
-ccodex --model MODEL   # or set CCODEX_MODEL
+ccodex --model gpt-6-astra  # flagship; or gpt-6.1-sol (default), gpt-6-luna
+                         # CCODEX_MODEL also selects the model
 ```
 
-Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` only if missing from an existing config, without resetting discovered models, credentials, or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. Use `ccodex --auth` to log in again.
+Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` if missing and adds GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna to existing configs without removing discovered models, credentials or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. Use `ccodex --auth` to log in again. These are configured model IDs, not a promise that the subscription exposes all three; verify access with `ccodex --doctor --model MODEL`.
 
 ### Dotfiles
 

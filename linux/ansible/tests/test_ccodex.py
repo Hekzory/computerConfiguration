@@ -53,6 +53,7 @@ class CcodexTest(unittest.TestCase):
         provider, = self.config['Providers']
         self.assertEqual(provider['api_base_url'], 'https://chatgpt.com/backend-api/codex')
         self.assertEqual(provider['models_api_url'], 'https://chatgpt.com/backend-api/codex/models')
+        self.assertEqual(provider['models'], ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna'])
         self.assertEqual(provider['api_key'], 'oauth-placeholder')
         self.assertEqual(provider['transformer']['use'], ['openai-responses', 'codex'])
         for model in self.config['Router'].values():
@@ -75,7 +76,9 @@ class CcodexTest(unittest.TestCase):
         self.assertEqual(updated['Providers'][1]['models_api_url'],
                          'https://chatgpt.com/backend-api/codex/models')
         self.assertEqual(updated['Providers'][0], existing['Providers'][0])
-        self.assertEqual(updated['Providers'][1]['models'], codex['models'])
+        self.assertEqual(updated['Providers'][1]['models'],
+                         ['custom-model', 'gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna'])
+        self.assertEqual(codex['models'], ['custom-model'])
         self.assertEqual(updated['Router'], existing['Router'])
         self.assertEqual(self.config_path.stat().st_mode & 0o777, 0o600)
         after_first = self.config_path.read_bytes()
@@ -91,6 +94,27 @@ class CcodexTest(unittest.TestCase):
         result = self.run_models_api_migration()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), 'unchanged')
+        self.assertEqual(self.config_path.read_text(), original)
+
+    def test_models_api_migration_adds_missing_tiers_without_replacing_custom_url(self):
+        self.config['Providers'][0]['models_api_url'] = 'https://custom.example/models'
+        self.config['Providers'][0]['models'] = ['custom-model', 'gpt-6-astra']
+        self.config_path.write_text(json.dumps(self.config))
+        result = self.run_models_api_migration()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), 'updated')
+        updated = json.loads(self.config_path.read_text())
+        provider = updated['Providers'][0]
+        self.assertEqual(provider['models_api_url'], 'https://custom.example/models')
+        self.assertEqual(provider['models'],
+                         ['custom-model', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna'])
+
+    def test_models_api_migration_rejects_invalid_models_without_overwriting(self):
+        self.config['Providers'][0]['models'] = 'not-a-model-list'
+        original = json.dumps(self.config)
+        self.config_path.write_text(original)
+        result = self.run_models_api_migration()
+        self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.config_path.read_text(), original)
 
     def test_models_api_migration_does_not_damage_invalid_json(self):
@@ -221,6 +245,12 @@ class CcodexTest(unittest.TestCase):
         args = ['--print', '--model', 'test-model', '--resume', 'session', 'prompt']
         self.assertEqual(ccodex.select_model(args, 'codex,default'),
                          ('codex,test-model', ['--print', '--resume', 'session', 'prompt']))
+
+    def test_model_flag_can_select_each_supported_tier(self):
+        for model in ('gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna'):
+            with self.subTest(model=model):
+                self.assertEqual(ccodex.select_model(['--model', model], 'codex,gpt-6.1-sol'),
+                                 ('codex,' + model, []))
 
     def test_model_flag_overrides_environment_and_last_flag_wins(self):
         os.environ['CCODEX_MODEL'] = 'from-env'
