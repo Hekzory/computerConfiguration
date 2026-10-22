@@ -1,6 +1,6 @@
 # Managed by computerConfiguration: Codex
 # User settings, credentials, model and effort stay in ~/.codex, not in this file.
-# No agent instructions: the hooks enforce the two command policies.
+# The hooks enforce the two command policies.
 
 # Reuse Claude project guidance when there is no AGENTS.override.md or AGENTS.md.
 project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]
