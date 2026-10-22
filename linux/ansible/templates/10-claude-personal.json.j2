@@ -29,10 +29,6 @@
    bash the model writes: an unquoted glob that matches nothing aborts the
    command, a word starting with = is looked up as a program, an unquoted $var
    isn't split into words.
-   run-timeout-guard makes a long run pick its time limit before it starts: a
-   test or benchmark runner and any background job need `timeout`, a subagent
-   brief needs a wall-clock budget. It denies with the reason, the model adds the
-   limit and goes on.
    ssh-fish-guard catches bash syntax sent over ssh: this playbook makes fish the
    login shell everywhere, and sshd runs a remote command in it, so a remote
    `f=x; for …; do` or a heredoc piped to plain `ssh host` dies there. The fix it
@@ -82,15 +78,6 @@
           {
             "type": "command",
             "command": "python3 {{ user_home }}/.claude/hooks/ssh-fish-guard.py"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 {{ user_home }}/.claude/hooks/run-timeout-guard.py"
           }
         ]
       }
