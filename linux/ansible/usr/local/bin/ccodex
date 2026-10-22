@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run Claude Code through the local ChatGPT subscription OAuth router."""
+import hashlib
 import http.client
 import json
 import os
@@ -90,7 +91,19 @@ class Router:
 def response_error(status, data):
     # A provider response can contain credentials; only print its error field.
     error = data.get('error', 'No error details returned') if isinstance(data, dict) else 'No error details returned'
+    if any(code in str(error) for code in ('refresh_token_invalidated', 'refresh_token_reused')):
+        return (f'HTTP {status}: Codex OAuth session was invalidated; '
+                'run ccodex --setup for a fresh browser login. '
+                'A revoked refresh token cannot be renewed automatically.')
     return f'HTTP {status}: {str(error)[:1000]}'
+
+
+def auth_fingerprint(path):
+    # Compare private credentials without printing or storing them outside the auth file.
+    try:
+        return hashlib.sha256(path.read_bytes()).digest()
+    except FileNotFoundError:
+        return None
 
 
 def select_model(args, default):
@@ -143,8 +156,8 @@ def launch_env(router, model, metadata):
 def main(args):
     if args == ['--help']:
         print('Usage: ccodex [--setup | --auth | --doctor] [Claude Code arguments]\n'
-              '  --setup   Log in to ChatGPT and discover subscription models\n'
-              '  --auth    Log in again\n'
+              '  --setup   Fresh browser login, then discover subscription models\n'
+              '  --auth    Fresh browser login without model discovery\n'
               '  --doctor  Send a small test request through the subscription\n'
               '  --model ID / CCODEX_MODEL selects the model')
         return
@@ -155,14 +168,18 @@ def main(args):
     auth_path = router.directory / 'codex_auth.json'
     if args in (['--setup'], ['--auth']):
         router.start()
-        if args == ['--auth'] or not auth_path.exists():
-            router.command('codex-auth')
-        if not auth_path.exists():
-            sys.exit('OAuth login did not complete. Run ccodex --auth to retry.')
+        # A present auth file is not evidence of a usable refresh token. Even
+        # setup must start a new PKCE login after refresh_token_invalidated.
+        before = auth_fingerprint(auth_path)
+        router.command('codex-auth')
+        after = auth_fingerprint(auth_path)
+        if after is None or after == before:
+            sys.exit('OAuth login did not update Codex credentials. Complete the browser '
+                     'callback and retry ccodex --setup. Existing credentials were left untouched.')
         if args == ['--setup']:
             router.command('model', 'get', 'codex')
             router.sync_models()
-        print('OAuth setup complete. Run ccodex to start Claude Code.')
+        print('OAuth login complete. Run ccodex to start Claude Code.')
         return
     if not auth_path.exists():
         sys.exit('ChatGPT subscription login is required. Run ccodex --setup first.')

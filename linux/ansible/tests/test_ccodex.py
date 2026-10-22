@@ -312,26 +312,45 @@ class CcodexTest(unittest.TestCase):
         router.sync_models.assert_called_once()
         router.request.assert_not_called()
 
-    def test_setup_reuses_existing_login(self):
-        self.auth.touch()
+    def test_setup_reauthenticates_existing_login(self):
+        self.auth.write_text('old credentials')
         router = self.mock_router()
+        def command(*args):
+            if args == ('codex-auth',):
+                self.auth.write_text('new credentials')
+        router.command.side_effect = command
         with patch.object(ccodex, 'Router', return_value=router), contextlib.redirect_stdout(io.StringIO()):
             ccodex.main(['--setup'])
-        router.command.assert_called_once_with('model', 'get', 'codex')
+        self.assertEqual([call.args for call in router.command.call_args_list],
+                         [('codex-auth',), ('model', 'get', 'codex')])
+        router.sync_models.assert_called_once()
+        self.assertEqual(self.auth.read_text(), 'new credentials')
+
+    def test_setup_rejects_unchanged_stale_credentials(self):
+        self.auth.write_text('stale credentials')
+        router = self.mock_router()
+        with patch.object(ccodex, 'Router', return_value=router), \
+                self.assertRaisesRegex(SystemExit, 'did not update Codex credentials'):
+            ccodex.main(['--setup'])
+        self.assertEqual(self.auth.read_text(), 'stale credentials')
+        router.command.assert_called_once_with('codex-auth')
+        router.sync_models.assert_not_called()
 
     def test_setup_checks_that_login_completed(self):
         router = self.mock_router()
-        with patch.object(ccodex, 'Router', return_value=router), self.assertRaisesRegex(SystemExit, 'did not complete'):
+        with patch.object(ccodex, 'Router', return_value=router), self.assertRaisesRegex(SystemExit, 'did not update Codex credentials'):
             ccodex.main(['--setup'])
         router.sync_models.assert_not_called()
 
     def test_auth_always_runs_browser_login(self):
-        self.auth.touch()
+        self.auth.write_text('old credentials')
         router = self.mock_router()
+        router.command.side_effect = lambda *args: self.auth.write_text('new credentials')
         with patch.object(ccodex, 'Router', return_value=router), contextlib.redirect_stdout(io.StringIO()):
             ccodex.main(['--auth'])
         router.command.assert_called_once_with('codex-auth')
         router.sync_models.assert_not_called()
+        self.assertEqual(self.auth.read_text(), 'new credentials')
 
     def test_launch_sets_cli_settings_without_changing_user_files(self):
         self.auth.touch()
@@ -377,6 +396,17 @@ class CcodexTest(unittest.TestCase):
         self.assertEqual(router.request.call_args.args[2]['model'], 'codex,test')
         self.assertEqual(router.request.call_args.kwargs['timeout'], 120)
         execv.assert_not_called()
+
+    def test_doctor_explains_invalidated_refresh_token(self):
+        self.auth.touch()
+        router = self.mock_router()
+        router.request.side_effect = [(200, {}), (500, {
+            'error': {'message': 'Codex OAuth token refresh failed (401): refresh_token_invalidated',
+                      'code': 'internal_error'}})]
+        with patch.object(ccodex, 'Router', return_value=router), \
+                self.assertRaisesRegex(SystemExit, 'ccodex --setup'):
+            ccodex.main(['--doctor'])
+        self.assertEqual(router.request.call_count, 2)
 
     def test_doctor_reports_failed_inference(self):
         self.auth.touch()
