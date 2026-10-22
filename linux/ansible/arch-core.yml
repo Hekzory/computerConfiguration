@@ -750,6 +750,11 @@
       loop_control:
         label: "{{ item.path }}"
       when: item.state == 'file'
+    # Filetree doesn't prune removed dotfiles; clean up the old timeout hook.
+    - name: Remove retired Claude Code timeout guard
+      ansible.builtin.file:
+        path: "{{ user_home }}/.claude/hooks/run-timeout-guard.py"
+        state: absent
     # CONFIG - WSL: the distro's wsl.conf and the Windows host's dotfiles
     # (windows/home), see roles/wsl
     - name: WSL - distro and Windows host config
