@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Run Claude Code through the local ChatGPT subscription OAuth router."""
+import http.client
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+from urllib.parse import quote
+
+
+class Router:
+    def __init__(self):
+        self.directory = Path.home() / '.claude-code-router'
+        self.config = json.loads((self.directory / 'config.json').read_text())
+        self.port = self.config.get('PORT', 3456)
+        if self.port != 1455 or self.config.get('HOST') != '127.0.0.1':
+            sys.exit('ccodex requires HOST 127.0.0.1 and PORT 1455 in ~/.claude-code-router/config.json.')
+        self.ccr = Path.home() / '.local/share/ccodex/router/node_modules/.bin/ccr'
+        if not self.ccr.exists():
+            sys.exit('Router is not installed. Run ./run.sh arch-desktop first.')
+        # Use the system Node that Ansible installed, not an older shell version.
+        self.env = {**os.environ, 'PATH': '/usr/bin:' + os.environ.get('PATH', '')}
+
+    def request(self, method, path, body=None, timeout=30):
+        connection = http.client.HTTPConnection('127.0.0.1', self.port, timeout=timeout)
+        try:
+            headers = {'Authorization': 'Bearer ' + self.config.get('APIKEY', 'local-router'),
+                       'anthropic-version': '2023-06-01'}
+            if body is not None:
+                headers['Content-Type'] = 'application/json'
+            connection.request(method, path, json.dumps(body) if body is not None else None, headers)
+            response = connection.getresponse()
+            raw = response.read().decode('utf-8', errors='replace')
+            try:
+                data = json.loads(raw)
+            except ValueError:
+                data = raw
+            return response.status, data
+        finally:
+            connection.close()
+
+    def ready(self):
+        try:
+            status, data = self.request('GET', '/health', timeout=1)
+            return status == 200 and isinstance(data, dict) and data.get('status') == 'ok'
+        except (OSError, http.client.HTTPException):
+            return False
+
+    def start(self):
+        if self.ready():
+            return
+        # Avoid CCR's PID-file service manager; wait for the HTTP listener instead.
+        log_path = self.ccr.parents[3] / 'server-start.log'
+        fd = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        with os.fdopen(fd, 'a') as log:
+            process = subprocess.Popen([str(self.ccr), 'start'], stdin=subprocess.DEVNULL,
+                                       stdout=log, stderr=log, start_new_session=True, env=self.env)
+        for _ in range(60):
+            if self.ready():
+                return
+            if process.poll() is not None:
+                sys.exit(f'Router exited with code {process.returncode}. Check {log_path}')
+            time.sleep(0.25)
+        sys.exit(f'Router did not start. Check {log_path}')
+
+    def sync_models(self):
+        # Discovery updates the file, not the running provider registry.
+        self.config = json.loads((self.directory / 'config.json').read_text())
+        provider = next((item for item in self.config.get('Providers', [])
+                         if item.get('name') == 'codex'), None)
+        if provider is None:
+            sys.exit('Add the codex provider to ~/.claude-code-router/config.json first.')
+        status, current = self.request('GET', '/providers/codex')
+        if status != 200 or not isinstance(current, dict):
+            sys.exit('Cannot inspect the codex provider: ' + response_error(status, current))
+        if current.get('models') != provider.get('models'):
+            status, result = self.request('PUT', '/providers/codex', {'models': provider['models']})
+            if status != 200:
+                sys.exit('Cannot refresh router models: ' + response_error(status, result))
+
+    def command(self, *args):
+        result = subprocess.run([str(self.ccr), *args], env=self.env)
+        if result.returncode:
+            sys.exit(result.returncode)
+
+
+def response_error(status, data):
+    # A provider response can contain credentials; only print its error field.
+    error = data.get('error', 'No error details returned') if isinstance(data, dict) else 'No error details returned'
+    return f'HTTP {status}: {str(error)[:1000]}'
+
+
+def select_model(args, default):
+    model = os.environ.get('CCODEX_MODEL', default)
+    forwarded = []
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            forwarded.extend(args[index:])
+            break
+        if arg == '--model':
+            index += 1
+            if index == len(args):
+                sys.exit('--model requires a model ID.')
+            model = args[index]
+        elif arg.startswith('--model='):
+            model = arg.split('=', 1)[1]
+        else:
+            forwarded.append(arg)
+        index += 1
+    model = model.removeprefix('codex,')
+    if not model or ',' in model:
+        sys.exit('Choose a Codex model ID, optionally prefixed with codex,.')
+    return 'codex,' + model, forwarded
+
+
+def launch_env(router, model, metadata):
+    context = metadata.get('max_input_tokens') or metadata.get('context_window') or 200000
+    overrides = {
+        'CLAUDE_CODE_MAX_CONTEXT_TOKENS': os.environ.get('CLAUDE_CODE_MAX_CONTEXT_TOKENS', str(context)),
+        'ANTHROPIC_BASE_URL': f'http://127.0.0.1:{router.port}',
+        'ANTHROPIC_AUTH_TOKEN': router.config.get('APIKEY', 'local-router'),
+        'ANTHROPIC_API_KEY': '',
+        'ANTHROPIC_CUSTOM_HEADERS': '',
+        'CLAUDE_CODE_OAUTH_TOKEN': '',
+        'ANTHROPIC_MODEL': model,
+        'ANTHROPIC_SMALL_FAST_MODEL': model,
+        'ANTHROPIC_DEFAULT_OPUS_MODEL': model,
+        'ANTHROPIC_DEFAULT_SONNET_MODEL': model,
+        'ANTHROPIC_DEFAULT_HAIKU_MODEL': model,
+        'CLAUDE_CODE_SUBAGENT_MODEL': model,
+        'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC': '1',
+    }
+    for name in ('NO_PROXY', 'no_proxy'):
+        overrides[name] = os.environ.get(name, '') + ',localhost,127.0.0.1,::1'
+    return overrides
+
+
+def main(args):
+    if args == ['--help']:
+        print('Usage: ccodex [--setup | --auth | --doctor] [Claude Code arguments]\n'
+              '  --setup   Log in to ChatGPT and discover subscription models\n'
+              '  --auth    Log in again\n'
+              '  --doctor  Send a small test request through the subscription\n'
+              '  --model ID / CCODEX_MODEL selects the model')
+        return
+    try:
+        router = Router()
+    except (OSError, ValueError) as error:
+        sys.exit(f'Cannot load the router configuration: {error}. Run ./run.sh arch-desktop first.')
+    auth_path = router.directory / 'codex_auth.json'
+    if args in (['--setup'], ['--auth']):
+        router.start()
+        if args == ['--auth'] or not auth_path.exists():
+            router.command('codex-auth')
+        if not auth_path.exists():
+            sys.exit('OAuth login did not complete. Run ccodex --auth to retry.')
+        if args == ['--setup']:
+            router.command('model', 'get', 'codex')
+            router.sync_models()
+        print('OAuth setup complete. Run ccodex to start Claude Code.')
+        return
+    if not auth_path.exists():
+        sys.exit('ChatGPT subscription login is required. Run ccodex --setup first.')
+    doctor = args[:1] == ['--doctor']
+    if doctor:
+        args = args[1:]
+    model, forwarded = select_model(args, router.config['Router']['default'])
+    router.start()
+    router.sync_models()
+    status, metadata = router.request('GET', '/v1/models/' + quote(model, safe=''))
+    if status != 200 or not isinstance(metadata, dict):
+        sys.exit('Router rejected the selected model: ' + response_error(status, metadata))
+    if doctor:
+        status, result = router.request('POST', '/v1/messages', {
+            'model': model, 'max_tokens': 32, 'stream': False,
+            'messages': [{'role': 'user', 'content': 'Reply with just OK.'}],
+        }, timeout=120)
+        if status != 200 or not isinstance(result, dict) or result.get('type') != 'message':
+            sys.exit('Subscription inference failed: ' + response_error(status, result))
+        print('Subscription inference succeeded.')
+        return
+    claude = shutil.which('claude')
+    if not claude:
+        sys.exit('Claude Code executable was not found on PATH.')
+    overrides = launch_env(router, model, metadata)
+    # CLI settings take precedence over user endpoint settings without replacing
+    # the user's file, hooks, skills, local MCP servers or plugins.
+    # Cloud connectors need Anthropic auth, which the router replaces.
+    settings = json.dumps({'env': overrides, 'disableClaudeAiConnectors': True})
+    os.environ.update(overrides)
+    os.execv(claude, [claude, '--settings', settings, '--model', model, *forwarded])
+
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv[1:])
+    except (OSError, http.client.HTTPException) as error:
+        sys.exit(f'ccodex: {error}')
