@@ -30,7 +30,7 @@ It validates the playbook name, installs galaxy collections, and asks for the su
 
 ### ccodex
 
-`arch-core` also installs `ccodex`: Claude Code through the [Claude Code Router fork](https://github.com/Hekzory/claude-code-router), using a ChatGPT subscription rather than an OpenAI API key. The package is pinned to a GitHub Release archive with SHA-256 verification; downloading it needs no token. After applying the playbook:
+`arch-core` also installs `ccodex`: Claude Code through the [cco-router](https://github.com/Hekzory/cco-router), using a ChatGPT subscription rather than an OpenAI API key. The package is pinned to a GitHub Release archive with SHA-256 verification; downloading it needs no token. After applying the playbook:
 
 ```bash
 ccodex --setup          # fresh browser OAuth login, then model discovery
