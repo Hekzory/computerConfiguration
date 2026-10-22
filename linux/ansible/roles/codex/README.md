@@ -15,6 +15,22 @@ precedence; Codex reads the first non-empty matching file, not both agents' file
 The normal root-to-working-directory discovery and instruction size limit apply.
 See [instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
+On Linux, Codex falls back to Bash for a fish login account; fish isn't one of
+its supported execution shells. `allow_login_shell = false` keeps commands out
+of login profiles (including profiles that start fish). Shell snapshots and
+experimental profile loading are disabled too, and `BASH_ENV=/dev/null` prevents
+non-interactive Bash from sourcing a separately configured startup script.
+Child programs see `SHELL=/usr/bin/bash`; this environment variable doesn't
+select Codex's own interpreter. A machine with a supported login shell such as
+zsh still needs an explicit Bash selection in the shell tool. This Linux role
+doesn't change native Windows execution from PowerShell to Bash.
+
+Agent commands inherit the usual environment, with pagers disabled for ordinary
+tools, Git, systemd and man. `GIT_TERMINAL_PROMPT=0` makes missing Git credentials
+fail instead of waiting for terminal input. Inherited `PATH` must already expose
+the tools you need; new sessions no longer recover paths from login scripts.
+See [shell settings](https://learn.chatgpt.com/docs/config-file/config-reference).
+
 The commit guard applies the existing no-attribution policy to Codex as well:
 Co-Authored-By, generated-with/by/using Claude/Codex/OpenAI/ChatGPT, AI noreply
 addresses and the robot emoji are rejected in explicit `git commit` command text.

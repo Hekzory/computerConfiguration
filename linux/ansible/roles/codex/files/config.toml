@@ -5,8 +5,26 @@
 # Reuse Claude project guidance when there is no AGENTS.override.md or AGENTS.md.
 project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]
 
+# Linux fish accounts already fall back to Bash in Codex. Avoid profile startup
+# (including profiles that exec fish), and don't capture a login-shell snapshot.
+allow_login_shell = false
+
 [features]
 hooks = true
+shell_snapshot = false
+
+[shell_environment_policy]
+experimental_use_profile = false
+
+[shell_environment_policy.set]
+# SHELL is for child programs; it does not select Codex's own interpreter.
+SHELL = "/usr/bin/bash"
+BASH_ENV = "/dev/null"
+PAGER = "cat"
+GIT_PAGER = "cat"
+SYSTEMD_PAGER = "cat"
+MANPAGER = "col -bx"
+GIT_TERMINAL_PROMPT = "0"
 
 [tui]
 status_line = ["model-with-reasoning", "context-used", "context-window-size", "current-dir"]
