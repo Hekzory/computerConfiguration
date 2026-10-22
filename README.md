@@ -17,7 +17,7 @@ Three layered playbooks under `linux/ansible/`, each importing the previous:
 | Playbook | What it covers |
 |----------|----------------|
 | `arch-core.yml` | base packages, pacman/sysctl/makepkg tuning, gitconfig, fish + dotfiles, docker (with NVIDIA detection when present), journald, systemd-resolved, udev rules, kernel module blacklist |
-| `arch-desktop.yml` | desktop fonts, kitty, claude-code, chrome, realtime audio group (asserts not WSL) |
+| `arch-desktop.yml` | desktop fonts, kitty, claude-code + ccodex, chrome, realtime audio group (asserts not WSL) |
 | `arch-home.yml` | personal apps (telegram, qbittorrent, vesktop), gaming group |
 
 Run via the wrapper from `linux/ansible/`:
@@ -27,6 +27,19 @@ Run via the wrapper from `linux/ansible/`:
 ```
 
 It validates the playbook name, installs galaxy collections, and asks for the sudo password once up front, so the run prompts only once (and a fingerprint reader is touched once, not per task).
+
+### ccodex
+
+`arch-desktop` also installs `ccodex`: Claude Code through the third-party [Claude Code Router](https://github.com/oakimov/claude-code-router), using a ChatGPT subscription rather than an OpenAI API key. After applying the playbook:
+
+```bash
+ccodex --setup          # browser OAuth login, then model discovery
+ccodex                 # same arguments as claude
+ccodex --doctor        # small inference check; uses subscription quota
+ccodex --model MODEL   # or set CCODEX_MODEL
+```
+
+Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; model discovery and local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. Use `ccodex --auth` to log in again.
 
 ### Dotfiles
 
