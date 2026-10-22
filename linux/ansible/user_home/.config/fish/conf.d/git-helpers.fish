@@ -1,6 +1,6 @@
 # git-helpers — aliases + custom functions, auto-loaded from conf.d/
 # Loads BEFORE config.fish, so the AI-agent block in config.fish can erase
-# the interactive functions below when running under Claude/Cursor.
+# the interactive functions below when running under Claude/Cursor/Codex.
 # Interactive only: conf.d is sourced by `ssh host cmd` and scripts too, and
 # they have no business seeing `g` or a `read -P` prompt.
 if status is-interactive

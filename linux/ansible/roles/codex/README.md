@@ -7,7 +7,36 @@ This configures Codex; it does not install the CLI or log in for you.
 The role deploys root-owned `/etc/codex/config.toml` and two scripts under
 `/etc/codex/hooks/`. It enables lifecycle hooks and the native footer's model with
 reasoning level, used context percentage, context window size and current directory.
-No model/effort is pinned and no agent instructions are injected.
+No model/effort is pinned and no extra agent instructions are injected.
+
+`project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]` reuses existing
+project guidance. In each directory, `AGENTS.override.md` and `AGENTS.md` take
+precedence; Codex reads the first non-empty matching file, not both agents' files.
+The normal root-to-working-directory discovery and instruction size limit apply.
+See [instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+
+On Linux, Codex falls back to Bash for a fish login account; fish isn't one of
+its supported execution shells. `allow_login_shell = false` keeps commands out
+of login profiles (including profiles that start fish). Shell snapshots and
+experimental profile loading are disabled too, and `BASH_ENV=/dev/null` prevents
+non-interactive Bash from sourcing a separately configured startup script.
+Child programs see `SHELL=/usr/bin/bash`; this environment variable doesn't
+select Codex's own interpreter. A machine with a supported login shell such as
+zsh still needs an explicit Bash selection in the shell tool. This Linux role
+doesn't change native Windows execution from PowerShell to Bash.
+
+Agent commands inherit the usual environment, with pagers disabled for ordinary
+tools, Git, systemd and man. `GIT_TERMINAL_PROMPT=0` makes missing Git credentials
+fail instead of waiting for terminal input. Inherited `PATH` must already expose
+the tools you need; new sessions no longer recover paths from login scripts.
+See [shell settings](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+The shared fish and PowerShell configs recognize `CODEX_THREAD_ID` and `CODEX_CI`
+alongside `CLAUDECODE` and `CURSOR_TRACE_ID`. Even an interactive agent shell skips
+banners and theme initialization, disables pagers and avoids Git credential
+prompts. Fish also skips its theme download and interactive aliases, and removes
+the destructive Git wrappers that wait for confirmation. Human terminals retain
+their usual startup and confirmations.
 
 The commit guard applies the existing no-attribution policy to Codex as well:
 Co-Authored-By, generated-with/by/using Claude/Codex/OpenAI/ChatGPT, AI noreply
@@ -44,11 +73,17 @@ From `linux/ansible/`:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_codex.py' -v
+python3 -m unittest discover -s tests -p 'test_agent_shells.py' -v
 ```
 
 The existing Python CI job picks these up automatically. Tests run the real scripts
 over the documented JSON hook protocol, without Codex, credentials or network.
 They need Python 3.11+, bash and jq (already shipped by arch-core).
+
+Shell startup tests use fish and PowerShell when installed (including `pwsh.exe`
+under WSL). CI installs fish before running the full Python suite, and runs the
+PowerShell case separately on Windows so neither platform's checks depend on
+an optional interpreter being present on the other runner.
 
 References: [Codex hooks](https://learn.chatgpt.com/docs/hooks),
 [configuration layers](https://learn.chatgpt.com/docs/config-file/config-basic).

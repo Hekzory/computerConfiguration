@@ -85,7 +85,7 @@ Existing event names: `sysctl_changed`, `networkmanager_changed`, `resolved_chan
   - Destructive ops (`gfuck`, `gpshf`) → functions, ideally with confirmation
   - Common verbs (`g`, `gd`, `gpsh`) → aliases or abbreviations
   - Tool replacements (`cat→bat`) → conditional aliases gated on `type -q`
-- **AI-agent awareness**: fish config strips icons/pagers/interactive prompts when `CLAUDECODE` or `CURSOR_TRACE_ID` is set. Preserve this behavior when editing fish config. The PowerShell profile in `windows/home` does the same: under an agent, a `-Command`/`-File` run or redirected output it skips the fastfetch banner and the prompt theme.
+- **AI-agent awareness**: fish and PowerShell recognize `CLAUDECODE`, `CURSOR_TRACE_ID`, `CODEX_THREAD_ID` and `CODEX_CI`. Agent shells skip banners and prompt themes and disable pagers and Git credential prompts; fish also strips interactive wrappers and icons. Preserve this behavior when editing either shell. The PowerShell profile in `windows/home` also skips the banner and theme for a `-Command`/`-File` run or redirected output. Native Codex defaults are documented in `linux/ansible/roles/codex/README.md`.
 
 ## CI
 GitHub Actions runs `ansible-lint` on push. Run it locally before committing playbook changes. `claude-mods.yml` tests the Claude Code mods under `linux/ansible/etc/claude-code/mods` (see Claude Code above); run `claude plugin test` and `node tests/live/check.mjs` in the plugin folder before committing changes to them.

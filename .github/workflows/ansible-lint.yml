@@ -51,9 +51,6 @@ jobs:
             linux/ansible/user_home/.claude/statusline.sh \
             linux/ansible/user_home/.claude/otel-headers.sh \
             linux/ansible/user_home/.claude/hooks/git-guard.sh
-      - name: Test Python helpers without an account or network
-        working-directory: linux/ansible
-        run: timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Install fish 4 (same major as the machines, ubuntu ships 3.x)
         # o-srv's runner image has it from the same PPA; GitHub's runners don't
         run: |
@@ -63,6 +60,10 @@ jobs:
             sudo apt-get install -y fish
           fi
           fish --version
+      - name: Test Python helpers and Codex hooks and shell startup
+        working-directory: linux/ansible
+        # Install fish first so its behavior tests cannot silently skip.
+        run: timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: fish -n on every shipped fish file
         run: find linux/ansible/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
       - name: stylua --check init.lua
@@ -71,3 +72,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: v2.5.2
           args: --check linux/ansible/user_home/.config/nvim/init.lua
+
+  powershell:
+    name: PowerShell agent startup
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test the shipped Windows profile
+        working-directory: linux/ansible
+        shell: pwsh
+        run: |
+          # Run the PowerShell case directly; fish is covered by the Linux job.
+          $env:PYTHONPATH = 'tests'
+          python -m unittest test_agent_shells.PowerShellStartup -v
+          exit $LASTEXITCODE
