@@ -23,7 +23,7 @@
     }
   ],
   "Router": {
-    "default": "codex,gpt-6.1-sol",
+    "default": "codex,gpt-6-astra",
     "background": "codex,gpt-6.1-sol",
     "think": "codex,gpt-6.1-sol",
     "longContext": "codex,gpt-6.1-sol"

@@ -257,7 +257,7 @@ class CcodexTest(unittest.TestCase):
             router.status()
         text = output.getvalue()
         for expected in ('PID 12345', str(self.ccr), '/usr/bin/node', 'Installation: current',
-                         'Requests in flight: 3', 'Sessions: 2', 'codex,gpt-6.1-sol'):
+                         'Requests in flight: 3', 'Sessions: 2', 'codex,gpt-6-astra'):
             self.assertIn(expected, text)
         request.assert_called_once_with('GET', '/health', timeout=1)
 
@@ -563,6 +563,17 @@ class CcodexTest(unittest.TestCase):
         self.assertEqual(settings_path.read_text(), original)
         self.assertEqual(json.loads(self.config_path.read_text()), self.config)
         router.request.assert_called_once_with('GET', '/v1/models/codex%2Ctest-model')
+
+    def test_launch_defaults_to_astra(self):
+        self.auth.touch()
+        router = self.mock_router()
+        with patch.object(ccodex, 'Router', return_value=router), \
+                patch.object(ccodex.shutil, 'which', return_value='/usr/bin/claude'), patch.object(ccodex.os, 'execv') as execv:
+            ccodex.main([])
+        _, argv = execv.call_args.args
+        self.assertEqual(argv[3:], ['--model', 'codex,gpt-6-astra'])
+        self.assertEqual(json.loads(argv[2])['env']['ANTHROPIC_MODEL'], 'codex,gpt-6-astra')
+        router.request.assert_called_once_with('GET', '/v1/models/codex%2Cgpt-6-astra')
 
     def test_invalid_model_never_launches_claude(self):
         self.auth.touch()
