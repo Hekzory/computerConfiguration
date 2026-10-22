@@ -70,13 +70,24 @@
     validate: >-
       /usr/bin/python3 -c 'import sys,tomllib; tomllib.load(open(sys.argv[1], "rb"))' %s
 
-- name: Codex - create the user's configuration directory
+- name: Codex - create the user's configuration directories
   ansible.builtin.file:
-    path: "{{ user_home }}/.codex"
+    path: "{{ item }}"
     state: directory
     owner: "{{ the_user }}"
     group: "{{ the_user }}"
     mode: '0700'
+  loop:
+    - "{{ user_home }}/.codex"
+    - "{{ user_home }}/.codex/rules"
+
+- name: Codex - deploy selected global command approvals
+  ansible.builtin.copy:
+    src: claude-import.rules
+    dest: "{{ user_home }}/.codex/rules/claude-import.rules"
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0600'
 
 - name: Codex - deploy shared working agreements
   ansible.builtin.blockinfile:
