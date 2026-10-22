@@ -88,7 +88,8 @@ class Hooks(unittest.TestCase):
 class Configuration(unittest.TestCase):
     def test_configuration_scope_and_hook_wiring(self):
         config = tomllib.loads((ROLE / "files/config.toml").read_text())
-        self.assertEqual(set(config), {"features", "tui", "hooks"})
+        self.assertEqual(set(config), {"project_doc_fallback_filenames", "features", "tui", "hooks"})
+        self.assertEqual(config["project_doc_fallback_filenames"], ["CLAUDE.md", "claude.md"])
         self.assertEqual(config["features"], {"hooks": True})
         self.assertEqual(config["tui"]["status_line"], [
             "model-with-reasoning", "context-used", "context-window-size", "current-dir",

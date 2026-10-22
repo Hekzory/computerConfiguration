@@ -7,7 +7,13 @@ This configures Codex; it does not install the CLI or log in for you.
 The role deploys root-owned `/etc/codex/config.toml` and two scripts under
 `/etc/codex/hooks/`. It enables lifecycle hooks and the native footer's model with
 reasoning level, used context percentage, context window size and current directory.
-No model/effort is pinned and no agent instructions are injected.
+No model/effort is pinned and no extra agent instructions are injected.
+
+`project_doc_fallback_filenames = ["CLAUDE.md", "claude.md"]` reuses existing
+project guidance. In each directory, `AGENTS.override.md` and `AGENTS.md` take
+precedence; Codex reads the first non-empty matching file, not both agents' files.
+The normal root-to-working-directory discovery and instruction size limit apply.
+See [instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
 The commit guard applies the existing no-attribution policy to Codex as well:
 Co-Authored-By, generated-with/by/using Claude/Codex/OpenAI/ChatGPT, AI noreply
