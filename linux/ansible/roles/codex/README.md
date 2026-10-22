@@ -7,7 +7,8 @@ This configures Codex; it does not install the CLI or log in for you.
 The role deploys root-owned `/etc/codex/config.toml` and two scripts under
 `/etc/codex/hooks/`. It enables lifecycle hooks and the native footer's model with
 reasoning level, used context percentage, context window size and current directory.
-No model/effort is pinned and no extra agent instructions are injected.
+The main model remains a user choice. Main and planning reasoning default to
+`high`; higher-precedence user settings such as `xhigh` still win.
 
 Commands use `workspace-write` sandboxing with network access enabled. Approvals
 stay `on-request` and go to the user. Downloads and API calls can run inside the
@@ -74,6 +75,31 @@ before the configuration, whose TOML is validated before replacement.
 Start a new Codex session after deployment and inspect `/hooks` for both handlers.
 Use a recent CLI with `PreToolUse` support. A hook error/timeout is not a guaranteed
 denial, so these checks must not be mistaken for a sandbox.
+
+## Shared memory and instructions
+
+The system defaults enable local Codex memories with `gpt-6.1-sol` for extraction
+and `gpt-6-astra` for consolidation. Built-in background memory jobs use their own
+lower effort levels, an explicitly approved exception to the high-or-higher
+instruction. User-level config can override these defaults, including either
+memory model. These background requests use Codex quota.
+
+The role manages a marked block in `~/.codex/AGENTS.md` from
+[`files/AGENTS.md`](files/AGENTS.md), preserving personal instructions outside the
+block. It contains the no-Luna rule, reasoning minimum and shared working
+agreements. Start a new Codex session after deployment.
+
+Memory contents stay on each machine under its Codex home; this repository does
+not deploy memories or chat history. To bring over eligible Claude memories, use
+Codex's local `/import` flow and select only memory items. In CLI 0.163.0, launch
+with `codex --enable external_agent_memory_import` to expose memory imports for
+that session. The importer needs reliable project scope and may skip projects
+without session metadata. `/import` is unavailable during an active task or in a
+remote or daemon-connected session.
+
+Use `/memories` for chat-level controls. Turning off generation does not erase
+existing memories. See the [memory documentation](https://learn.chatgpt.com/docs/customization/memories)
+and [import guide](https://learn.chatgpt.com/docs/import).
 
 ## Tests
 
