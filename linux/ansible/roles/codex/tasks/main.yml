@@ -69,3 +69,21 @@
     mode: '0644'
     validate: >-
       /usr/bin/python3 -c 'import sys,tomllib; tomllib.load(open(sys.argv[1], "rb"))' %s
+
+- name: Codex - create the user's configuration directory
+  ansible.builtin.file:
+    path: "{{ user_home }}/.codex"
+    state: directory
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0700'
+
+- name: Codex - deploy shared working agreements
+  ansible.builtin.blockinfile:
+    path: "{{ user_home }}/.codex/AGENTS.md"
+    create: true
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0640'
+    marker: "<!-- {mark} computerConfiguration: Codex instructions -->"
+    block: "{{ lookup('ansible.builtin.file', role_path + '/files/AGENTS.md') }}"
