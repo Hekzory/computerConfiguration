@@ -36,11 +36,15 @@ It validates the playbook name, installs galaxy collections, and asks for the su
 ccodex --setup          # fresh browser OAuth login, then model discovery
 ccodex                 # same arguments as claude
 ccodex --doctor        # small inference check; uses subscription quota
+ccodex --status        # process, Node version and active requests; no inference
+ccodex --restart       # restart this installation's router when idle
 ccodex --model gpt-6-astra  # flagship; or gpt-6.1-sol (default), gpt-6-luna
                          # CCODEX_MODEL also selects the model
 ```
 
-Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` if missing and adds GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna to existing configs without removing discovered models, credentials or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. This shares the router config and login with an existing `claude-openai` installation. CCR automatically refreshes access tokens before expiry and coordinates concurrent refreshes; `ccodex` does not make a second refresh attempt. If OpenAI invalidates the refresh token (`refresh_token_invalidated`), automated renewal cannot recover it: run `ccodex --setup` to force a fresh browser login and rediscover models, or `ccodex --auth` to log in without discovery. Both verify the saved auth file actually changed before reporting success. These are configured model IDs, not a promise that the subscription exposes all three; verify access with `ccodex --doctor --model MODEL`.
+Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` if missing and adds GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna to existing configs without removing discovered models, credentials or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. CCR automatically refreshes access tokens before expiry and coordinates concurrent refreshes; `ccodex` does not make a second refresh attempt. If OpenAI invalidates the refresh token (`refresh_token_invalidated`), automated renewal cannot recover it: run `ccodex --setup` to force a fresh browser login and rediscover models, or `ccodex --auth` to log in without discovery. Both verify the saved auth file actually changed before reporting success. These are configured model IDs, not a promise that the subscription exposes all three; verify access with `ccodex --doctor --model MODEL`.
+
+Fish completions include wrapper options, common Claude Code arguments and models from the local router config. They work before OAuth setup and make no network requests. `--status` leaves a stopped router stopped; `--restart` checks the live process identity, refuses active requests or another installation, and waits for the port to close before starting a replacement.
 
 ### Dotfiles
 
