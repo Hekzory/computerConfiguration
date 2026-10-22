@@ -1,0 +1,22 @@
+# Managed by computerConfiguration: Codex
+# User settings, credentials, model and effort stay in ~/.codex, not in this file.
+# No agent instructions: the hooks enforce the two command policies.
+
+[features]
+hooks = true
+
+[tui]
+status_line = ["model-with-reasoning", "context-used", "context-window-size", "current-dir"]
+
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "/usr/bin/bash /etc/codex/hooks/git-guard.sh"
+timeout = 10
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "/usr/bin/python3 /etc/codex/hooks/ssh-fish-guard.py"
+timeout = 10
