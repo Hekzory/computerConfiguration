@@ -798,15 +798,44 @@
         - "{{ user_home }}/.claude-code-router"
 
     - name: Install ccodex subscription router
-      # npm comes from arch-core. Use system Node, not a shell's older fnm version.
-      environment:
-        PATH: "/usr/bin:{{ ansible_facts['env'].PATH }}"
-      community.general.npm:
-        name: "@caeliq/claude-code-router"
-        version: "2.1.15"
-        path: "{{ user_home }}/.local/share/ccodex/router"
-        state: present
-      timeout: 180
+      vars:
+        ccodex_router_version: "2.1.16-hekzory.1"
+        ccodex_router_archive: "caeliq-claude-code-router-{{ ccodex_router_version }}.tgz"
+        ccodex_router_sha256: "4adde56754b20b75a5a12afa4f062a88492297a3dd83d3dfd2bc3ea6738560ff"
+      block:
+        - name: Read installed ccodex router version
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - >-
+                import json, pathlib, sys;
+                p = pathlib.Path(sys.argv[1]);
+                print(json.loads(p.read_text())['version'] if p.is_file() else '')
+              - "{{ user_home }}/.local/share/ccodex/router/node_modules/@caeliq/claude-code-router/package.json"
+          register: ccodex_installed_router
+          changed_when: false
+          check_mode: false
+
+        - name: Download verified ccodex router release
+          ansible.builtin.get_url:
+            url: "https://github.com/Hekzory/claude-code-router/releases/download/v{{ ccodex_router_version }}/{{ ccodex_router_archive }}"
+            dest: "{{ user_home }}/.local/share/ccodex/{{ ccodex_router_archive }}"
+            checksum: "sha256:{{ ccodex_router_sha256 }}"
+            mode: "0600"
+          when: ccodex_installed_router.stdout != ccodex_router_version
+
+        - name: Install ccodex router archive
+          # Use system Node, not an older shell version. The bundle needs no install scripts.
+          environment:
+            PATH: "/usr/bin:{{ ansible_facts['env'].PATH }}"
+          community.general.npm:
+            name: "{{ user_home }}/.local/share/ccodex/{{ ccodex_router_archive }}"
+            path: "{{ user_home }}/.local/share/ccodex/router"
+            state: present
+            ignore_scripts: true
+          when: ccodex_installed_router.stdout != ccodex_router_version
+          timeout: 180
 
     # Model discovery edits this file; other providers may hold keys. Seed once,
     # never overwrite it or put the OAuth token file under dotfile management.
