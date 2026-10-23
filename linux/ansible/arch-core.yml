@@ -878,6 +878,27 @@
     # which is what we want for "never attribute commits to the AI". Shipped as a
     # managed-settings.d drop-in so an employer-managed policy file can coexist.
     # Ships everywhere, WSL included — inert on machines without claude-code.
+    - name: Agents - deploy writing and change description preferences
+      ansible.builtin.blockinfile:
+        path: "{{ user_home }}/{{ item }}"
+        create: true
+        owner: "{{ the_user }}"
+        group: "{{ the_user }}"
+        mode: '0640'
+        marker: "<!-- {mark} computerConfiguration: writing preferences -->"
+        block: "{{ lookup('ansible.builtin.file', 'files/agent-text.md') }}"
+      loop:
+        - .claude/CLAUDE.md
+        - .codex/AGENTS.md
+
+    - name: Claude Code - bound diagnostic output
+      ansible.builtin.blockinfile:
+        path: "{{ user_home }}/.claude/CLAUDE.md"
+        marker: "<!-- {mark} computerConfiguration: diagnostics -->"
+        block: |
+          For journal reads, use --no-pager and a finite -n limit (optionally --since/--until).
+          Do not follow the journal without an explicit request and a timeout.
+
     - name: Create /etc/claude-code/managed-settings.d
       become: true
       ansible.builtin.file:
