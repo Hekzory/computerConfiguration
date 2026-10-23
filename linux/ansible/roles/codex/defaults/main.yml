@@ -4,6 +4,22 @@
 codex_user_config_updates:
   desktop:
     ambient-suggestions-enabled: false
+  plugins:
+    work-pets@openai-curated-remote:
+      enabled: false
+    latex@openai-bundled:
+      enabled: false
+  apps:
+    connector_openai_hotline:
+      enabled: false
+    connector_openai_chatgpt_pets:
+      enabled: false
+    connector_openai_safety_settings:
+      enabled: false
+codex_user_disabled_skills:
+  - work-pets:create-pet
+  - work-pets:pets
+  - work-pets:update-pet
 codex_user_config_remove:
   - [features, analytics_plan_history]
 

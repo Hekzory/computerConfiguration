@@ -67,7 +67,30 @@ def write_config(path, original, desired, check=False, private=True):
     return changed
 
 
-def configure(path, updates, removals=(), check=False):
+def disable_skills(document, names):
+    """Keep other skill rules and append owned name rules after path overrides."""
+    if not names:
+        return
+    merge(document, {'skills': {}})
+    skills = document['skills']
+    if 'config' not in skills:
+        skills['config'] = tomlkit.aot() if isinstance(skills, tomlkit.items.Table) else []
+    entries = skills['config']
+    if not isinstance(entries, list) or not all(isinstance(entry, dict) for entry in entries):
+        raise ValueError('invalid skills.config rules')
+    names = list(dict.fromkeys(names))
+    desired = [entry for entry in entries if entry.get('name') not in names]
+    desired.extend({'name': name, 'enabled': False} for name in names)
+    if entries == desired:
+        return
+    for index in reversed(range(len(entries))):
+        if entries[index].get('name') in names:
+            del entries[index]
+    for name in names:
+        entries.append({'name': name, 'enabled': False})
+
+
+def configure(path, updates, removals=(), check=False, disabled_skills=()):
     original = read_config(path)
     expected = copy.deepcopy(tomllib.loads(original))
     document = tomlkit.parse(original)
@@ -85,6 +108,8 @@ def configure(path, updates, removals=(), check=False):
             else:
                 target[key] = value
     plain_merge(expected, updates)
+    disable_skills(document, disabled_skills)
+    disable_skills(expected, disabled_skills)
     desired = tomlkit.dumps(document)
     if tomllib.loads(desired) != expected:
         raise ValueError("unexpected configuration change")

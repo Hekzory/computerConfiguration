@@ -68,6 +68,41 @@ features = { analytics_plan_history = true, memories = true }
         self.assertFalse(config['desktop']['ambient-suggestions-enabled'])
         self.assertIn('[looks.like.a.table]', config['desktop']['custom'])
 
+    def test_named_skill_disables_preserve_other_rules_and_win_over_paths(self):
+        self.path.write_text(self.original + '''
+[[skills.config]]
+name = "work-pets:pets"
+enabled = true
+[[skills.config]]
+# Preserve this unrelated rule and its comment.
+path = "/custom/skill/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "/plugins/work-pets/pets/SKILL.md"
+enabled = true
+''')
+        original = self.path.read_text()
+        names = ['work-pets:create-pet', 'work-pets:pets', 'work-pets:update-pet']
+        before = tomllib.loads(original)
+        self.assertTrue(MODULE.configure(self.path, {}, check=True, disabled_skills=names))
+        self.assertEqual(self.path.read_text(), original)
+        self.assertTrue(MODULE.configure(self.path, {}, disabled_skills=names))
+        after = tomllib.loads(self.path.read_text())
+        rules = after.pop('skills')['config']
+        self.assertEqual(rules[:2], before.pop('skills')['config'][1:])
+        self.assertEqual(rules[2:], [{'name': name, 'enabled': False} for name in names])
+        self.assertEqual(after, before)
+        self.assertIn('# Preserve this unrelated rule and its comment.', self.path.read_text())
+        self.assertFalse(MODULE.configure(self.path, {}, disabled_skills=names))
+
+    def test_invalid_skill_rules_are_not_overwritten(self):
+        for rules in ('"foreign string"', '["foreign string"]'):
+            original = self.original + '\n[skills]\nconfig = ' + rules + '\n'
+            self.path.write_text(original)
+            with self.assertRaises(ValueError):
+                MODULE.configure(self.path, {}, disabled_skills=['work-pets:pets'])
+            self.assertEqual(self.path.read_text(), original)
+
     def test_invalid_or_conflicting_config_is_unchanged(self):
         for original in ('[broken', 'desktop = "foreign string"\n'):
             self.path.write_text(original)

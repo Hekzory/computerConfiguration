@@ -96,7 +96,7 @@ denial, so these checks must not be mistaken for a sandbox.
 | Owner | Files or keys |
 | --- | --- |
 | Base role | `/etc/codex/config.toml`, system hooks/editors, marked working agreements and `claude-import.rules` |
-| Selected user policy | Only leaves in `codex_user_config_updates` and paths in `codex_user_config_remove` |
+| Selected user policy | Leaves in `codex_user_config_updates`, paths in `codex_user_config_remove`, and names in `codex_user_disabled_skills` |
 | Metrics helper | Marked `otel.environment`, exporter/trace exporter, prompt logging, HTTP metrics endpoint/protocol and its Authorization header |
 | Optional corporate role | Its three corporate MCP policies, adapters, skill links, research role and selected hook handlers |
 | Desktop / account | Plugin switches, marketplaces, generated `node_repl` paths/environment, OAuth, onboarding, hook trust hashes, appearance and queue/detail preferences |
@@ -117,9 +117,11 @@ session. The role preserves late search, summary, theme, memory and trust choice
 The default removal list deletes only `features.analytics_plan_history`. It does
 not disable `analytics.enabled` or the private metrics exporter. A later role run
 reconciles this deprecated flag if a client writes it again.
-The default update sets `desktop.ambient-suggestions-enabled = false` while
-preserving the rest of the desktop table. Override the policy variables to change
-these selections; the role does not manage unrelated feature flags.
+The default updates disable ambient suggestions, the Work Pets and bundled LaTeX
+plugins, and the Hotline, Pets and Safety Settings apps. `codex_user_disabled_skills`
+also disables the three `work-pets:*` skills by name, independent of cached plugin
+versions. Other skill rules are preserved; the managed name rules follow existing
+path overrides. Override the policy variables to change these selections.
 
 ## Metrics
 
