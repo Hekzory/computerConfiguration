@@ -77,6 +77,14 @@
     group: root
     mode: '0644'
 
+- name: Codex - install optional Desktop browser preparation
+  ansible.builtin.copy:
+    src: browser-connect.py
+    dest: /etc/codex/hooks/browser-connect.py
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Codex - deploy hooks and the model effort context status line
   ansible.builtin.copy:
     src: config.toml

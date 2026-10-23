@@ -4,7 +4,7 @@
 or under WSL. Apply from `linux/ansible/` with the usual `./run.sh arch-core`.
 This configures Codex; it does not install the CLI or log in for you.
 
-The role deploys root-owned `/etc/codex/config.toml` and two scripts under
+The role deploys root-owned `/etc/codex/config.toml` and three scripts under
 `/etc/codex/hooks/`. It enables lifecycle hooks and the native footer's model with
 reasoning level, used context percentage, context window size and current directory.
 The main model remains a user choice. Main and planning reasoning default to
@@ -87,9 +87,32 @@ before adopting the role; it will not silently overwrite an employer's config.
 Later runs update the managed files idempotently. Hook scripts are installed
 before the configuration, whose TOML is validated before replacement.
 
-Start a new Codex session after deployment and inspect `/hooks` for both handlers.
+Start a new Codex session after deployment and inspect `/hooks` for the handlers.
 Use a recent CLI with `PreToolUse` support. A hook error/timeout is not a guaranteed
 denial, so these checks must not be mistaken for a sandbox.
+
+## Desktop browser connection
+
+Before `mcp__cua_repl__js`, a synchronous hook checks whether the current chat has
+an in-app browser connection in ChatGPT Desktop. A chat created in the CLI may
+have the browser plugin available while Desktop has no window registered for
+that chat. The hook opens `codex://threads/<session_id>` in Desktop when needed
+and waits up to 20 seconds for a matching `getInfo` response. This may launch or
+focus Desktop and switch it to the current chat; it does not start a model turn.
+
+Desktop must already be installed and exposed as `chatgpt` or `codex-desktop` on
+`PATH`; the role does not install it. Without either executable, the hook exits
+immediately without probing sockets or writing cache files. Invalid input,
+launch/connection errors, timeouts and unexpected helper errors also fail open:
+the hook returns no approval, denial or rewritten tool input, leaving the
+original browser call and normal permission checks to proceed.
+
+The helper only probes owned sockets under `/tmp/codex-browser-use` and accepts
+an `iab` backend whose metadata matches the current session. A per-session lock
+prevents duplicate launches from parallel calls. Its cache under
+`${XDG_CACHE_HOME:-~/.cache}/codex-browser-hook` is revalidated on every call so
+Desktop restarts do not leave a stale successful marker. The socket handshake
+is an internal Desktop protocol; incompatible versions fail open.
 
 ## Configuration ownership
 
