@@ -891,13 +891,16 @@
         - .claude/CLAUDE.md
         - .codex/AGENTS.md
 
-    - name: Claude Code - bound diagnostic output
+    - name: Agents - bound diagnostic output
       ansible.builtin.blockinfile:
-        path: "{{ user_home }}/.claude/CLAUDE.md"
+        path: "{{ user_home }}/{{ item }}"
         marker: "<!-- {mark} computerConfiguration: diagnostics -->"
         block: |
           For journal reads, use --no-pager and a finite -n limit (optionally --since/--until).
           Do not follow the journal without an explicit request and a timeout.
+      loop:
+        - .claude/CLAUDE.md
+        - .codex/AGENTS.md
 
     - name: Create /etc/claude-code/managed-settings.d
       become: true
