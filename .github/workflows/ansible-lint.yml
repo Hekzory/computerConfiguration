@@ -64,7 +64,7 @@ jobs:
         working-directory: linux/ansible
         # Install fish first so its behavior tests cannot silently skip.
         run: |
-          python3 -m pip install 'tomlkit>=0.13,<1'
+          python3 -m pip install 'tomlkit>=0.13,<1' PyYAML
           timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: fish -n on every shipped fish file
         run: find linux/ansible/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
