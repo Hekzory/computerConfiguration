@@ -1,0 +1,180 @@
+# Explicit opt-in only. Private sources must already exist on the target.
+codex_corporate_skill_source: '{{ user_home }}/.local/share/agent-skills'
+codex_corporate_context_source: '{{ user_home }}/.local/share/agent-context'
+codex_corporate_mcc_guard_source: '{{ user_home }}/.claude/hooks/mcc-guard.sh'
+codex_corporate_skill_names:
+  - consul-ro-token
+  - gitlab
+  - jira
+  - mcc
+  - publish-prototype
+  - sh-cluster-create
+  - sh-release
+  - victoriametrics
+codex_corporate_mcp_policy:
+  mcp_servers:
+    confluence:
+      command: /usr/bin/python3
+      args:
+        - '{{ user_home }}/.codex/mcp/confluence.py'
+      startup_timeout_sec: 30
+      tool_timeout_sec: 60
+      enabled_tools:
+        - confluence_advanced_search
+        - confluence_convert_to_markdown
+        - confluence_cql_search
+        - confluence_get_footer_comments
+        - confluence_get_inline_comments
+        - confluence_get_page
+        - confluence_get_page_source
+        - confluence_get_page_versions
+        - confluence_list_spaces
+        - confluence_search_pages
+      disabled_tools:
+        - confluence_create_page
+        - confluence_get_current_user
+        - confluence_get_markdown_guide
+        - confluence_move_page
+        - confluence_preview_section_update
+        - confluence_reply_to_footer_comment
+        - confluence_reply_to_inline_comment
+        - confluence_search_users
+        - confluence_update_page
+        - confluence_update_page_section
+      default_tools_approval_mode: prompt
+      tools:
+        confluence_advanced_search:
+          approval_mode: auto
+        confluence_convert_to_markdown:
+          approval_mode: auto
+        confluence_cql_search:
+          approval_mode: auto
+        confluence_get_footer_comments:
+          approval_mode: auto
+        confluence_get_inline_comments:
+          approval_mode: auto
+        confluence_get_page:
+          approval_mode: auto
+        confluence_get_page_source:
+          approval_mode: auto
+        confluence_get_page_versions:
+          approval_mode: auto
+        confluence_list_spaces:
+          approval_mode: auto
+        confluence_search_pages:
+          approval_mode: auto
+    vkworkspace-assistant:
+      url: https://assistant.mail.ru/mcp/
+      http_headers_helper: /usr/bin/python3 {{ user_home }}/.codex/mcp/workspace-headers.py
+      startup_timeout_sec: 30
+      tool_timeout_sec: 60
+      enabled_tools:
+        - messenger-list-chats
+        - messenger-list-messages
+        - messenger-resolve-message-url
+        - messenger-search
+        - messenger-search-summaries
+        - orgstructure-get-root
+        - orgstructure-search
+        - orgstructure-unit-get
+        - orgstructure-unit-staff-get
+        - orgstructure-unit-subunits-get
+        - orgstructure-users-get
+      disabled_tools:
+        - calendar-append-attendees
+        - calendar-create-event
+        - calendar-delete-attendees
+        - calendar-delete-event
+        - calendar-find-free-slots
+        - calendar-list-calendars
+        - calendar-list-event-attendees
+        - calendar-list-events
+        - calendar-update-event
+        - calendar-update-recurrence
+        - cloud-create-folder
+        - cloud-create-public-link
+        - cloud-get-access
+        - cloud-list
+        - cloud-move
+        - cloud-remove
+        - cloud-search
+        - cloud-set-access
+        - cloud-stat
+        - confrooms-booking-info
+        - confrooms-find-overlaps
+        - confrooms-freebusy
+        - confrooms-list
+        - confrooms-list-locations
+        - confrooms-list-offices
+        - mail-delete-threads
+        - mail-list-folders
+        - mail-list-threads
+        - mail-mark-message
+        - mail-move-threads
+        - mail-read-thread
+        - mail-save-draft
+        - mail-schedule
+        - mail-search
+        - mail-search-contacts
+        - mail-send
+        - mail-unread
+        - mail-unsubscribe
+        - messenger-add-chat-members
+        - messenger-create-chat
+        - messenger-create-folder
+        - messenger-create-thread
+        - messenger-delete-folder
+        - messenger-draft-message
+        - messenger-get-chat-info
+        - messenger-get-current-user
+        - messenger-get-file
+        - messenger-get-message-reactions
+        - messenger-invalidate-session
+        - messenger-join-chat
+        - messenger-leave-chat
+        - messenger-list-folders
+        - messenger-mark-as-read
+        - messenger-modify-folder-chats
+        - messenger-remove-chat-members
+        - messenger-rename-folder
+        - messenger-search-entities
+        - messenger-search-messages
+        - messenger-send-message
+      default_tools_approval_mode: prompt
+      tools:
+        messenger-list-chats:
+          approval_mode: auto
+        messenger-list-messages:
+          approval_mode: auto
+        messenger-resolve-message-url:
+          approval_mode: auto
+        messenger-search:
+          approval_mode: auto
+        messenger-search-summaries:
+          approval_mode: auto
+        orgstructure-get-root:
+          approval_mode: auto
+        orgstructure-search:
+          approval_mode: auto
+        orgstructure-unit-get:
+          approval_mode: auto
+        orgstructure-unit-staff-get:
+          approval_mode: auto
+        orgstructure-unit-subunits-get:
+          approval_mode: auto
+        orgstructure-users-get:
+          approval_mode: auto
+    docs-vk-team:
+      url: https://mcp.aiflow.vk.team/mcp/rag-docs
+      startup_timeout_sec: 30
+      tool_timeout_sec: 60
+      enabled_tools:
+        - list-repos
+        - search-docs
+      disabled_tools: []
+      default_tools_approval_mode: prompt
+      tools:
+        list-repos:
+          approval_mode: auto
+        search-docs:
+          approval_mode: auto

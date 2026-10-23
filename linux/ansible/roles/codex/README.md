@@ -91,6 +91,36 @@ Start a new Codex session after deployment and inspect `/hooks` for both handler
 Use a recent CLI with `PreToolUse` support. A hook error/timeout is not a guaranteed
 denial, so these checks must not be mistaken for a sandbox.
 
+## Configuration ownership
+
+| Owner | Files or keys |
+| --- | --- |
+| Base role | `/etc/codex/config.toml`, system hooks/editors, marked working agreements and `claude-import.rules` |
+| Selected user policy | Only leaves in `codex_user_config_updates` and paths in `codex_user_config_remove` |
+| Metrics helper | Marked `otel.environment`, exporter/trace exporter, prompt logging, HTTP metrics endpoint/protocol and its Authorization header |
+| Optional corporate role | Its three corporate MCP policies, adapters, skill links, research role and selected hook handlers |
+| Desktop / account | Plugin switches, marketplaces, generated `node_repl` paths/environment, OAuth, onboarding, hook trust hashes, appearance and queue/detail preferences |
+| User | All other configuration, credentials and private work context |
+
+`codex_user_config_updates` recursively merges selected leaves; it never replaces
+the whole document. Removals use lists of path components, preserving quoted or
+hyphenated names. Values are parsed and checked before an atomic private write.
+No credentials belong in these variables or in Git. Helpers support `--check`
+without writes; Ansible calls them in check mode only if the installed editor is
+available. On a fresh host the install tasks report planned changes, and user
+configuration validation requires a subsequent check after installation.
+
+Do not restore missing plugin/runtime tables from old snapshots. Their ownership
+stays with the desktop; inspect effective availability in a fresh supported
+session. The role preserves late search, summary, theme, memory and trust choices.
+
+The default removal list deletes only `features.analytics_plan_history`. It does
+not disable `analytics.enabled` or the private metrics exporter. A later role run
+reconciles this deprecated flag if a client writes it again.
+The default update sets `desktop.ambient-suggestions-enabled = false` while
+preserving the rest of the desktop table. Override the policy variables to change
+these selections; the role does not manage unrelated feature flags.
+
 ## Metrics
 
 The role enables native Codex OTLP/HTTP metrics when `~/.codex/otel-token` exists,
@@ -100,8 +130,13 @@ With neither token available, this exporter stays off and the role removes its
 metrics block on the next run. An existing Codex `[otel]` configuration or an explicit
 `analytics.enabled = false` keeps this role's exporter off.
 
-Only a marked block in `~/.codex/config.toml` is managed; other user settings are
-preserved. The file is written atomically with mode `0600` because the native
+Only the metrics keys inside a marked block in `~/.codex/config.toml` are managed;
+foreign tables inserted by the desktop before its END marker are preserved when
+the block is migrated. Unknown telemetry fields are retained and prevent adopting
+the role's exporter. The role installs `python-tomlkit` for lossless TOML edits,
+validates values independently with Python's `tomllib`, and rejects a file that
+changes while an update is being prepared. The file is written atomically with
+mode `0600` because the native
 exporter needs a static Authorization header. The token is never put into shell
 environment variables or command arguments. Logs, traces and prompt export are
 disabled in this block. Project-local telemetry configuration is ignored by Codex.
@@ -159,11 +194,13 @@ From `linux/ansible/`:
 ```sh
 python3 -m unittest discover -s tests -p 'test_codex.py' -v
 python3 -m unittest discover -s tests -p 'test_agent_shells.py' -v
+python3 -m unittest discover -s tests -p 'test_codex_telemetry.py' -v
 ```
 
 The existing Python CI job picks these up automatically. Tests run the real scripts
 over the documented JSON hook protocol, without Codex, credentials or network.
-They need Python 3.11+, bash and jq (already shipped by arch-core).
+They need Python 3.11+, tomlkit, bash and jq. The role installs Arch's
+`python-tomlkit`; CI installs `tomlkit>=0.13,<1` for the Python tests.
 
 Shell startup tests use fish and PowerShell when installed (including `pwsh.exe`
 under WSL). CI installs fish before running the full Python suite, and runs the

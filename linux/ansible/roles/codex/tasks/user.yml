@@ -1,0 +1,21 @@
+- name: Codex - inspect the installed configuration editor
+  ansible.builtin.stat:
+    path: /etc/codex/configure-user.py
+  register: codex_user_editor
+
+- name: Codex - merge narrowly owned user policy
+  become: true
+  become_user: "{{ the_user }}"
+  ansible.builtin.command:
+    argv: >-
+      {{ ['/usr/bin/python3', '/etc/codex/configure-user.py',
+          '--config', user_home + '/.codex/config.toml',
+          '--updates-json', codex_user_config_updates | to_json,
+          '--remove-json', codex_user_config_remove | to_json]
+         + (['--check'] if ansible_check_mode else []) }}
+  register: codex_user_result
+  changed_when: codex_user_result.stdout == 'updated'
+  when: not ansible_check_mode or codex_user_editor.stat.exists
+  check_mode: false
+  diff: false
+  no_log: true
