@@ -19,6 +19,8 @@ codex_user_config_updates:
     codex-app-tools@openai-bundled:
       mcp_servers:
         codex_app:
+          # Desktop enables this only when its app-tools pipe is available.
+          enabled: false
           disabled_tools:
             - end_realtime_voice_call
             - share_thread
