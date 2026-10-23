@@ -1,6 +1,170 @@
-# Managed by computerConfiguration: selected Claude command approvals.
+# Managed by computerConfiguration: selected agent command approvals.
 # These approvals apply globally and permit execution outside the sandbox.
 # Rules match argument prefixes, so extra arguments are also permitted.
+
+# Selected development commands and Linux diagnostics, shared with Claude.
+# Build/test commands execute repository code. Keep journal output finite with -n.
+
+prefix_rule(
+    pattern = ["go", "build"],
+    decision = "allow",
+    match = ["go build ./...", "go build -o /tmp/app ./cmd/app"],
+    not_match = ["go install ./..."],
+)
+
+prefix_rule(
+    pattern = ["go", "test"],
+    decision = "allow",
+    match = ["go test ./...", "go test -race ./..."],
+    not_match = ["go clean -cache"],
+)
+
+prefix_rule(
+    pattern = ["go", "vet"],
+    decision = "allow",
+    match = ["go vet ./..."],
+    not_match = ["go generate ./..."],
+)
+
+prefix_rule(
+    pattern = ["go", "version"],
+    decision = "allow",
+    match = ["go version", "go version -m /tmp/app"],
+    not_match = ["go env -w GOPROXY=example"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "build"],
+    decision = "allow",
+    match = ["npm run build", "npm run build -- --mode production"],
+    not_match = ["npm run deploy"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "lint"],
+    decision = "allow",
+    match = ["npm run lint", "npm run lint -- --quiet"],
+    not_match = ["npm install"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "type-check"],
+    decision = "allow",
+    match = ["npm run type-check"],
+    not_match = ["npm run typecheck"],
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "unit"],
+    decision = "allow",
+    match = ["npm run unit", "npm run unit -- --run"],
+    not_match = ["npm run integration"],
+)
+
+prefix_rule(
+    pattern = ["uv", "run", "pytest"],
+    decision = "allow",
+    match = ["uv run pytest", "uv run pytest -q tests"],
+    not_match = ["uv run python script.py", "uv sync"],
+)
+
+prefix_rule(
+    pattern = ["journalctl", "-b", "--no-pager", "-n"],
+    decision = "allow",
+    match = ["journalctl -b --no-pager -n 200", "journalctl -b --no-pager -n 50 --since today"],
+    not_match = ["journalctl -f", "journalctl --vacuum-time=1d"],
+)
+
+prefix_rule(
+    pattern = ["journalctl", "--list-boots"],
+    decision = "allow",
+    match = ["journalctl --list-boots", "journalctl --list-boots --no-pager"],
+    not_match = ["journalctl --rotate"],
+)
+
+prefix_rule(
+    pattern = ["ip", "-br", "address", "show"],
+    decision = "allow",
+    match = ["ip -br address show", "ip -br address show dev lo"],
+    not_match = ["ip -br address flush dev lo"],
+)
+
+prefix_rule(
+    pattern = ["ip", "-br", "link", "show"],
+    decision = "allow",
+    match = ["ip -br link show", "ip -br link show dev lo"],
+    not_match = ["ip -br link set dev lo down"],
+)
+
+prefix_rule(
+    pattern = ["ip", "-6", "address", "show"],
+    decision = "allow",
+    match = ["ip -6 address show", "ip -6 address show dev lo"],
+    not_match = ["ip -6 address add ::1/128 dev lo"],
+)
+
+prefix_rule(
+    pattern = ["ip", "-6", "route", "show"],
+    decision = "allow",
+    match = ["ip -6 route show", "ip -6 route show table all"],
+    not_match = ["ip -6 route delete default"],
+)
+
+prefix_rule(
+    pattern = ["ip", "-6", "route", "get"],
+    decision = "allow",
+    match = ["ip -6 route get ::1"],
+    not_match = ["ip -6 route add default via ::1"],
+)
+
+prefix_rule(
+    pattern = ["ip", "route", "show"],
+    decision = "allow",
+    match = ["ip route show", "ip route show table all"],
+    not_match = ["ip route delete default"],
+)
+
+prefix_rule(
+    pattern = ["ip", "route", "get"],
+    decision = "allow",
+    match = ["ip route get 127.0.0.1"],
+    not_match = ["ip route add default via 127.0.0.1"],
+)
+
+prefix_rule(
+    pattern = ["ip", "rule", "show"],
+    decision = "allow",
+    match = ["ip rule show"],
+    not_match = ["ip rule add priority 100 table main"],
+)
+
+prefix_rule(
+    pattern = ["resolvectl", "status"],
+    decision = "allow",
+    match = ["resolvectl status", "resolvectl status lo"],
+    not_match = ["resolvectl dns lo 1.1.1.1"],
+)
+
+prefix_rule(
+    pattern = ["getent", "hosts"],
+    decision = "allow",
+    match = ["getent hosts localhost"],
+    not_match = ["getent passwd"],
+)
+
+prefix_rule(
+    pattern = ["systemctl", "--user", "status"],
+    decision = "allow",
+    match = ["systemctl --user status", "systemctl --user status example.service --no-pager"],
+    not_match = ["systemctl --user restart example.service"],
+)
+
+prefix_rule(
+    pattern = ["systemctl", "--user", "cat"],
+    decision = "allow",
+    match = ["systemctl --user cat example.service"],
+    not_match = ["systemctl --user edit example.service"],
+)
 
 # From linux/ansible/.claude/settings.local.json.
 prefix_rule(

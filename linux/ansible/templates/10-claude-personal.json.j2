@@ -32,7 +32,12 @@
    ssh-fish-guard catches bash syntax sent over ssh: this playbook makes fish the
    login shell everywhere, and sshd runs a remote command in it, so a remote
    `f=x; for …; do` or a heredoc piped to plain `ssh host` dies there. The fix it
-   names is `ssh host bash -s <<'EOF'`. #}
+   names is `ssh host bash -s <<'EOF'`.
+   Selected command approvals travel with this policy too. Builds and tests
+   execute repository code, including pnpm build; this is a deliberate allowance,
+   not a general shell, npx, Git-write or sudo approval. Network diagnostics name
+   read subcommands rather than ip-wide prefixes. Journal reads use a finite -n
+   limit and --no-pager, as the separately managed diagnostic instructions say. #}
 {
   "attribution": {
     "commit": "",
@@ -41,6 +46,37 @@
   },
   "promptSuggestionEnabled": false,
   "awaySummaryEnabled": false,
+  "permissions": {
+    "allow": [
+      "Bash(go build *)",
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go version)",
+      "Bash(npm run build *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run type-check *)",
+      "Bash(npm run unit *)",
+      "Bash(uv run pytest *)",
+      "Bash(journalctl -b --no-pager -n *)",
+      "Bash(journalctl --list-boots)",
+      "Bash(ip -br address show *)",
+      "Bash(ip -br link show *)",
+      "Bash(ip -6 address show *)",
+      "Bash(ip -6 route show *)",
+      "Bash(ip -6 route get *)",
+      "Bash(ip route show *)",
+      "Bash(ip route get *)",
+      "Bash(ip rule show *)",
+      "Bash(resolvectl status *)",
+      "Bash(getent hosts *)",
+      "Bash(systemctl --user status *)",
+      "Bash(systemctl --user cat *)",
+      "Bash(nvim --version *)",
+      "Bash(tree-sitter --version *)",
+      "Bash(/bin/ls *)",
+      "Bash(pnpm build *)"
+    ]
+  },
   "deniedMcpServers": [
     { "serverName": "claude.ai Claude Docs" }
   ],
