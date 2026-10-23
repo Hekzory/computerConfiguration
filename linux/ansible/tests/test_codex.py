@@ -115,7 +115,7 @@ class Configuration(unittest.TestCase):
         ])
         self.assertEqual(set(config["hooks"]), {"PreToolUse"})
         groups = config["hooks"]["PreToolUse"]
-        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups), 2)
         self.assertEqual(groups[0]["matcher"], "^Bash$")
         self.assertEqual(len(groups[0]["hooks"]), 2)
         for handler, interpreter, source in zip(
@@ -128,6 +128,19 @@ class Configuration(unittest.TestCase):
                 interpreter, f"/etc/codex/hooks/{source.name}",
             ])
             self.assertTrue(source.is_file())
+        self.assertEqual(groups[1], {
+            "matcher": "^mcp__cua_repl__js$",
+            "hooks": [{
+                "type": "command",
+                "command": "/usr/bin/python3 /etc/codex/hooks/browser-connect.py",
+                "timeout": 25,
+                "statusMessage": "Checking Desktop browser connection",
+            }],
+        })
+        tasks = (ROLE / "tasks/main.yml").read_text()
+        self.assertIn("src: browser-connect.py", tasks)
+        self.assertIn("dest: /etc/codex/hooks/browser-connect.py", tasks)
+        self.assertLess(tasks.index("src: browser-connect.py"), tasks.index("src: config.toml"))
 
     def test_ownership_marker(self):
         self.assertTrue((ROLE / "files/config.toml").read_text().startswith(

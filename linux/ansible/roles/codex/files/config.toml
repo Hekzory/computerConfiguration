@@ -1,6 +1,6 @@
 # Managed by computerConfiguration: Codex
 # User settings and credentials stay in ~/.codex; these system defaults remain overridable.
-# The hooks enforce the two command policies.
+# The hooks enforce command policies and prepare optional Desktop browser access.
 
 model_reasoning_effort = "high"
 plan_mode_reasoning_effort = "high"
@@ -59,3 +59,12 @@ timeout = 10
 type = "command"
 command = "/usr/bin/python3 /etc/codex/hooks/ssh-fish-guard.py"
 timeout = 10
+
+[[hooks.PreToolUse]]
+matcher = "^mcp__cua_repl__js$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "/usr/bin/python3 /etc/codex/hooks/browser-connect.py"
+timeout = 25
+statusMessage = "Checking Desktop browser connection"
