@@ -144,6 +144,9 @@ The default updates disable ambient suggestions, the Work Pets, Pages, bundled
 LaTeX and Code Review plugins, and the Hotline, Pets, Pages and Safety Settings
 apps. The Codex App Tools server also excludes voice-call termination, chat
 sharing and its two LaTeX tools while retaining the other app tools.
+The server is disabled by default so standalone CLI sessions do not start it
+without `CODEX_APP_TOOLS_PIPE_PATH`. The desktop app supplies a session override
+to enable the server when its app-tools pipe is available.
 `codex_user_disabled_skills` also disables the three `work-pets:*` and four
 `pages:*` skills by name, independent of cached plugin versions. Other skill
 rules are preserved; the managed name rules follow existing path overrides.
