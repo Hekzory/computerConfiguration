@@ -7,6 +7,8 @@ codex_user_config_updates:
   plugins:
     work-pets@openai-curated-remote:
       enabled: false
+    pages@openai-curated-remote:
+      enabled: false
     latex@openai-bundled:
       enabled: false
     code-review@openai-bundled:
@@ -29,10 +31,16 @@ codex_user_config_updates:
       enabled: false
     connector_openai_safety_settings:
       enabled: false
+    connector_openai_pages:
+      enabled: false
 codex_user_disabled_skills:
   - work-pets:create-pet
   - work-pets:pets
   - work-pets:update-pet
+  - pages:maintain-space
+  - pages:manage-schedules
+  - pages:organize-space
+  - pages:write-page
 codex_user_config_remove:
   - [features, analytics_plan_history]
 

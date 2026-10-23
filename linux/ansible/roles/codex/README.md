@@ -117,13 +117,14 @@ session. The role preserves late search, summary, theme, memory and trust choice
 The default removal list deletes only `features.analytics_plan_history`. It does
 not disable `analytics.enabled` or the private metrics exporter. A later role run
 reconciles this deprecated flag if a client writes it again.
-The default updates disable ambient suggestions, the Work Pets, bundled LaTeX and
-Code Review plugins, and the Hotline, Pets and Safety Settings apps. The Codex App
-Tools server also excludes voice-call termination, chat sharing and its two LaTeX
-tools while retaining the other app tools. `codex_user_disabled_skills`
-also disables the three `work-pets:*` skills by name, independent of cached plugin
-versions. Other skill rules are preserved; the managed name rules follow existing
-path overrides. Override the policy variables to change these selections.
+The default updates disable ambient suggestions, the Work Pets, Pages, bundled
+LaTeX and Code Review plugins, and the Hotline, Pets, Pages and Safety Settings
+apps. The Codex App Tools server also excludes voice-call termination, chat
+sharing and its two LaTeX tools while retaining the other app tools.
+`codex_user_disabled_skills` also disables the three `work-pets:*` and four
+`pages:*` skills by name, independent of cached plugin versions. Other skill
+rules are preserved; the managed name rules follow existing path overrides.
+Override the policy variables to change these selections.
 
 ## Metrics
 
