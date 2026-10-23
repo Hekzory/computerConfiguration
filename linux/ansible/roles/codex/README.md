@@ -70,7 +70,7 @@ The SSH-to-fish guard is copied unchanged from
 Claude; both clients retain the same behavior and one source of truth.
 
 Claude Code, ccodex, their configuration, plugins and credentials stay untouched.
-So do `~/.codex/config.toml`, auth files, user/project hooks, MCP servers and
+So do auth files, user/project hooks, MCP servers and
 `requirements.toml`. The system config is a defaults layer, not a replacement for
 user settings: a higher-precedence footer choice still wins, and explicitly
 turning off `features.hooks` at a higher layer disables hooks. System hooks are
@@ -85,6 +85,42 @@ before the configuration, whose TOML is validated before replacement.
 Start a new Codex session after deployment and inspect `/hooks` for both handlers.
 Use a recent CLI with `PreToolUse` support. A hook error/timeout is not a guaranteed
 denial, so these checks must not be mistaken for a sandbox.
+
+## Metrics
+
+The role enables native Codex OTLP/HTTP metrics when `~/.codex/otel-token` exists,
+falling back to the existing personal `~/.claude/otel-token`. Obtain the ingest
+token with `make otel-token` in nginx-gateway on o-srv. Tokens stay outside Git.
+With neither token available, this exporter stays off and the role removes its
+metrics block on the next run. An existing Codex `[otel]` configuration or an explicit
+`analytics.enabled = false` keeps this role's exporter off.
+
+Only a marked block in `~/.codex/config.toml` is managed; other user settings are
+preserved. The file is written atomically with mode `0600` because the native
+exporter needs a static Authorization header. The token is never put into shell
+environment variables or command arguments. Logs, traces and prompt export are
+disabled in this block. Project-local telemetry configuration is ignored by Codex.
+
+Metrics go to `https://otel.tsv.one/v1/metrics`, through the existing authenticated
+gateway into VictoriaMetrics on o-srv. No local collector or listening port is
+needed. Override `codex_otel_endpoint`, `codex_otel_machine` or
+`codex_otel_token_paths` in Ansible if needed. The native `otel.environment`
+resource attribute (`env` in VictoriaMetrics) identifies the machine: hostname,
+with `-wsl` appended under WSL. This works from desktop and CLI launches without
+a shell wrapper. Do not reuse a machine label on two different machines.
+
+The [Codex dashboard](https://grafana.tsv.one/d/codex/codex) is provisioned by
+o-srv's monitoring repo, with Machine and Model filters. Codex 0.163 exports delta
+counters and histograms; totals use `sum_over_time`, including histogram `_sum`
+and `_count`, rather than `rate` or `increase`. Token types overlap: input includes
+cached input, and output includes reasoning output. The dashboard totals use only
+`token_type="total"`. Metrics flush periodically and at process shutdown; restart
+Codex after applying the role. The running session does not reload its exporter.
+Apply just the Codex role with `ansible-playbook arch-core.yml --tags codex` from
+`linux/ansible/` after authenticating sudo, or use the usual full playbook run.
+
+See the [official telemetry settings](https://learn.chatgpt.com/docs/config-file/config-reference)
+and [metrics catalog](https://learn.chatgpt.com/docs/config-file/config-advanced#metrics).
 
 ## Shared memory and instructions
 

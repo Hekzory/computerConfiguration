@@ -1,0 +1,6 @@
+# An existing personal Claude metrics token also opts this machine into Codex metrics.
+codex_otel_endpoint: https://otel.tsv.one/v1/metrics
+codex_otel_machine: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | default(false) | bool) else '') }}"
+codex_otel_token_paths:
+  - "{{ user_home }}/.codex/otel-token"
+  - "{{ user_home }}/.claude/otel-token"

@@ -98,3 +98,6 @@
     mode: '0640'
     marker: "<!-- {mark} computerConfiguration: Codex instructions -->"
     block: "{{ lookup('ansible.builtin.file', role_path + '/files/AGENTS.md') }}"
+
+- name: Codex - configure metrics
+  ansible.builtin.import_tasks: telemetry.yml
