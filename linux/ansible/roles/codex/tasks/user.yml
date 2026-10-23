@@ -11,7 +11,8 @@
       {{ ['/usr/bin/python3', '/etc/codex/configure-user.py',
           '--config', user_home + '/.codex/config.toml',
           '--updates-json', codex_user_config_updates | to_json,
-          '--remove-json', codex_user_config_remove | to_json]
+          '--remove-json', codex_user_config_remove | to_json,
+          '--disabled-skills-json', codex_user_disabled_skills | to_json]
          + (['--check'] if ansible_check_mode else []) }}
   register: codex_user_result
   changed_when: codex_user_result.stdout == 'updated'
