@@ -9,6 +9,19 @@ codex_user_config_updates:
       enabled: false
     latex@openai-bundled:
       enabled: false
+    code-review@openai-bundled:
+      enabled: false
+      mcp_servers:
+        code-review:
+          enabled: false
+    codex-app-tools@openai-bundled:
+      mcp_servers:
+        codex_app:
+          disabled_tools:
+            - end_realtime_voice_call
+            - share_thread
+            - create_latex_project
+            - compile_latex_document
   apps:
     connector_openai_hotline:
       enabled: false
