@@ -24,9 +24,16 @@ Run via the wrapper from `linux/ansible/`:
 
 ```bash
 ./run.sh arch-core      # or arch-desktop, or arch-home
+./run.sh arch-core --corporate  # opt in to corporate Codex setup; works with all three
 ```
 
 It validates the playbook name, installs galaxy collections, and asks for the sudo password once up front, so the run prompts only once (and a fingerprint reader is touched once, not per task).
+
+`--corporate` enables the separate corporate Codex role inside the selected
+playbook's `arch-core` setup. It requires the private inputs described in
+[`roles/codex_corporate`](linux/ansible/roles/codex_corporate/README.md).
+Without the flag, corporate provisioning is skipped; existing integrations are
+preserved.
 
 ### ccodex
 

@@ -1,10 +1,19 @@
 # Opt-in corporate Codex configuration
 
-This role is separate from `codex` and is never imported by the standard Arch
-playbooks. Existing work integrations stay in place when the base role runs.
-Explicitly invoke `ansible-playbook codex-corporate.yml` from `linux/ansible/`
-after reviewing `--check`. That playbook installs the base role first. There is
-no automatic corporate activation by hostname, user name or repository origin.
+This role is separate from `codex` and is enabled explicitly through the normal
+`run.sh` flow from `linux/ansible/`:
+
+```sh
+./run.sh arch-core --corporate
+# The same option works with arch-desktop and arch-home.
+```
+
+The flag passes `codex_corporate_enabled=true` to the selected playbook. Its
+`arch-core` portion applies the base Codex role first, then the corporate role.
+Without the flag (or another explicit true value for that variable), the
+corporate role is skipped. There is no activation by hostname, user name or
+repository origin. Already-installed integrations stay configured when the role
+is skipped; this option controls provisioning, not runtime availability.
 
 It manages three corporate MCP configurations, preserving the reviewed 23 read
 tools and original server names. The default approval policy remains `prompt`;
@@ -43,8 +52,8 @@ existing transport. VPN/access requirements remain external prerequisites.
 
 Private skill contents, work briefs, tokens, npm modules and OAuth state are not
 committed here. A machine without these inputs fails before corporate files are
-changed. Base defaults may already have been installed by the explicit playbook.
-Do not run this role as part of the default workstation bootstrap.
+changed. Base defaults may already have been installed by the normal playbook.
+Default workstation bootstrap does not apply the corporate role.
 
 On a fresh check-mode run, private assets whose destination directories do not
 exist are reported as planned, and the uninstalled hooks helper is skipped.

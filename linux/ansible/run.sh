@@ -27,14 +27,21 @@ die() {
 # Function to display usage
 show_usage() {
     cat <<EOF
-Usage: $(basename "$0") <playbook>
+Usage: $(basename "$0") <playbook> [--corporate]
 Available playbooks: ${VALID_PLAYBOOKS[*]}
+  --corporate  Apply corporate Codex integrations (requires private inputs).
 EOF
     exit 1
 }
 
-# Check if exactly one argument is provided
-[[ $# -ne 1 ]] && show_usage
+# The corporate role is optional within the same normal playbook flow.
+[[ $# -lt 1 || $# -gt 2 ]] && show_usage
+ansible_options=()
+if [[ $# -eq 2 ]]; then
+    [[ "$2" == "--corporate" ]] || die "Unknown option: $2"
+    ansible_options+=(--extra-vars '{"codex_corporate_enabled":true}')
+fi
+readonly -a ansible_options
 
 # Validate playbook argument using array
 playbook_valid=0
@@ -97,7 +104,7 @@ main() {
     fi
 
     echo "Running playbook..."
-    if ! ansible-playbook -v "$PLAYBOOK_FILE"; then
+    if ! ansible-playbook -v "$PLAYBOOK_FILE" "${ansible_options[@]}"; then
         die "Playbook execution failed"
     fi
 

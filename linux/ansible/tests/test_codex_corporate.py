@@ -28,7 +28,13 @@ class Corporate(unittest.TestCase):
         self.home = Path(self.temp.name)
 
     def test_role_is_opt_in_and_keeps_exact_reviewed_reads(self):
-        for name in ['arch-core.yml', 'arch-desktop.yml', 'arch-home.yml']:
+        core = yaml.safe_load((ROOT / 'arch-core.yml').read_text())
+        optional = next(task for task in core[0]['tasks']
+                        if task.get('ansible.builtin.include_role', {}).get('name') == 'codex_corporate')
+        self.assertEqual(optional['when'], 'codex_corporate_enabled | default(false) | bool')
+        self.assertEqual(optional['ansible.builtin.include_role']['apply'],
+                         {'become': True, 'tags': ['codex_corporate']})
+        for name in ['arch-desktop.yml', 'arch-home.yml']:
             self.assertNotIn('codex_corporate', (ROOT / name).read_text())
         policy = yaml.safe_load((ROLE / 'defaults/main.yml').read_text())['codex_corporate_mcp_policy']
         self.assertEqual(set(policy), {'mcp_servers'})
