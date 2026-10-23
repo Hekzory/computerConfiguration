@@ -117,6 +117,9 @@ session. The role preserves late search, summary, theme, memory and trust choice
 The default removal list deletes only `features.analytics_plan_history`. It does
 not disable `analytics.enabled` or the private metrics exporter. A later role run
 reconciles this deprecated flag if a client writes it again.
+The default update sets `desktop.ambient-suggestions-enabled = false` while
+preserving the rest of the desktop table. Override the policy variables to change
+these selections; the role does not manage unrelated feature flags.
 
 ## Metrics
 
