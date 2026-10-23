@@ -8,6 +8,7 @@ import tomllib
 import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "roles/codex/files/configure-telemetry.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("codex_telemetry", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -55,6 +56,48 @@ class Telemetry(unittest.TestCase):
         self.token.unlink()
         self.assertEqual(self.configure(), (True, "no ingest token"))
         self.assertEqual(self.config.read_text(), original)
+
+    def test_preserves_foreign_tables_interleaved_before_end(self):
+        original = 'model = "gpt-6.1-sol"\n'
+        foreign = '''# App-owned values, including a multiline string and quoted key.
+[desktop]
+preventSleepWhileRunning = true
+theme = """Dark
+[not.a.table]
+"""
+[desktop.colors]
+accent = "#ff79c6"
+[plugins."browser@openai-bundled"]
+enabled = true
+[marketplaces.local]
+path = "/private/cache"
+[mcp_servers.node_repl.env]
+APP_RUNTIME = "/generated/version/path"
+'''
+        self.config.write_text(original)
+        self.configure()
+        self.config.write_text(self.config.read_text().replace(MODULE.END, foreign + MODULE.END))
+        expected = tomllib.loads(original + foreign)
+        before = self.config.read_bytes()
+        self.assertTrue(self.configure(check=True)[0])
+        self.assertEqual(self.config.read_bytes(), before)
+        self.assertTrue(self.configure()[0])
+        actual = tomllib.loads(self.config.read_text())
+        del actual['otel']
+        self.assertEqual(actual, expected)
+        self.assertIn('# App-owned values', self.config.read_text())
+        self.assertEqual(self.configure(), (False, ''))
+        self.token.write_text('rotated-token')
+        self.assertTrue(self.configure()[0])
+        self.token.unlink()
+        self.assertEqual(self.configure(), (True, 'no ingest token'))
+        self.assertEqual(tomllib.loads(self.config.read_text()), expected)
+
+    def test_does_not_erase_unowned_otel_settings(self):
+        self.configure()
+        self.config.write_text(self.config.read_text().replace('[otel]\n', '[otel]\ncustom = "preserve"\n'))
+        self.assertEqual(self.configure(), (True, 'existing telemetry configuration'))
+        self.assertEqual(tomllib.loads(self.config.read_text()), {'otel': {'custom': 'preserve'}})
 
     def test_no_token_does_not_create_config(self):
         self.token.unlink()

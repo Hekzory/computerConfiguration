@@ -100,8 +100,13 @@ With neither token available, this exporter stays off and the role removes its
 metrics block on the next run. An existing Codex `[otel]` configuration or an explicit
 `analytics.enabled = false` keeps this role's exporter off.
 
-Only a marked block in `~/.codex/config.toml` is managed; other user settings are
-preserved. The file is written atomically with mode `0600` because the native
+Only the metrics keys inside a marked block in `~/.codex/config.toml` are managed;
+foreign tables inserted by the desktop before its END marker are preserved when
+the block is migrated. Unknown telemetry fields are retained and prevent adopting
+the role's exporter. The role installs `python-tomlkit` for lossless TOML edits,
+validates values independently with Python's `tomllib`, and rejects a file that
+changes while an update is being prepared. The file is written atomically with
+mode `0600` because the native
 exporter needs a static Authorization header. The token is never put into shell
 environment variables or command arguments. Logs, traces and prompt export are
 disabled in this block. Project-local telemetry configuration is ignored by Codex.
@@ -159,11 +164,13 @@ From `linux/ansible/`:
 ```sh
 python3 -m unittest discover -s tests -p 'test_codex.py' -v
 python3 -m unittest discover -s tests -p 'test_agent_shells.py' -v
+python3 -m unittest discover -s tests -p 'test_codex_telemetry.py' -v
 ```
 
 The existing Python CI job picks these up automatically. Tests run the real scripts
 over the documented JSON hook protocol, without Codex, credentials or network.
-They need Python 3.11+, bash and jq (already shipped by arch-core).
+They need Python 3.11+, tomlkit, bash and jq. The role installs Arch's
+`python-tomlkit`; CI installs `tomlkit>=0.13,<1` for the Python tests.
 
 Shell startup tests use fish and PowerShell when installed (including `pwsh.exe`
 under WSL). CI installs fish before running the full Python suite, and runs the

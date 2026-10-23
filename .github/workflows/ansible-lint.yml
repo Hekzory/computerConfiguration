@@ -63,7 +63,9 @@ jobs:
       - name: Test Python helpers and Codex hooks and shell startup
         working-directory: linux/ansible
         # Install fish first so its behavior tests cannot silently skip.
-        run: timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
+        run: |
+          python3 -m pip install 'tomlkit>=0.13,<1'
+          timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: fish -n on every shipped fish file
         run: find linux/ansible/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
       - name: stylua --check init.lua

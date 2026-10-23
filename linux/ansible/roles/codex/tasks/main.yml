@@ -1,4 +1,9 @@
 # System defaults and managed hooks, alongside Claude rather than replacing it.
+- name: Codex - install the lossless TOML editor dependency
+  ansible.builtin.package:
+    name: python-tomlkit
+    state: present
+
 - name: Codex - inspect the system config
   ansible.builtin.stat:
     path: /etc/codex/config.toml
@@ -41,6 +46,17 @@
   loop:
     - /etc/codex
     - /etc/codex/hooks
+
+- name: Codex - install validated configuration editors
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/codex/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - config_edit.py
+    - configure-telemetry.py
 
 - name: Codex - install the commit attribution guard
   ansible.builtin.copy:

@@ -2,32 +2,63 @@
 """Manage only our private user-level Codex metrics block; never print its token."""
 import argparse
 import json
-import os
+import copy
 from pathlib import Path
 import re
-import tempfile
 import tomllib
 from urllib.parse import urlsplit
 
+import tomlkit
+
+from config_edit import delete_path, read_config, write_config
+
 BEGIN = "# BEGIN computerConfiguration: Codex metrics"
 END = "# END computerConfiguration: Codex metrics"
+OWNED = [
+    ("otel", key) for key in ("environment", "exporter", "trace_exporter", "log_user_prompt")
+] + [
+    ("otel", "metrics_exporter", "otlp-http", key) for key in ("endpoint", "protocol")
+] + [("otel", "metrics_exporter", "otlp-http", "headers", "Authorization")]
+COMMENT = "# Metrics only. env identifies the machine, including a -wsl suffix under WSL.\n"
 
 
 def unmanaged(text):
     if BEGIN not in text and END not in text:
         return text
-    pattern = rf"(?m)^{re.escape(BEGIN)}\n.*?^{re.escape(END)}(?:\n|$)"
-    result, count = re.subn(pattern, "", text, flags=re.DOTALL)
-    if count != 1 or BEGIN in result or END in result:
+    pattern = rf"(?m)^{re.escape(BEGIN)}\n(.*?)^{re.escape(END)}(?:\n|$)"
+    matches = list(re.finditer(pattern, text, flags=re.DOTALL))
+    if len(matches) != 1 or text.count(BEGIN) != 1 or text.count(END) != 1:
         raise ValueError("invalid Codex metrics block markers; review config.toml")
+    match = matches[0]
+    # Desktop writes may place unrelated tables before END. Markers delimit a
+    # search area, not permission to delete its contents. Own only these leaves.
+    original_body = match.group(1).replace(COMMENT, "", 1)
+    body = tomlkit.parse(original_body)
+    expected = copy.deepcopy(tomllib.loads(text))
+    for path in OWNED:
+        # Only delete keys actually present in this managed region.
+        current = body
+        for key in path:
+            if not isinstance(current, dict) or key not in current:
+                break
+            current = current[key]
+        else:
+            delete_path(body, path)
+            delete_path(expected, path)
+    retained = tomlkit.dumps(body)
+    # TOML associates comments before a foreign header with the preceding
+    # metrics table. Keep those comments when pruning an empty managed table.
+    comments = re.findall(r"(?m)^[ \t]*#[^\n]*(?:\n|$)", original_body)
+    retained = ''.join(line for line in comments if line not in retained) + retained
+    result = text[:match.start()] + retained + text[match.end():]
+    if tomllib.loads(result) != expected:
+        raise ValueError("unexpected change outside managed metrics keys")
     return result
 
 
 def configure(path, token_paths, endpoint, machine, check=False):
     path = Path(path)
-    if path.is_symlink():
-        raise ValueError("Codex config is a symlink; review it before enabling metrics")
-    original = path.read_text() if path.exists() else ""
+    original = read_config(path)
     base = unmanaged(original)
     config = tomllib.loads(base)
     reason = ""
@@ -69,20 +100,7 @@ Authorization = {quote("Bearer " + token)}
 {END}
 '''
         desired = base + ("\n" if base and not base.endswith("\n") else "") + block
-    # Validate the complete replacement before touching the original.
-    tomllib.loads(desired)
-    private = path.exists() and not reason and (path.stat().st_mode & 0o777) != 0o600
-    changed = desired != original or private
-    if changed and not check:
-        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(prefix=".config.toml-", dir=path.parent)
-        try:
-            with os.fdopen(fd, "w") as stream:
-                stream.write(desired)
-            os.replace(temporary, path)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+    changed = write_config(path, original, desired, check, private=not reason)
     return changed, reason
 
 

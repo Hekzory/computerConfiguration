@@ -1,9 +1,9 @@
 - name: Codex - configure private metrics export where an ingest token exists
   become: true
   become_user: "{{ the_user }}"
-  ansible.builtin.script:
+  ansible.builtin.command:
     cmd: >-
-      {{ (role_path + '/files/configure-telemetry.py') | quote }}
+      /usr/bin/python3 /etc/codex/configure-telemetry.py
       --config {{ (user_home + '/.codex/config.toml') | quote }}
       {% for token_path in codex_otel_token_paths %}
       --token {{ token_path | quote }}
@@ -11,7 +11,6 @@
       --endpoint {{ codex_otel_endpoint | quote }}
       --machine {{ codex_otel_machine | quote }}
       {{ '--check' if ansible_check_mode else '' }}
-    executable: /usr/bin/python3
   register: codex_otel_result
   changed_when: codex_otel_result.stdout is search('^updated')
   # The helper implements a read-only check and never prints the token.
