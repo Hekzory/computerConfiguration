@@ -114,6 +114,10 @@ Do not restore missing plugin/runtime tables from old snapshots. Their ownership
 stays with the desktop; inspect effective availability in a fresh supported
 session. The role preserves late search, summary, theme, memory and trust choices.
 
+The default removal list deletes only `features.analytics_plan_history`. It does
+not disable `analytics.enabled` or the private metrics exporter. A later role run
+reconciles this deprecated flag if a client writes it again.
+
 ## Metrics
 
 The role enables native Codex OTLP/HTTP metrics when `~/.codex/otel-token` exists,
