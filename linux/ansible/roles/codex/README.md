@@ -91,6 +91,29 @@ Start a new Codex session after deployment and inspect `/hooks` for both handler
 Use a recent CLI with `PreToolUse` support. A hook error/timeout is not a guaranteed
 denial, so these checks must not be mistaken for a sandbox.
 
+## Configuration ownership
+
+| Owner | Files or keys |
+| --- | --- |
+| Base role | `/etc/codex/config.toml`, system hooks/editors, marked working agreements and `claude-import.rules` |
+| Selected user policy | Only leaves in `codex_user_config_updates` and paths in `codex_user_config_remove` |
+| Metrics helper | Marked `otel.environment`, exporter/trace exporter, prompt logging, HTTP metrics endpoint/protocol and its Authorization header |
+| Optional corporate role | Its three corporate MCP policies, adapters, skill links, research role and selected hook handlers |
+| Desktop / account | Plugin switches, marketplaces, generated `node_repl` paths/environment, OAuth, onboarding, hook trust hashes, appearance and queue/detail preferences |
+| User | All other configuration, credentials and private work context |
+
+`codex_user_config_updates` recursively merges selected leaves; it never replaces
+the whole document. Removals use lists of path components, preserving quoted or
+hyphenated names. Values are parsed and checked before an atomic private write.
+No credentials belong in these variables or in Git. Helpers support `--check`
+without writes; Ansible calls them in check mode only if the installed editor is
+available. On a fresh host the install tasks report planned changes, and user
+configuration validation requires a subsequent check after installation.
+
+Do not restore missing plugin/runtime tables from old snapshots. Their ownership
+stays with the desktop; inspect effective availability in a fresh supported
+session. The role preserves late search, summary, theme, memory and trust choices.
+
 ## Metrics
 
 The role enables native Codex OTLP/HTTP metrics when `~/.codex/otel-token` exists,

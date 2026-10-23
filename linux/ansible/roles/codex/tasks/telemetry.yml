@@ -13,6 +13,7 @@
       {{ '--check' if ansible_check_mode else '' }}
   register: codex_otel_result
   changed_when: codex_otel_result.stdout is search('^updated')
+  when: not ansible_check_mode or codex_user_editor.stat.exists
   # The helper implements a read-only check and never prints the token.
   check_mode: false
   diff: false

@@ -1,4 +1,9 @@
 # An existing personal Claude metrics token also opts this machine into Codex metrics.
+# These are leaf-level updates, not a replacement for the user document. Keep
+# credentials and generated runtime state out of these variables.
+codex_user_config_updates: {}
+codex_user_config_remove: []
+
 codex_otel_endpoint: https://otel.tsv.one/v1/metrics
 codex_otel_machine: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | default(false) | bool) else '') }}"
 codex_otel_token_paths:

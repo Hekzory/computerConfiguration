@@ -57,6 +57,7 @@
   loop:
     - config_edit.py
     - configure-telemetry.py
+    - configure-user.py
 
 - name: Codex - install the commit attribution guard
   ansible.builtin.copy:
@@ -114,6 +115,9 @@
     mode: '0640'
     marker: "<!-- {mark} computerConfiguration: Codex instructions -->"
     block: "{{ lookup('ansible.builtin.file', role_path + '/files/AGENTS.md') }}"
+
+- name: Codex - configure user policy
+  ansible.builtin.import_tasks: user.yml
 
 - name: Codex - configure metrics
   ansible.builtin.import_tasks: telemetry.yml
