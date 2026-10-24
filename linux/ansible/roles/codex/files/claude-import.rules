@@ -34,10 +34,10 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = ["npm", "run", "build"],
+    pattern = ["npm", "run", ["build", "check"]],
     decision = "allow",
-    match = ["npm run build", "npm run build -- --mode production"],
-    not_match = ["npm run deploy"],
+    match = ["npm run build", "npm run check", "npm run build -- --mode production"],
+    not_match = ["npm run deploy", "npm install", "npm publish"],
 )
 
 prefix_rule(
@@ -195,4 +195,113 @@ prefix_rule(
     decision = "allow",
     match = ["pnpm build", "pnpm build --verbose"],
     not_match = ["pnpm install", "pnpm publish", "pnpm run build"],
+)
+
+# Stage paths without opening an editor or accepting additional options.
+# Git may still execute configured clean filters.
+prefix_rule(
+    pattern = ["git", "add", "--"],
+    decision = "allow",
+    match = ["git add -- src/file.py"],
+    not_match = ["git add --edit", "git add --force src/file.py", "git reset --hard"],
+)
+
+prefix_rule(
+    pattern = ["git", "add", ["-A", "-u"], "--"],
+    decision = "allow",
+    match = ["git add -A --", "git add -u -- src/file.py"],
+    not_match = ["git add -A --edit", "git add -u --force src/file.py"],
+)
+
+# Repository inspection. Do not allow all of git, worktree or remote.
+prefix_rule(
+    pattern = ["git", ["status", "ls-files", "ls-tree", "rev-parse", "rev-list", "describe"]],
+    decision = "allow",
+    match = [
+        "git status --short", "git ls-files", "git ls-tree HEAD",
+        "git rev-parse HEAD", "git rev-list --count HEAD", "git describe --always",
+    ],
+    not_match = ["git reset --hard", "git clean -fd", "git diff --output=/tmp/diff"],
+)
+
+prefix_rule(
+    pattern = ["git", "worktree", "list"],
+    decision = "allow",
+    match = ["git worktree list", "git worktree list --porcelain"],
+    not_match = ["git worktree remove /tmp/worktree", "git worktree prune"],
+)
+
+prefix_rule(
+    pattern = ["git", "remote", "get-url"],
+    decision = "allow",
+    match = ["git remote get-url origin", "git remote get-url --all origin"],
+    not_match = ["git remote remove origin", "git remote set-url origin example"],
+)
+
+# Prefer fast-forward pulls for routine updates. This is a prefix approval,
+# not an argument validator: trailing options can override --ff-only, and
+# explicit refspecs can update other local refs. Plain pull/fetch stay unapproved.
+prefix_rule(
+    pattern = ["git", "pull", "--ff-only"],
+    decision = "allow",
+    match = ["git pull --ff-only", "git pull --ff-only origin main"],
+    not_match = ["git pull", "git pull --rebase", "git fetch", "git reset --hard"],
+)
+
+# Read pull requests, CI runs and releases without approving publication.
+prefix_rule(
+    pattern = ["gh", "pr", ["view", "list", "diff", "checks"]],
+    decision = "allow",
+    match = ["gh pr view 1", "gh pr list", "gh pr diff 1", "gh pr checks 1"],
+    not_match = ["gh pr merge 1", "gh pr create", "gh pr comment 1 --body example"],
+)
+
+prefix_rule(
+    pattern = ["gh", "run", ["view", "list"]],
+    decision = "allow",
+    match = ["gh run view 1 --log", "gh run list"],
+    not_match = ["gh run cancel 1", "gh run rerun 1", "gh run delete 1"],
+)
+
+prefix_rule(
+    pattern = ["gh", "repo", "view"],
+    decision = "allow",
+    match = ["gh repo view", "gh repo view owner/repo"],
+    not_match = ["gh repo delete owner/repo", "gh repo edit --visibility public"],
+)
+
+prefix_rule(
+    pattern = ["gh", "release", ["view", "list"]],
+    decision = "allow",
+    match = ["gh release view v1.0", "gh release list"],
+    not_match = ["gh release create v1.0", "gh release delete v1.0"],
+)
+
+prefix_rule(
+    pattern = ["glab", "mr", ["view", "list", "diff"]],
+    decision = "allow",
+    match = ["glab mr view 1", "glab mr list", "glab mr diff 1"],
+    not_match = ["glab mr merge 1", "glab mr create", "glab mr note 1 -m example"],
+)
+
+# Build/test commands execute project code outside the sandbox.
+prefix_rule(
+    pattern = ["pnpm", "run", ["build", "check"]],
+    decision = "allow",
+    match = ["pnpm run build", "pnpm run check", "pnpm run build -- --mode production"],
+    not_match = ["pnpm run deploy", "pnpm install", "pnpm publish"],
+)
+
+prefix_rule(
+    pattern = ["bun", "run", ["build", "check"]],
+    decision = "allow",
+    match = ["bun run build", "bun run check", "bun run build -- --mode production"],
+    not_match = ["bun run deploy", "bun install", "bun publish", "bun build src/index.ts"],
+)
+
+prefix_rule(
+    pattern = ["python3", "-m", "unittest"],
+    decision = "allow",
+    match = ["python3 -m unittest", "python3 -m unittest discover -s tests -v"],
+    not_match = ["python3 -m pip install example", "python3 -c 'print(1)'"],
 )
