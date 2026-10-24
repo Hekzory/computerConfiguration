@@ -18,16 +18,26 @@ and the sandbox does not add credential read restrictions. These are defaults
 for new sessions, subject to higher-precedence settings and managed requirements.
 See [sandbox and approvals](https://learn.chatgpt.com/docs/agent-approvals-security).
 
-The role also installs `~/.codex/rules/claude-import.rules`, a selected global
-import of Claude command approvals: Go build/test/vet/version, npm's build/lint/
+The role also installs `~/.codex/rules/claude-import.rules`, selected global
+command approvals: Go build/test/vet/version, npm's build/check/lint/
 type-check/unit scripts, `uv run pytest`, bounded journal reads, selected `ip`
 show/get commands, `resolvectl status`, `getent hosts`, `systemctl --user status/cat`,
-`nvim --version`, `tree-sitter --version`, `/bin/ls` and `pnpm build`.
+`nvim --version`, `tree-sitter --version`, `/bin/ls`, `pnpm build`,
+`pnpm run build/check`, `bun run build/check` and `python3 -m unittest`.
+Git approvals cover staging with `git add --`, `git add -A --` and
+`git add -u --`; status, ls-files, ls-tree, rev-parse, rev-list and describe;
+`git worktree list`, `git remote get-url` and `git pull --ff-only`.
+GitHub CLI approvals cover PR view/list/diff/checks, run view/list, repo view
+and release view/list. GitLab CLI approvals cover MR view/list/diff.
 Matching commands may run outside the sandbox without prompting in any project
 for this user.
 Rules match argument prefixes, so extra arguments are permitted too. Inline
 `match` and `not_match` examples are checked by Codex when the file loads.
 Build/test approvals execute repository-defined code in any repository.
+Staging can execute configured Git clean filters. The pull prefix prefers
+fast-forward updates but does not enforce them: trailing options can override
+`--ff-only`, and explicit refspecs can update other local refs. Plain `git pull`,
+`git fetch`, reset/clean and publication commands have no allow rule.
 Both agents receive instructions to use finite journal output limits; prefix
 rules match the shown argument order and permit additional trailing arguments.
 PowerShell, curl and headless Neovim approvals were deliberately excluded.
