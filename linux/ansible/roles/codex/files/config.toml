@@ -46,7 +46,7 @@ MANPAGER = "col -bx"
 GIT_TERMINAL_PROMPT = "0"
 
 [tui]
-status_line = ["model-with-reasoning", "context-used", "context-window-size", "current-dir"]
+status_line = ["model-with-reasoning", "context-used", "context-window-size", "current-dir", "weekly-limit", "git-branch"]
 
 [[hooks.PreToolUse]]
 matcher = "^Bash$"

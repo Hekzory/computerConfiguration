@@ -113,6 +113,7 @@ class Configuration(unittest.TestCase):
         })
         self.assertEqual(config["tui"]["status_line"], [
             "model-with-reasoning", "context-used", "context-window-size", "current-dir",
+            "weekly-limit", "git-branch",
         ])
         self.assertEqual(set(config["hooks"]), {"PreToolUse"})
         groups = config["hooks"]["PreToolUse"]
