@@ -105,6 +105,7 @@ class Configuration(unittest.TestCase):
             "hooks": True, "shell_snapshot": False, "memories": True,
         })
         self.assertEqual(config["memories"], {
+            "version": "v2",
             "generate_memories": True,
             "use_memories": True,
             "extract_model": "gpt-6.1-sol",

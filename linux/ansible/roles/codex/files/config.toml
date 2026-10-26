@@ -26,6 +26,7 @@ shell_snapshot = false
 memories = true
 
 [memories]
+version = "v2"
 generate_memories = true
 use_memories = true
 extract_model = "gpt-6.1-sol"
