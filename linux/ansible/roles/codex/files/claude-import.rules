@@ -34,6 +34,19 @@ prefix_rule(
 )
 
 prefix_rule(
+    pattern = [["golangci-lint", "/usr/bin/golangci-lint"]],
+    decision = "allow",
+    match = [
+        "golangci-lint run ./...",
+        "golangci-lint run --timeout 5m --config .golangci.yml ./...",
+        "golangci-lint --verbose run --fix ./internal/...",
+        "golangci-lint version",
+        "/usr/bin/golangci-lint run --build-tags integration ./...",
+    ],
+    not_match = ["golangci-lint-custom run ./...", "sudo golangci-lint run ./..."],
+)
+
+prefix_rule(
     pattern = ["npm", "run", ["build", "check"]],
     decision = "allow",
     match = ["npm run build", "npm run check", "npm run build -- --mode production"],

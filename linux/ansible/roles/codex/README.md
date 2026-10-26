@@ -19,7 +19,8 @@ for new sessions, subject to higher-precedence settings and managed requirements
 See [sandbox and approvals](https://learn.chatgpt.com/docs/agent-approvals-security).
 
 The role also installs `~/.codex/rules/claude-import.rules`, selected global
-command approvals: Go build/test/vet/version, npm's build/check/lint/
+command approvals: Go build/test/vet/version, `golangci-lint` (by name or
+`/usr/bin/golangci-lint`, with any arguments), npm's build/check/lint/
 type-check/unit scripts, `uv run pytest`, bounded journal reads, selected `ip`
 show/get commands, `resolvectl status`, `getent hosts`, `systemctl --user status/cat`,
 `nvim --version`, `tree-sitter --version`, `/bin/ls`, `pnpm build`,
