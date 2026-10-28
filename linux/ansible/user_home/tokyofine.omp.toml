@@ -67,7 +67,7 @@ final_space = true
       mixed_threshold = 16
 
   [[blocks.segments]]
-    template = '{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}{{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}{{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}{{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}'
+    template = '{{ if .Ref }}{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }} * {{ end }}{{ if .Staging.Changed }}{{ if .Env.LOW_COLOR_SUPPORT }}|V|{{ else }}{{ end }} {{ .Staging.String }}{{ end }}{{ if gt .Behind 0 }} {{ .Behind }}{{ if .Env.LOW_COLOR_SUPPORT }}D{{ else }}⇣{{ end }}{{ end }}{{ if gt .Ahead 0 }} {{ .Ahead }}{{ if .Env.LOW_COLOR_SUPPORT }}U{{ else }}⇡{{ end }}{{ end }}{{ end }}'
     foreground = 'p:light-sky-blue'
     background = 'transparent'
     type = 'git'
