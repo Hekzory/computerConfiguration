@@ -53,11 +53,16 @@ if status is-interactive; and test $_agent_shell -eq 0
     set -g theme_path ~/tokyofine.omp.toml
     if not test -f $theme_path
         echo "🔄 Downloading missing theme..."
-        curl -sL "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o $theme_path || echo "❌ Theme download failed!"
+        set -l theme_tmp (mktemp "$theme_path.XXXXXX")
+        if test -z "$theme_tmp"; or not curl --fail --silent --show-error --location --connect-timeout 3 --max-time 10 \
+                "https://raw.githubusercontent.com/Hekzory/computerConfiguration/master/linux/ansible/user_home/tokyofine.omp.toml" -o "$theme_tmp"; or not command mv -f -- "$theme_tmp" "$theme_path"
+            test -n "$theme_tmp"; and command rm -f -- "$theme_tmp"
+            echo "❌ Theme download failed!"
+        end
     end
 
     # Initialize oh-my-posh if available
-    if type -q oh-my-posh
+    if type -q oh-my-posh; and test -f $theme_path
         oh-my-posh init fish --config $theme_path | source
     end
 
