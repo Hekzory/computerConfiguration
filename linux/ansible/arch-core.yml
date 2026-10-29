@@ -223,7 +223,6 @@
           - gopls # Go lsp server
           - ruff # Python's new best friend
           - shfmt # Because shell scripts deserve love too
-          - shellcheck # and a second opinion on them
           - yamlfmt # yaml formatter
           # System Essentials - The Foundation (hardware-facing ones are a separate, non-WSL task below)
           - python3 # The snake that powers everything
@@ -622,6 +621,12 @@
         state: present
       when: not yay_installed.stat.exists
     # PACKAGES - AUR packages setup
+    - name: Remove dynamically linked ShellCheck and its unused dependencies
+      become: true
+      community.general.pacman:
+        name: shellcheck
+        state: absent
+        extra_args: --recursive
     - name: Ensure wrong packages are absent
       become: true
       community.general.pacman:
@@ -637,6 +642,7 @@
       kewlfft.aur.aur:
         name:
           - oh-my-posh-bin # most stable one
+          - shellcheck-bin # same checks, without the Haskell dependency tree
         use: yay
         state: present
     # ananicy-cpp ships zero rules, so until now the daemon scanned and applied
