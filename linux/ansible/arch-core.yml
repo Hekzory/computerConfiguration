@@ -208,7 +208,6 @@
           - lld # Linking at the speed of thought
           - openmp # Parallel processing? Yes, please
           - ccache # Cache your builds
-          - ananicy-cpp # Auto-nice daemon - snappier foreground apps
           # Development Arsenal - Tools of the Trade
           - docker # Containers
           - docker-compose # Orchestra conductor for your containers
@@ -238,6 +237,12 @@
           - zoxide # smart cd that learns frequent dirs
           - tealdeer # tldr in rust - usage examples without the man-page slog
           - jq # parse json easily
+        state: present
+    - name: Install ananicy-cpp (not WSL)
+      become: true
+      when: not (is_wsl | bool)
+      community.general.pacman:
+        name: ananicy-cpp
         state: present
     # CPU microcode, picked by vendor. It used to be a flat amd-ucode in the list
     # above, which left the Intel laptop with no microcode at all. The other
@@ -376,15 +381,19 @@
         and 'Could not find the requested service' not in service_command_output.msg
       loop:
         - ModemManager.service # Not needed by most people, so disable by default
-    - name: Manage host-only services (disabled on WSL)
+    - name: Manage fstrim timer (disabled on WSL)
       become: true
       ansible.builtin.service:
-        name: "{{ item }}"
+        name: fstrim.timer
         state: "{{ 'stopped' if (is_wsl | bool) else 'started' }}"
         enabled: "{{ not (is_wsl | bool) }}"
-      loop:
-        - fstrim.timer
-        - ananicy-cpp.service # auto-nicing is pointless under WSL
+    - name: Enable ananicy-cpp (not WSL)
+      become: true
+      when: not (is_wsl | bool)
+      ansible.builtin.service:
+        name: ananicy-cpp.service
+        state: started
+        enabled: true
     # fwupd itself isn't installed on WSL (hardware-facing packages above), so
     # there's no timer to stop there - the service module fails on a missing unit.
     - name: Enable fwupd refresh timer (not WSL)
