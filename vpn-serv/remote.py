@@ -19,7 +19,9 @@ DEBLOAT = frozenset({'avahi-daemon', 'avahi-utils', 'cups', 'cups-daemon',
 # never selected merely because they are installed.
 DEBLOAT_METAPACKAGES = frozenset({'ubuntu-server', 'ubuntu-server-minimal'})
 DEBLOAT_ALLOWED = DEBLOAT | DEBLOAT_METAPACKAGES
-SYSCTL = {'net.ipv4.tcp_syncookies': '1', 'net.ipv4.tcp_mtu_probing': '1'}
+SYSCTL = {'net.ipv4.tcp_syncookies': '1', 'net.ipv4.tcp_mtu_probing': '1',
+          'net.ipv4.tcp_congestion_control': 'bbr',
+          'net.core.default_qdisc': 'fq_codel', 'fs.file-max': '2097152'}
 JOURNAL = '[Journal]\nSystemMaxUse=128M\nRuntimeMaxUse=32M\nSystemKeepFree=256M\nMaxRetentionSec=14day\n'
 # Optional functionality on a dedicated VPN VPS, including activation units.
 # Keep security updates, networking and provider/virtualization agents intact.
@@ -251,6 +253,11 @@ def resolve_sysctl_conflicts(settings, supported, etc=Path('/etc')):
 
 def configure(apply):
     settings = Settings(apply)
+    # Load before setting sysctls, and before systemd-sysctl on future boots.
+    for module in ('tcp_bbr', 'sch_fq_codel'):
+        command(['modprobe', module] if apply else ['modprobe', '--dry-run', module])
+    settings.write('/etc/modules-load.d/90-vpn-serv.conf', 'tcp_bbr\nsch_fq_codel\n',
+                   'BBR и fq_codel: загрузка модулей при старте')
     if settings.write('/etc/systemd/journald.conf.d/90-vpn-serv.conf', JOURNAL, 'Журнал: лимит 128 MiB на диске, 32 MiB в RAM, хранение 14 дней') and apply:
         command(['systemctl', 'restart', 'systemd-journald'])
     supported = {}
@@ -261,7 +268,7 @@ def configure(apply):
             continue
         supported[key] = desired
     content = '# Managed by vpn-serv/setup\n' + ''.join(f'{k} = {v}\n' for k, v in supported.items())
-    settings.write('/etc/sysctl.d/90-vpn-serv.conf', content, 'Сетевые параметры: сохранить профиль')
+    settings.write('/etc/sysctl.d/90-vpn-serv.conf', content, 'Sysctl: сохранить профиль VPN')
     resolve_sysctl_conflicts(settings, supported)
     for key, desired in supported.items():
         current = command(['sysctl', '-n', key]).stdout.strip()
@@ -274,6 +281,36 @@ def configure(apply):
             emit('CHANGED', f'{key}: {current} → {desired}')
         else:
             emit('PLAN', f'{key}: {current} → {desired}')
+    configure_qdisc(apply)
+
+
+def configure_qdisc(apply):
+    # default_qdisc only affects newly activated devices. Update existing uplinks
+    # too, but preserve any custom hierarchy (CAKE/HTB/mq/etc.).
+    devices = set()
+    for family in ('-4', '-6'):
+        routes = json.loads(command(['ip', '-j', family, 'route', 'show', 'default']).stdout)
+        for route in routes:
+            if route.get('dev'):
+                devices.add(route['dev'])
+            devices.update(hop['dev'] for hop in route.get('nexthops', []) if hop.get('dev'))
+    for device in sorted(devices):
+        def roots():
+            return [q for q in json.loads(command(['tc', '-j', 'qdisc', 'show', 'dev', device]).stdout)
+                    if q.get('root')]
+        current = roots()
+        if len(current) == 1 and current[0]['kind'] == 'fq_codel':
+            emit('OK', f'{device}: fq_codel')
+        elif len(current) != 1 or current[0]['kind'] not in {'fq', 'pfifo_fast'}:
+            emit('WARN', f'{device}: нестандартная очередь, оставлена без изменений')
+        elif apply:
+            command(['tc', 'qdisc', 'replace', 'dev', device, 'root', 'fq_codel'])
+            after = roots()
+            if len(after) != 1 or after[0]['kind'] != 'fq_codel':
+                raise RuntimeError(f'{device}: fq_codel не применился')
+            emit('CHANGED', f'{device}: {current[0]["kind"]} → fq_codel')
+        else:
+            emit('PLAN', f'{device}: {current[0]["kind"]} → fq_codel')
 
 
 def main(config):

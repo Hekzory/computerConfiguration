@@ -44,7 +44,8 @@ class Reporter:
 def parser():
     p = argparse.ArgumentParser(description=__doc__, epilog=(
         'Requires Python 3 and root or passwordless sudo on Ubuntu. Uses existing SSH '
-        'keys/config. Defaults: journal limits, TCP SYN cookies and MTU probing. '
+        'keys/config. Defaults: journal limits, BBR, fq_codel, TCP SYN cookies, '
+        'MTU probing and fs.file-max=2097152. '
         'Does not install Amnezia or restart Docker. Package removal requires interactive '
         'confirmation; service disabling does not. No autoremove. Backups: /var/backups/vpn-serv. '
         'Use "setup set login@address" to save a default host beside this script.'))

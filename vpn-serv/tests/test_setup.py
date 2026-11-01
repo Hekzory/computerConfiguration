@@ -15,6 +15,65 @@ spec.loader.exec_module(remote)
 
 
 class RemoteTests(unittest.TestCase):
+    def test_qdisc_check_apply_repeat_preserves_custom_hierarchy(self):
+        kinds = {'ens3': 'fq', 'ens4': 'htb'}
+        mutations = []
+
+        def network(argv, **kwargs):
+            if argv[0] == 'ip':
+                result = [{'dev': 'ens3'}, {'dev': 'ens4'}]
+            elif 'replace' in argv:
+                device = argv[4]
+                mutations.append(device)
+                kinds[device] = 'fq_codel'
+                return subprocess.CompletedProcess(argv, 0, '', '')
+            else:
+                result = [{'kind': kinds[argv[-1]], 'root': True}]
+            return subprocess.CompletedProcess(argv, 0, json.dumps(result), '')
+
+        with patch.object(remote, 'command', side_effect=network), contextlib.redirect_stdout(io.StringIO()) as output:
+            remote.configure_qdisc(False)
+            self.assertEqual(mutations, [])
+            remote.configure_qdisc(True)
+            remote.configure_qdisc(True)
+            self.assertEqual(mutations, ['ens3'])
+            self.assertEqual(kinds['ens4'], 'htb')
+            self.assertIn('WARN', output.getvalue())
+
+    def test_network_defaults_persist_and_repair_live_drift(self):
+        current = dict(remote.SYSCTL)
+        current['net.ipv4.tcp_congestion_control'] = 'hybla'
+        current['fs.file-max'] = '51200'
+        current['net.core.default_qdisc'] = 'fq'
+        commands = []
+        def execute(argv, **kwargs):
+            commands.append(argv)
+            if argv[:2] == ['sysctl', '-n']:
+                return subprocess.CompletedProcess(argv, 0, current[argv[2]] + '\n', '')
+            if argv[:2] == ['sysctl', '-w']:
+                key, value = argv[2].split('=', 1)
+                current[key] = value
+            return subprocess.CompletedProcess(argv, 0, '', '')
+        with patch.object(remote, 'command', side_effect=execute), \
+             patch.object(remote.Settings, 'write', return_value=False) as write, \
+             patch.object(remote, 'resolve_sysctl_conflicts'), patch.object(remote, 'configure_qdisc'), \
+             contextlib.redirect_stdout(io.StringIO()):
+            remote.configure(False)
+            self.assertEqual(current['net.ipv4.tcp_congestion_control'], 'hybla')
+            self.assertFalse(any(c[:2] == ['sysctl', '-w'] for c in commands))
+            self.assertTrue(all('--dry-run' in c for c in commands if c[0] == 'modprobe'))
+            commands.clear()
+            remote.configure(True)
+            self.assertEqual(current, remote.SYSCTL)
+            self.assertLess(commands.index(['modprobe', 'tcp_bbr']),
+                            commands.index(['sysctl', '-w', 'net.ipv4.tcp_congestion_control=bbr']))
+            files = {c.args[0]: c.args[1] for c in write.call_args_list}
+            self.assertIn('tcp_bbr\n', files['/etc/modules-load.d/90-vpn-serv.conf'])
+            self.assertIn('net.ipv4.tcp_congestion_control = bbr\n', files['/etc/sysctl.d/90-vpn-serv.conf'])
+            commands.clear()
+            remote.configure(True)
+            self.assertFalse(any(c[:2] == ['sysctl', '-w'] for c in commands))
+
     def test_stale_failure_check_apply_and_repeat(self):
         failed = True
         mutations = []
