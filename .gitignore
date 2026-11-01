@@ -4,3 +4,7 @@
 # python bytecode from the callback plugin
 __pycache__/
 *.pyc
+
+# Local VPN server destination
+/vpn-serv/.last-host
+/vpn-serv/.last-host-*
