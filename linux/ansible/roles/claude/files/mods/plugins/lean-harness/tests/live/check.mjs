@@ -25,8 +25,8 @@ import * as mod from '../../hooks/register.js'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const PLUGIN = path.resolve(HERE, '../..')
 const MODS = path.resolve(PLUGIN, '../..')
-const ANSIBLE = path.resolve(MODS, '../../..')
-const TEMPLATES = path.join(ANSIBLE, 'templates')
+const ROLE = path.resolve(MODS, '../..')
+const TEMPLATES = path.join(ROLE, 'templates')
 const PROBE = path.join(HERE, 'probe')
 const USERKIT = path.join(HERE, 'userkit')
 const MOD_ID = 'lean-harness@computerconfiguration'

@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 FISH = shutil.which('fish')
-LOADER = importlib.machinery.SourceFileLoader('ccodex', str(ROOT / 'usr/local/bin/ccodex'))
+LOADER = importlib.machinery.SourceFileLoader('ccodex', str(ROOT / 'files/ccodex'))
 SPEC = importlib.util.spec_from_loader(LOADER.name, LOADER)
 ccodex = importlib.util.module_from_spec(SPEC)
 LOADER.exec_module(ccodex)
@@ -378,7 +378,7 @@ class CcodexTest(unittest.TestCase):
 
     @unittest.skipUnless(FISH, 'fish is not installed')
     def fish_complete(self, line):
-        completion = ROOT / 'user_home/.config/fish/completions/ccodex.fish'
+        completion = ROOT / 'files/user_home/.config/fish/completions/ccodex.fish'
         result = subprocess.run([FISH, '--no-config', '-c', 'source $argv[1]; complete -C $argv[2]',
                                  str(completion), line], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

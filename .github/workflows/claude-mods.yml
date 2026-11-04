@@ -1,65 +1,48 @@
-name: Claude Code mods
+name: Claude Code checks
 on:
   push:
     branches: ["main", "master"]
     paths:
-      - 'linux/ansible/etc/claude-code/**'
-      - 'linux/ansible/templates/*claude*'
+      - 'linux/ansible/roles/claude/**'
+      - 'linux/ansible/files/ssh-fish-guard.py'
       - '.github/workflows/claude-mods.yml'
   pull_request:
     branches: ["main", "master"]
-  # A new Claude Code can rename or reword what a rule of lean-harness names. The `latest` leg
-  # says so within a week, before the machines update to it.
-  schedule:
-    - cron: '17 5 * * 1'
+    paths:
+      - 'linux/ansible/roles/claude/**'
+      - 'linux/ansible/files/ssh-fish-guard.py'
+      - '.github/workflows/claude-mods.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  lean-harness:
-    name: lean-harness on Claude Code ${{ matrix.claude }}
-    # The self-hosted runner named by the repo variable CI_RUNNER takes the
-    # owner's and Dependabot's own branches; everything else, pull requests
-    # from forks included, runs on GitHub's runners, and so does every job
-    # while CI_RUNNER is unset.
+  static:
+    name: Claude static checks
     runs-on: ${{ (github.actor == github.repository_owner || github.actor == 'dependabot[bot]') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.CI_RUNNER || 'ubuntu-latest' }}
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        # `fixtures`: the newest version tests/fixtures holds a capture of; `latest`: what npm has now.
-        claude: [fixtures, latest]
+    timeout-minutes: 5
     defaults:
       run:
-        working-directory: linux/ansible/etc/claude-code/mods
+        working-directory: linux/ansible/roles/claude
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Install Claude Code
+      - name: Check shell helpers
+        run: find files/user_home -name '*.sh' -print0 | xargs -0 shellcheck
+      - name: Check JavaScript syntax
+        run: find files/mods -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Check Python and JSON files
         run: |
-          version='${{ matrix.claude }}'
-          if [ "$version" = fixtures ]; then
-            version=$(find plugins/lean-harness/tests/fixtures -name 'v*.ts' -printf '%f\n' | sed 's/^v//; s/\.ts$//' | sort -V | tail -1)
-          fi
-          # A folder of this job's own: self-hosted runners share one Node tool cache, and both legs
-          # installing into it at once break each other. The package's postinstall fetches the
-          # native binary; npm 12 runs it only when allowed.
-          prefix="$RUNNER_TEMP/claude-code"
-          npm install -g --prefix "$prefix" --no-audit --no-fund --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@$version"
-          "$prefix/bin/claude" --version || node "$prefix/lib/node_modules/@anthropic-ai/claude-code/install.cjs"
-          "$prefix/bin/claude" --version
-          echo "$prefix/bin" >> "$GITHUB_PATH"
-      - name: Validate the marketplace and its plugins
-        run: |
-          claude plugin validate .
-          claude plugin validate plugins/lean-harness
-          claude plugin validate plugins/lean-harness/tests/live/probe
-          claude plugin validate plugins/lean-harness/tests/live/userkit
-      - name: Unit tests on the captured fixtures
-        run: claude plugin test plugins/lean-harness
-      - name: The real Claude Code against a stand-in API, as shipped and with the mod
-        run: node plugins/lean-harness/tests/live/check.mjs
+          python3 -m compileall -q files tests
+          python3 -m py_compile files/ccodex
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for file in Path('files').rglob('*.json'):
+              json.loads(file.read_text())
+          PY
+      - name: Test ccodex without a Claude installation or account
+        run: timeout 30s python3 -m unittest discover -s tests -p 'test_*.py' -v

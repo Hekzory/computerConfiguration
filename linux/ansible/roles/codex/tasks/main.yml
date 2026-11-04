@@ -71,7 +71,7 @@
 - name: Codex - install the existing SSH-to-fish guard
   ansible.builtin.copy:
     # One source of truth, independent installed copies. No Claude installation needed.
-    src: "{{ role_path }}/../../user_home/.claude/hooks/ssh-fish-guard.py"
+    src: "{{ playbook_dir }}/files/ssh-fish-guard.py"
     dest: /etc/codex/hooks/ssh-fish-guard.py
     owner: root
     group: root

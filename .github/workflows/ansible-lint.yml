@@ -46,11 +46,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: shellcheck the helper scripts
         run: |
-          shellcheck \
-            linux/ansible/run.sh \
-            linux/ansible/user_home/.claude/statusline.sh \
-            linux/ansible/user_home/.claude/otel-headers.sh \
-            linux/ansible/user_home/.claude/hooks/git-guard.sh
+          shellcheck linux/ansible/run.sh
       - name: Install fish 4 (same major as the machines, ubuntu ships 3.x)
         # o-srv's runner image has it from the same PPA; GitHub's runners don't
         run: |
@@ -73,7 +69,7 @@ jobs:
           "$codex_test_env/bin/python" -m pip install 'tomlkit>=0.13,<1' PyYAML
           timeout 30s "$codex_test_env/bin/python" -m unittest discover -s tests -p 'test_*.py' -v
       - name: fish -n on every shipped fish file
-        run: find linux/ansible/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
+        run: find linux/ansible/user_home/.config/fish linux/ansible/roles/claude/files/user_home/.config/fish -name '*.fish' -print0 | xargs -0 -n1 -t fish -n
       - name: stylua --check init.lua
         uses: JohnnyMorganz/stylua-action@v5
         with:

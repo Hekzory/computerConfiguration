@@ -1,0 +1,7 @@
+# Claude Code usage metrics, see the "Claude Code metrics" tasks. The host
+# label is the instance on the dashboard; WSL gets a suffix so it doesn't
+# merge with the Windows side of the same box (WSL takes the Windows name).
+claude_otel_endpoint: https://otel.tsv.one/v1/metrics
+claude_otel_host: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | bool) else '') }}"
+# Claude Code mods loaded by policy (a folder marketplace), see the "Claude Code lean-harness" tasks.
+claude_mods_dir: /etc/claude-code/mods

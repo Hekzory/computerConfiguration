@@ -63,8 +63,31 @@ if Path(sys.argv[0]).name == 'sudo' and sys.argv[1:3] == ['-n', '-v']:
                 self.assertEqual(invocation[:4], ['ansible-playbook', '-v', playbook + '.yml', '--extra-vars'])
                 self.assertEqual(json.loads(invocation[4]), {'codex_corporate_enabled': True})
 
+    def test_claude_option_is_independent_and_combines_with_corporate(self):
+        for playbook in ['arch-core', 'arch-desktop', 'arch-home']:
+            for options in [('--claude',), ('--claude', '--corporate'),
+                            ('--corporate', '--claude')]:
+                with self.subTest(playbook=playbook, options=options):
+                    self.log.unlink(missing_ok=True)
+                    result, commands = self.run_flow(playbook, *options)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    invocation = next(c for c in commands if c[0] == 'ansible-playbook')
+                    self.assertEqual(invocation[:3], ['ansible-playbook', '-v', playbook + '.yml'])
+                    variables = {}
+                    for flag, value in zip(invocation[3::2], invocation[4::2]):
+                        self.assertEqual(flag, '--extra-vars')
+                        variables.update(json.loads(value))
+                    expected = {'claude_enabled': True}
+                    if '--corporate' in options:
+                        expected['codex_corporate_enabled'] = True
+                    self.assertEqual(variables, expected)
+
     def test_invalid_options_fail_before_authentication_or_provisioning(self):
-        for args in [[], ['other'], ['arch-core', '--unknown'], ['arch-core', '--corporate', '--unknown']]:
+        for args in [[], ['other'], ['arch-core', '--unknown'],
+                     ['arch-core', '--corporate', '--unknown'],
+                     ['arch-core', '--claude', '--unknown'],
+                     ['arch-core', '--claude', '--claude'],
+                     ['arch-core', '--corporate', '--corporate']]:
             with self.subTest(args=args):
                 result, commands = self.run_flow(*args)
                 self.assertNotEqual(result.returncode, 0)

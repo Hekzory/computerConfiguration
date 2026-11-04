@@ -7,13 +7,6 @@
     is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | lower) }}"
     pacman_parallel_downloads: 16
     suppress_pam_systemd_home_warning: true
-    # Claude Code usage metrics, see the "Claude Code metrics" tasks. The host
-    # label is the instance on the dashboard; WSL gets a suffix so it doesn't
-    # merge with the Windows side of the same box (WSL takes the Windows name).
-    claude_otel_endpoint: https://otel.tsv.one/v1/metrics
-    claude_otel_host: "{{ ansible_facts['hostname'] ~ ('-wsl' if (is_wsl | bool) else '') }}"
-    # Claude Code mods loaded by policy (a folder marketplace), see the "Claude Code lean-harness" tasks.
-    claude_mods_dir: /etc/claude-code/mods
   handlers:
     - name: Apply sysctl
       become: true
@@ -758,18 +751,12 @@
         force: true
         owner: "{{ the_user }}"
         group: "{{ the_user }}"
-        # .sh gets +x — helper scripts other tools shell out to (Claude statusline,
-        # hooks) are useless at 0640. Everything else stays plain config.
+        # Shell helpers need +x; everything else stays plain config.
         mode: "{{ '0750' if item.path.endswith('.sh') else 'u+rw,g+r,o--' }}"
       loop: "{{ lookup('community.general.filetree', 'user_home/') }}"
       loop_control:
         label: "{{ item.path }}"
       when: item.state == 'file'
-    # Filetree doesn't prune removed dotfiles; clean up the old timeout hook.
-    - name: Remove retired Claude Code timeout guard
-      ansible.builtin.file:
-        path: "{{ user_home }}/.claude/hooks/run-timeout-guard.py"
-        state: absent
     # CONFIG - WSL: the distro's wsl.conf and the Windows host's dotfiles
     # (windows/home), see roles/wsl
     - name: WSL - distro and Windows host config
@@ -817,91 +804,16 @@
           tags: [codex_corporate]
       when: codex_corporate_enabled | default(false) | bool
       tags: [codex_corporate]
-    # Claude Code with ChatGPT subscription OAuth; plain `claude` stays untouched.
-    - name: Create ccodex directories
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        mode: "0700"
-      loop:
-        - "{{ user_home }}/.local/share/ccodex/router"
-        - "{{ user_home }}/.claude-code-router"
+    # CONFIG - Claude Code is opt-in; ordinary runs leave existing installs alone.
+    - name: Claude - optional terminal client and integrations
+      ansible.builtin.include_role:
+        name: claude
+        apply:
+          tags: [claude]
+      when: claude_enabled | default(false) | bool
+      tags: [claude]
 
-    - name: Install ccodex subscription router
-      vars:
-        ccodex_router_version: "3.0.2"
-        ccodex_router_archive: "caeliq-claude-code-router-{{ ccodex_router_version }}.tgz"
-        ccodex_router_sha256: "2a7c435dbbb3d14486d9894a7050d9be90587ea79b315dcee3ffa5a38e89209f"
-      block:
-        - name: Read installed ccodex router version
-          ansible.builtin.command:
-            argv:
-              - python3
-              - -c
-              - >-
-                import json, pathlib, sys;
-                p = pathlib.Path(sys.argv[1]);
-                print(json.loads(p.read_text())['version'] if p.is_file() else '')
-              - "{{ user_home }}/.local/share/ccodex/router/node_modules/@caeliq/claude-code-router/package.json"
-          register: ccodex_installed_router
-          changed_when: false
-          check_mode: false
-
-        - name: Download verified ccodex router release
-          ansible.builtin.get_url:
-            url: "https://github.com/Hekzory/cco-router/releases/download/v{{ ccodex_router_version }}/{{ ccodex_router_archive }}"
-            dest: "{{ user_home }}/.local/share/ccodex/{{ ccodex_router_archive }}"
-            checksum: "sha256:{{ ccodex_router_sha256 }}"
-            mode: "0600"
-          when: ccodex_installed_router.stdout != ccodex_router_version
-
-        - name: Install ccodex router archive
-          # Use system Node, not an older shell version. The bundle needs no install scripts.
-          environment:
-            PATH: "/usr/bin:{{ ansible_facts['env'].PATH }}"
-          community.general.npm:
-            name: "{{ user_home }}/.local/share/ccodex/{{ ccodex_router_archive }}"
-            path: "{{ user_home }}/.local/share/ccodex/router"
-            state: present
-            ignore_scripts: true
-          when: ccodex_installed_router.stdout != ccodex_router_version
-          timeout: 180
-
-    # Model discovery edits this file; other providers may hold keys. Seed once,
-    # never overwrite it or put the OAuth token file under dotfile management.
-    - name: Seed ccodex router configuration
-      ansible.builtin.copy:
-        src: files/ccodex-router.json
-        dest: "{{ user_home }}/.claude-code-router/config.json"
-        force: false
-        mode: "0600"
-
-    # Existing router configs may have credentials and discovered models. Patch only
-    # the missing Codex URL; never reset the file to the repository's seed.
-    - name: Configure ccodex model discovery URL if missing
-      ansible.builtin.command:
-        argv:
-          - python3
-          - "{{ playbook_dir }}/files/ensure_ccodex_models_api.py"
-          - "{{ user_home }}/.claude-code-router/config.json"
-      register: ccodex_model_url_migration
-      changed_when: ccodex_model_url_migration.stdout == 'updated'
-
-    - name: Install ccodex launcher
-      become: true
-      ansible.builtin.copy:
-        src: usr/local/bin/ccodex
-        dest: /usr/local/bin/ccodex
-        owner: root
-        group: root
-        mode: "0755"
-
-    # CONFIG - Claude Code personal policy
-    # Not the user settings file: ~/.claude/settings.json carries API tokens and
-    # proxy env, so it stays out of git. Policy settings outrank user/project ones,
-    # which is what we want for "never attribute commits to the AI". Shipped as a
-    # managed-settings.d drop-in so an employer-managed policy file can coexist.
-    # Ships everywhere, WSL included — inert on machines without claude-code.
+    # Shared writing preferences still apply to native Codex on every run.
     - name: Agents - deploy writing and change description preferences
       ansible.builtin.blockinfile:
         path: "{{ user_home }}/{{ item }}"
@@ -910,9 +822,8 @@
         group: "{{ the_user }}"
         mode: '0640'
         marker: "<!-- {mark} computerConfiguration: writing preferences -->"
-        block: "{{ lookup('ansible.builtin.file', 'files/agent-text.md') }}"
+        block: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/agent-text.md') }}"
       loop:
-        - .claude/CLAUDE.md
         - .codex/AGENTS.md
 
     - name: Agents - bound diagnostic output
@@ -923,186 +834,8 @@
           For journal reads, use --no-pager and a finite -n limit (optionally --since/--until).
           Do not follow the journal without an explicit request and a timeout.
       loop:
-        - .claude/CLAUDE.md
         - .codex/AGENTS.md
 
-    - name: Create /etc/claude-code/managed-settings.d
-      become: true
-      ansible.builtin.file:
-        path: /etc/claude-code/managed-settings.d
-        state: directory
-        owner: "root"
-        group: "root"
-        mode: '0755'
-    - name: Claude Code policy - no commit attribution, no suggestions or recap, no Claude Docs connector, skill overrides, statusline, git guard
-      become: true
-      ansible.builtin.template:
-        src: templates/10-claude-personal.json.j2
-        dest: /etc/claude-code/managed-settings.d/10-claude-personal.json
-        force: true
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-    # CONFIG - Claude Code usage metrics -> otel.tsv.one -> Grafana "Claude Code".
-    # Opt-in per machine: it turns on where ~/.claude/otel-token exists (the
-    # ingest token, never in git; README says where to get it). And it stays off
-    # where anything else already sets telemetry up: a later drop-in overrides an
-    # employer policy key by key, and a work machine's telemetry must keep going
-    # to the employer's collector, not here.
-    - name: Claude Code metrics - look for the ingest token
-      ansible.builtin.stat:
-        path: "{{ user_home }}/.claude/otel-token"
-      register: claude_otel_token
-    - name: Claude Code metrics - look for telemetry set up by someone else
-      ansible.builtin.find:
-        paths:
-          - /etc/claude-code
-          - /etc/claude-code/managed-settings.d
-          - "{{ user_home }}/.claude"
-        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$', '^settings(\.local)?\.json$']
-        excludes: ['^20-claude-telemetry\.json$']
-        use_regex: true
-        contains: 'OTEL_|CLAUDE_CODE_ENABLE_TELEMETRY|otelHeadersHelper'
-        read_whole_file: true
-      register: claude_otel_foreign
-    - name: Claude Code metrics - keep the token private
-      ansible.builtin.file:
-        path: "{{ user_home }}/.claude/otel-token"
-        mode: '0600'
-      when: claude_otel_token.stat.exists
-    - name: Claude Code metrics - policy drop-in where the token is and nothing else claims telemetry
-      become: true
-      ansible.builtin.template:
-        src: templates/20-claude-telemetry.json.j2
-        dest: /etc/claude-code/managed-settings.d/20-claude-telemetry.json
-        force: true
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-      when: claude_otel_token.stat.exists and claude_otel_foreign.matched == 0
-    - name: Claude Code metrics - off elsewhere
-      become: true
-      ansible.builtin.file:
-        path: /etc/claude-code/managed-settings.d/20-claude-telemetry.json
-        state: absent
-      when: not (claude_otel_token.stat.exists and claude_otel_foreign.matched == 0)
-    - name: Claude Code metrics - say why they stay off despite the token
-      ansible.builtin.debug:
-        msg: "Telemetry is already configured in {{ claude_otel_foreign.files | map(attribute='path') | join(', ') }}; not overriding it"
-      when: claude_otel_token.stat.exists and claude_otel_foreign.matched > 0
-    # CONFIG - Claude Code spend meter (github.com/Hekzory/spend-meter), installed
-    # and kept up to date by policy. Two kinds of machine keep their own instead:
-    # one that runs the mod from a working copy (a folder marketplace of that name
-    # in ~/.claude/settings.json), which this would switch over to GitHub; and one
-    # whose policy allows only listed marketplaces, an employer's call.
-    - name: Claude Code spend meter - read the user settings
-      ansible.builtin.slurp:
-        src: "{{ user_home }}/.claude/settings.json"
-      register: claude_user_settings
-      failed_when: false
-    - name: Claude Code spend meter - look for a marketplace allowlist set by someone else
-      ansible.builtin.find:
-        paths:
-          - /etc/claude-code
-          - /etc/claude-code/managed-settings.d
-        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$']
-        excludes: ['^30-claude-spend-meter\.json$']
-        use_regex: true
-        contains: 'strictKnownMarketplaces'
-        read_whole_file: true
-      register: claude_marketplace_allowlist
-    - name: Claude Code spend meter - decide
-      ansible.builtin.set_fact:
-        spend_meter_working_copy: >-
-          {{ ((claude_user_settings.content | default('e30=') | b64decode | from_json).extraKnownMarketplaces | default({}))
-             .get('spend-meter', {}).get('source', {}).get('source', '') == 'directory' }}
-    - name: Claude Code spend meter - policy drop-in
-      become: true
-      ansible.builtin.template:
-        src: templates/30-claude-spend-meter.json.j2
-        dest: /etc/claude-code/managed-settings.d/30-claude-spend-meter.json
-        force: true
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-      when: not (spend_meter_working_copy | bool) and claude_marketplace_allowlist.matched == 0
-    - name: Claude Code spend meter - left out here
-      become: true
-      ansible.builtin.file:
-        path: /etc/claude-code/managed-settings.d/30-claude-spend-meter.json
-        state: absent
-      when: (spend_meter_working_copy | bool) or claude_marketplace_allowlist.matched > 0
-    - name: Claude Code spend meter - say why it is left out
-      ansible.builtin.debug:
-        msg: >-
-          {{ 'spend-meter runs from a working copy here (a folder marketplace in ~/.claude/settings.json); not switching it to GitHub'
-             if (spend_meter_working_copy | bool) else
-             'Marketplaces are allowlisted in ' ~ (claude_marketplace_allowlist.files | map(attribute='path') | join(', ')) ~ '; not adding spend-meter' }}
-      when: (spend_meter_working_copy | bool) or claude_marketplace_allowlist.matched > 0
-    # CONFIG - Claude Code lean-harness (etc/claude-code/mods/plugins/lean-harness): trims what
-    # every request carries, never anything added on the machine. A folder marketplace under /etc,
-    # root-owned so no session can edit what shapes its own prompt, and seated by policy, since
-    # only a plugin policy seats may rewrite the prompt. Its tests stay in the repo, CI runs them.
-    # The seat is left out, and removed, where another policy sets the tier lists or allowlists
-    # marketplaces: prependPlugins replaces Claude Code's list instead of adding to it.
-    - name: Claude Code lean-harness - folders
-      become: true
-      ansible.builtin.file:
-        path: "{{ claude_mods_dir }}/{{ item }}"
-        state: directory
-        owner: "root"
-        group: "root"
-        mode: '0755'
-      loop:
-        - .claude-plugin
-        - plugins/lean-harness/.claude-plugin
-        - plugins/lean-harness/hooks
-    - name: Claude Code lean-harness - the mod, manifests and hooks
-      become: true
-      ansible.builtin.copy:
-        src: "etc/claude-code/mods/{{ item }}"
-        dest: "{{ claude_mods_dir }}/{{ item }}"
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-      loop:
-        - .claude-plugin/marketplace.json
-        - plugins/lean-harness/.claude-plugin/plugin.json
-        - plugins/lean-harness/hooks/hooks.json
-        - plugins/lean-harness/hooks/register.js
-    - name: Claude Code lean-harness - look for tier lists or a marketplace allowlist set by someone else
-      ansible.builtin.find:
-        paths:
-          - /etc/claude-code
-          - /etc/claude-code/managed-settings.d
-        patterns: ['^managed-settings\.json$', '^\d+-.+\.json$']
-        excludes: ['^40-claude-lean-harness\.json$']
-        use_regex: true
-        contains: 'prependPlugins|appendPlugins|strictKnownMarketplaces'
-        read_whole_file: true
-      register: claude_mod_policy_foreign
-    - name: Claude Code lean-harness - policy drop-in that seats it
-      become: true
-      ansible.builtin.template:
-        src: templates/40-claude-lean-harness.json.j2
-        dest: /etc/claude-code/managed-settings.d/40-claude-lean-harness.json
-        force: true
-        owner: "root"
-        group: "root"
-        mode: u+rw,g+r,o+r
-      when: claude_mod_policy_foreign.matched == 0
-    - name: Claude Code lean-harness - left out here
-      become: true
-      ansible.builtin.file:
-        path: /etc/claude-code/managed-settings.d/40-claude-lean-harness.json
-        state: absent
-      when: claude_mod_policy_foreign.matched > 0
-    - name: Claude Code lean-harness - say why it is left out
-      ansible.builtin.debug:
-        msg: >-
-          Plugin tiers or a marketplace allowlist are set in
-          {{ claude_mod_policy_foreign.files | map(attribute='path') | join(', ') }}; not seating lean-harness
-      when: claude_mod_policy_foreign.matched > 0
     # DOCKER
     - name: Add existing user to group docker and wheel if not present
       become: true
