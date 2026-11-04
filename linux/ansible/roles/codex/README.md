@@ -82,7 +82,7 @@ workflow check, not a security boundary: file-sourced messages, Git aliases and
 arbitrary scripts aren't inspected. It doesn't modify Git's global hook settings.
 
 The SSH-to-fish guard is copied unchanged from
-`user_home/.claude/hooks/ssh-fish-guard.py`. Its deployed copy is independent of
+`files/ssh-fish-guard.py`. Its deployed copy is independent of
 Claude; both clients retain the same behavior and one source of truth.
 
 Claude Code, ccodex, their configuration, plugins and credentials stay untouched.

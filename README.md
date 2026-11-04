@@ -16,8 +16,8 @@ Three layered playbooks under `linux/ansible/`, each importing the previous:
 
 | Playbook | What it covers |
 |----------|----------------|
-| `arch-core.yml` | base packages, pacman/sysctl/makepkg tuning, gitconfig, fish + dotfiles, ccodex, docker (with NVIDIA detection when present), journald, systemd-resolved, udev rules, kernel module blacklist |
-| `arch-desktop.yml` | desktop fonts, kitty, claude-code, chrome, realtime audio group (asserts not WSL) |
+| `arch-core.yml` | base packages, pacman/sysctl/makepkg tuning, gitconfig, fish + dotfiles, native Codex, docker (with NVIDIA detection when present), journald, systemd-resolved, udev rules, kernel module blacklist |
+| `arch-desktop.yml` | desktop fonts, kitty, chrome, realtime audio group (asserts not WSL) |
 | `arch-home.yml` | personal apps (telegram, qbittorrent, vesktop), gaming group |
 
 Run via the wrapper from `linux/ansible/`:
@@ -25,6 +25,8 @@ Run via the wrapper from `linux/ansible/`:
 ```bash
 ./run.sh arch-core      # or arch-desktop, or arch-home
 ./run.sh arch-core --corporate  # opt in to corporate Codex setup; works with all three
+./run.sh arch-desktop --claude  # opt in to Claude Code and ccodex
+./run.sh arch-home --corporate --claude  # optional roles can be combined
 ```
 
 It validates the playbook name, installs galaxy collections, and asks for the sudo password once up front, so the run prompts only once (and a fingerprint reader is touched once, not per task).
@@ -35,23 +37,14 @@ playbook's `arch-core` setup. It requires the private inputs described in
 Without the flag, corporate provisioning is skipped; existing integrations are
 preserved.
 
-### ccodex
+### Optional Claude Code
 
-`arch-core` also installs `ccodex`: Claude Code through the [cco-router](https://github.com/Hekzory/cco-router), using a ChatGPT subscription rather than an OpenAI API key. The package is pinned to a GitHub Release archive with SHA-256 verification; downloading it needs no token. After applying the playbook:
-
-```bash
-ccodex --setup          # fresh browser OAuth login, then model discovery
-ccodex                 # same arguments as claude
-ccodex --doctor        # small inference check; uses subscription quota
-ccodex --status        # process, Node version and active requests; no inference
-ccodex --restart       # restart this installation's router when idle
-ccodex --model gpt-6-astra  # flagship; or gpt-6.1-sol (default), gpt-6-luna
-                         # CCODEX_MODEL also selects the model
-```
-
-Plain `claude` and `~/.claude/settings.json` stay unchanged. claude.ai connectors are disabled for `ccodex`; local MCP servers still load. The router listens on `127.0.0.1:1455` for OAuth callbacks and starts on demand. `~/.claude-code-router/config.json` is seeded only when absent; `arch-core` adds the Codex `models_api_url` if missing and adds GPT-6 Astra, GPT-6.1 Sol and GPT-6 Luna to existing configs without removing discovered models, credentials or custom endpoints. All other local edits survive playbook runs. OAuth tokens stay alongside it, outside git. CCR automatically refreshes access tokens before expiry and coordinates concurrent refreshes; `ccodex` does not make a second refresh attempt. If OpenAI invalidates the refresh token (`refresh_token_invalidated`), automated renewal cannot recover it: run `ccodex --setup` to force a fresh browser login and rediscover models, or `ccodex --auth` to log in without discovery. Both verify the saved auth file actually changed before reporting success. These are configured model IDs, not a promise that the subscription exposes all three; verify access with `ccodex --doctor --model MODEL`.
-
-Fish completions include wrapper options, common Claude Code arguments and models from the local router config. They work before OAuth setup and make no network requests. `--status` leaves a stopped router stopped; `--restart` checks the live process identity, refuses active requests or another installation, and waits for the port to close before starting a replacement.
+`./run.sh arch-core --claude` installs and configures Claude Code, ccodex,
+helpers, managed policy, telemetry and mods through the separate
+[`claude` role](linux/ansible/roles/claude/README.md). The flag works with all
+three playbooks and combines with `--corporate` in either order. Without it,
+Claude provisioning is skipped and existing installations and credentials stay
+as they are. Native Codex remains part of the default setup.
 
 ### Dotfiles
 
@@ -71,4 +64,4 @@ Windows-side dotfiles (`.wslconfig`, the PowerShell 7 profile, Windows Terminal'
 
 ## CI
 
-GitHub Actions runs `ansible-lint` on every push. See `.github/workflows/ansible-lint.yml`.
+GitHub Actions keeps the main Ansible and shell/Fish/Python checks. The optional Claude role has a separate path-filtered workflow with static checks and offline ccodex tests; no Claude installation, latest-version matrix, or weekly runs.

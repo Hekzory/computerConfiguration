@@ -10,7 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 ROLE = ROOT / "roles/codex"
 GIT = ROLE / "files/git-guard.sh"
-SSH = ROOT / "user_home/.claude/hooks/ssh-fish-guard.py"
+SSH = ROOT / "files/ssh-fish-guard.py"
 
 
 class Hooks(unittest.TestCase):
@@ -150,7 +150,7 @@ class Configuration(unittest.TestCase):
 
     def test_existing_ssh_guard_is_reused_without_removing_anything(self):
         tasks = (ROLE / "tasks/main.yml").read_text()
-        self.assertIn("{{ role_path }}/../../user_home/.claude/hooks/ssh-fish-guard.py", tasks)
+        self.assertIn("{{ playbook_dir }}/files/ssh-fish-guard.py", tasks)
         self.assertNotIn("state: absent", tasks)
         self.assertNotIn("dest: ~/.codex", tasks)
 

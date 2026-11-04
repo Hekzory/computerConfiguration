@@ -59,7 +59,6 @@
           - yt-dlp # mpv opens URLs through it; without it a YouTube link just fails
           - realtime-privileges
           - kitty # Terminal emulation evolved
-          - claude-code # Pair programming, terminal-side
           - ttf-meslo-nerd # Glyphs for the discerning eye
         state: present
 

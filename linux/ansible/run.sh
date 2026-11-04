@@ -27,20 +27,34 @@ die() {
 # Function to display usage
 show_usage() {
     cat <<EOF
-Usage: $(basename "$0") <playbook> [--corporate]
+Usage: $(basename "$0") <playbook> [--corporate] [--claude]
 Available playbooks: ${VALID_PLAYBOOKS[*]}
   --corporate  Apply corporate Codex integrations (requires private inputs).
+  --claude     Install and configure Claude Code and ccodex.
 EOF
     exit 1
 }
 
-# The corporate role is optional within the same normal playbook flow.
-[[ $# -lt 1 || $# -gt 2 ]] && show_usage
+# Optional roles share the same normal playbook flow and can be combined.
+[[ $# -lt 1 ]] && show_usage
 ansible_options=()
-if [[ $# -eq 2 ]]; then
-    [[ "$2" == "--corporate" ]] || die "Unknown option: $2"
-    ansible_options+=(--extra-vars '{"codex_corporate_enabled":true}')
-fi
+corporate_enabled=0
+claude_enabled=0
+for option in "${@:2}"; do
+    case "$option" in
+        --corporate)
+            [[ $corporate_enabled -eq 0 ]] || die "Duplicate option: $option"
+            corporate_enabled=1
+            ansible_options+=(--extra-vars '{"codex_corporate_enabled":true}')
+            ;;
+        --claude)
+            [[ $claude_enabled -eq 0 ]] || die "Duplicate option: $option"
+            claude_enabled=1
+            ansible_options+=(--extra-vars '{"claude_enabled":true}')
+            ;;
+        *) die "Unknown option: $option" ;;
+    esac
+done
 readonly -a ansible_options
 
 # Validate playbook argument using array
