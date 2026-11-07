@@ -572,14 +572,17 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       loop:
-        # -l caps parallelism by load so memory-bound builds (llvm/rust/chromium) back off instead of OOMing
+        # Internal makepkg jobs (e.g. stripping), separate from make's build jobs
+        - { regexp: '^#?NPROC=', line: 'NPROC="$(nproc)"' }
+        # Back off new make jobs when the system is busy; this is not a memory limit
         - { regexp: '^#?MAKEFLAGS=', line: 'MAKEFLAGS="-j$(nproc) -l$(nproc)"' }
         # enable ccache (default BUILDENV ships it off via !ccache) so AUR rebuilds reuse object cache
         - { regexp: '^#?BUILDENV=', line: 'BUILDENV=(!distcc color ccache check !sign)' }
         - { regexp: '^COMPRESSGZ=', line: 'COMPRESSGZ=(pigz -c -f -n)' }
         - { regexp: '^COMPRESSBZ2=', line: 'COMPRESSBZ2=(pbzip2 -c -f)' }
         - { regexp: '^COMPRESSXZ=', line: 'COMPRESSXZ=(xz -c -z --threads=0 -)' }
-        - { regexp: '^COMPRESSZST=', line: 'COMPRESSZST=(zstd -c -z -q --threads=0 -)' }
+        - { regexp: '^COMPRESSZST=', line: 'COMPRESSZST=(zstd -c -z -q -9 -T0 -)' }
+        - { regexp: '^#?PKGEXT=', line: 'PKGEXT=".pkg.tar.zst"' }
       loop_control:
         label: "{{ item.line }}"
     - name: Set ccache maximum size
