@@ -11,6 +11,36 @@
     mode: '0644'
   register: wsl_conf
 
+- name: WSL - tcodex command and fish completion directories
+  ansible.builtin.file:
+    path: "{{ user_home }}/{{ item }}"
+    state: directory
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0755'
+  loop:
+    - .local/bin
+    - .config/fish/completions
+
+- name: WSL - install the Codex terminal pixel wrapper
+  ansible.builtin.copy:
+    src: tcodex.py
+    dest: "{{ user_home }}/.local/bin/tcodex"
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0750'
+    validate: >-
+      /usr/bin/python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' %s
+
+- name: WSL - inherit Codex fish completions for tcodex
+  ansible.builtin.copy:
+    src: tcodex.fish
+    dest: "{{ user_home }}/.config/fish/completions/tcodex.fish"
+    owner: "{{ the_user }}"
+    group: "{{ the_user }}"
+    mode: '0644'
+    validate: /usr/bin/fish --no-config --no-execute %s
+
 # One powershell.exe call for every root windows/home can use. Documents goes
 # through GetFolderPath because it can be moved (it lives on D: here).
 - name: WSL - find the Windows known folders

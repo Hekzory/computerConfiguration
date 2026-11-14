@@ -45,6 +45,22 @@ Codex remain unconditional; Claude's copy belongs to the opt-in role.
 ### WSL
 `roles/wsl`, included from arch-core when `is_wsl`, owns what exists only because this is WSL: the distro's `/etc/wsl.conf` and, through interop, the Windows host's dotfiles. `windows/home/` mirrors the Windows profile with the known folder as the first path segment (`USERPROFILE/.wslconfig`; `Documents`, `APPDATA` and `LOCALAPPDATA` work the same way). One `powershell.exe` call resolves the folders (Documents is redirected to `D:` on this box) and `wslpath` maps them. As with `user_home/`, dropping a file in ships it. Shipped so far: `.wslconfig`, the PowerShell 7 profile, Windows Terminal Preview's `settings.json` and fastfetch's config (its own module list, not the Linux one). A file Windows shares with Linux, like the oh-my-posh theme, is listed in `wsl_windows_shared` and goes out from `user_home/` instead of a second copy; its folder has to exist already. Terminal's settings UI saves into the shipped file, so the next run undoes a change made there: make it in the repo. The `0755`/`0644` modes the role sets only land in WSL's metadata and leave the NTFS ACLs alone, packaged apps' folders under `LOCALAPPDATA/Packages` included. Everything is copied, never linked: a link from Windows into the distro is a reparse point Windows can't read. `wsl.conf` and `.wslconfig` are read only when WSL starts and the play runs inside it, so a change to either prints a reminder to run `wsl --shutdown` from Windows. `/etc/resolv.conf` is written by hand (home DNS first), which is why `wsl.conf` keeps `generateResolvConf = false`.
 
+The WSL role also installs `tcodex`, which runs the installed `codex` with the same
+arguments and inherited fish completions. It queries terminal cell pixels and
+maintains a PTY with real pixel dimensions, enabling Codex's Sixel previews in
+Windows Terminal. Window resizes requery the terminal, including font changes
+when they cause a resize. Pipelines and redirected streams run Codex directly.
+Only Python's standard library is needed; ordinary `codex` remains available.
+
+For the verified Arch Codex 0.169.0 build, `tcodex` also caches a binary copy with
+12×6-cell draft thumbnails (twice the original width and height). The patch checks
+the complete original/result SHA-256 hashes and all 22 instruction sites; unknown
+builds run unmodified with a notice. The package's binary and resources stay in
+place. The roughly 301 MiB copy persists under `$XDG_CACHE_HOME/tcodex` (normally
+`~/.cache/tcodex`); concurrent launches share it. `TCODEX_PREVIEW_PATCH=0 tcodex`
+disables the binary patch. Maintenance commands such as `tcodex update` use the
+installed executable.
+
 ### Terminal colors
 Programs decide on 24-bit color from `COLORTERM=truecolor`, and Windows Terminal doesn't set it by itself, so without help everything under WT (Claude Code included) rounds to 256 colors. WT's shipped settings set it in `profiles.defaults.environment`, which covers native Windows programs. That doesn't reach WSL, where `WSLENV` forwards only `WT_SESSION`, so `config.fish` sets it when `WT_SESSION` is present; kitty sets it itself. ssh carries `TERM` but not `COLORTERM`, so `etc/ssh/ssh_config.d/30-colorterm.conf` sends it and `etc/ssh/sshd_config.d/30-colorterm.conf` accepts it. Both halves ship everywhere, and the sshd reload only happens where sshd is running. Remote sessions get 24-bit color only once both ends have run the playbook.
 
