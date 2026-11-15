@@ -1,4 +1,4 @@
-"""Exercise a real nested PTY, with a tiny terminal emulator and a fake Codex."""
+"""Exercise native launches, WSL's nested PTY and the preview binary patch."""
 
 import errno
 import fcntl
@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest import mock
 
-SOURCE = Path(__file__).resolve().parents[1] / "roles/wsl/files/tcodex.py"
+SOURCE = Path(__file__).resolve().parents[1] / "roles/codex/files/tcodex.py"
 spec = importlib.util.spec_from_file_location("tcodex", SOURCE)
 tcodex = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tcodex)
@@ -38,7 +38,9 @@ def emit(label):
 
 
 class Terminal:
-    def __init__(self, body, *, cell=(8, 16), native=(0, 0), reply=True, args=()):
+    def __init__(
+        self, body, *, cell=(8, 16), native=(0, 0), reply=True, args=(), wsl=True
+    ):
         self.temp = tempfile.TemporaryDirectory()
         executable = Path(self.temp.name) / "codex"
         executable.write_text(PRELUDE + body)
@@ -59,8 +61,17 @@ class Terminal:
             os.setsid()
             fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 
+        # Exercise both kernel paths on any Linux test runner.
+        launcher = """import os, runpy, sys
+uname = list(os.uname())
+uname[2] = sys.argv.pop(1)
+os.uname = lambda: os.uname_result(uname)
+sys.argv = sys.argv[1:]
+runpy.run_path(sys.argv[0], run_name='__main__')
+"""
+        release = "6.18-microsoft-standard-WSL2" if wsl else "6.18.7-arch1-1"
         self.process = subprocess.Popen(
-            [sys.executable, str(SOURCE), *args],
+            [sys.executable, "-c", launcher, release, str(SOURCE), *args],
             stdin=self.slave,
             stdout=self.slave,
             stderr=self.slave,
@@ -191,6 +202,36 @@ class PTYTests(unittest.TestCase):
         terminal = Terminal(body, **kwargs)
         self.addCleanup(terminal.close)
         return terminal
+
+    def test_native_linux_executes_in_the_original_terminal_without_queries(self):
+        for pixels in ((0, 0), (800, 480)):
+            with self.subTest(pixels=pixels):
+                terminal = self.terminal(
+                    """emit('SIZE=')
+print('TTY='+os.ttyname(0),flush=True)
+print('PID='+str(os.getpid()),flush=True)
+print('ARGS='+json.dumps(sys.argv[1:]),flush=True)
+sys.exit(23)
+""",
+                    wsl=False,
+                    native=pixels,
+                    args=["resume", "a b", "--image", "картинка.png"],
+                )
+                self.assertEqual(terminal.finish(), 23)
+                self.assertEqual(terminal.queries, [])
+                self.assertIn(
+                    ("SIZE=" + json.dumps([24, 80, *pixels])).encode(), terminal.output
+                )
+                self.assertIn(
+                    ("TTY=" + os.ttyname(terminal.slave)).encode(), terminal.output
+                )
+                self.assertIn(
+                    f"PID={terminal.process.pid}".encode(), terminal.output
+                )
+                self.assertIn(
+                    json.dumps(["resume", "a b", "--image", "картинка.png"]).encode(),
+                    terminal.output,
+                )
 
     def test_initial_cell_size_arguments_and_exit_status(self):
         terminal = self.terminal(
@@ -534,6 +575,29 @@ class BinaryPatchTests(unittest.TestCase):
                 self.assertEqual(tcodex.main(), 0)
                 run.assert_called_with(["codex", "resume", "--last"])
         prepare.assert_not_called()
+
+    def test_native_launch_executes_the_patched_binary_without_terminal_setup(self):
+        args = ["resume", "--last"]
+        self.enterContext(mock.patch.object(sys, "argv", ["tcodex", *args]))
+        self.enterContext(mock.patch.object(tcodex, "interactive", return_value=True))
+        self.enterContext(mock.patch.dict(os.environ, {"TCODEX_PREVIEW_PATCH": "1"}))
+        self.enterContext(mock.patch.object(tcodex, "is_wsl", return_value=False))
+        self.enterContext(
+            mock.patch.object(tcodex.shutil, "which", return_value=str(self.source))
+        )
+        self.enterContext(
+            mock.patch.object(tcodex, "preview_binary", return_value="/cache/bin/codex")
+        )
+        probe = self.enterContext(mock.patch.object(tcodex, "initial_probe"))
+        fork = self.enterContext(mock.patch.object(tcodex.pty, "fork"))
+        execute = self.enterContext(
+            mock.patch.object(os, "execvp", side_effect=RuntimeError("exec called"))
+        )
+        with self.assertRaisesRegex(RuntimeError, "exec called"):
+            tcodex.main()
+        execute.assert_called_once_with("/cache/bin/codex", ["/cache/bin/codex", *args])
+        probe.assert_not_called()
+        fork.assert_not_called()
 
 
 class PipelineTests(unittest.TestCase):

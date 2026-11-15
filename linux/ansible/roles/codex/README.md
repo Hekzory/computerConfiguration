@@ -2,7 +2,22 @@
 
 `arch-core` imports this role, including when used by the desktop/home playbooks
 or under WSL. Apply from `linux/ansible/` with the usual `./run.sh arch-core`.
-This configures Codex; it does not install the CLI or log in for you.
+This configures Codex and installs the `tcodex` helper; it does not install the
+Codex CLI or log in for you.
+
+`tcodex` passes through Codex arguments and inherits its fish completions. On
+native Linux it directly executes a private binary copy with 12×6-cell draft
+previews. The patch supports the verified Arch `0.169.0+arch.1.1` x86_64 build,
+checks complete source/result hashes and all 22 instruction sites, and caches
+the roughly 301 MiB copy under `${XDG_CACHE_HOME:-~/.cache}/tcodex`. Unknown builds
+run unmodified with a notice; the installed package stays untouched. Set
+`TCODEX_PREVIEW_PATCH=0` to disable the patch. Maintenance/server commands,
+pipelines and redirected streams use the installed executable.
+
+On WSL only, detected from the kernel rather than environment variables,
+interactive launches also use a PTY relay to supply terminal pixel dimensions
+and track resizes for Windows Terminal's Sixel previews. Native Linux skips this
+terminal setup entirely. Both paths use only Python's standard library.
 
 The role deploys root-owned `/etc/codex/config.toml` and three scripts under
 `/etc/codex/hooks/`. It enables lifecycle hooks and the native footer's model with

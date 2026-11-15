@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Run Codex in a PTY whose pixel geometry follows the outer terminal.
+"""Run Codex with larger draft previews and WSL-only terminal pixel setup.
 
+Native Linux executes Codex directly after selecting the preview binary.
 WSL supplies rows/columns but leaves TIOCGWINSZ pixel dimensions at zero.
 Query XTWINOPS 16 (cell pixels), falling back to 14 (text area pixels).
 An input relay keeps these replies out of Codex, including during resizes.
@@ -584,9 +585,15 @@ def relay(fd, master, pid, attrs, geometry, decoder, buffered):
         os.close(wake_write)
 
 
+def is_wsl():
+    # Kernel detection also works over SSH, where WSL's env vars may be absent.
+    return "microsoft" in os.uname().release.lower()
+
+
 def run(command):
-    # Preserve pipelines, scripts and completion generation exactly as Codex does.
-    if not interactive(command):
+    # Only WSL needs a PTY relay. Native Linux keeps its existing terminal;
+    # pipelines, scripts and completion generation run directly everywhere.
+    if not interactive(command) or not is_wsl():
         os.execvp(command[0], command)
     fd = os.open(os.ttyname(0), os.O_RDWR | os.O_NOCTTY | os.O_CLOEXEC)
     attrs = termios.tcgetattr(fd)

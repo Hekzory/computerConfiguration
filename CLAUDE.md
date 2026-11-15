@@ -45,12 +45,16 @@ Codex remain unconditional; Claude's copy belongs to the opt-in role.
 ### WSL
 `roles/wsl`, included from arch-core when `is_wsl`, owns what exists only because this is WSL: the distro's `/etc/wsl.conf` and, through interop, the Windows host's dotfiles. `windows/home/` mirrors the Windows profile with the known folder as the first path segment (`USERPROFILE/.wslconfig`; `Documents`, `APPDATA` and `LOCALAPPDATA` work the same way). One `powershell.exe` call resolves the folders (Documents is redirected to `D:` on this box) and `wslpath` maps them. As with `user_home/`, dropping a file in ships it. Shipped so far: `.wslconfig`, the PowerShell 7 profile, Windows Terminal Preview's `settings.json` and fastfetch's config (its own module list, not the Linux one). A file Windows shares with Linux, like the oh-my-posh theme, is listed in `wsl_windows_shared` and goes out from `user_home/` instead of a second copy; its folder has to exist already. Terminal's settings UI saves into the shipped file, so the next run undoes a change made there: make it in the repo. The `0755`/`0644` modes the role sets only land in WSL's metadata and leave the NTFS ACLs alone, packaged apps' folders under `LOCALAPPDATA/Packages` included. Everything is copied, never linked: a link from Windows into the distro is a reparse point Windows can't read. `wsl.conf` and `.wslconfig` are read only when WSL starts and the play runs inside it, so a change to either prints a reminder to run `wsl --shutdown` from Windows. `/etc/resolv.conf` is written by hand (home DNS first), which is why `wsl.conf` keeps `generateResolvConf = false`.
 
-The WSL role also installs `tcodex`, which runs the installed `codex` with the same
-arguments and inherited fish completions. It queries terminal cell pixels and
-maintains a PTY with real pixel dimensions, enabling Codex's Sixel previews in
-Windows Terminal. Window resizes requery the terminal, including font changes
-when they cause a resize. Pipelines and redirected streams run Codex directly.
-Only Python's standard library is needed; ordinary `codex` remains available.
+### tcodex
+
+The Codex role installs `tcodex` on every Linux machine, with the same arguments
+and inherited fish completions as `codex`. Native Linux runs the selected binary
+directly, applying only the preview patch below. On WSL, detected from the kernel,
+it also queries terminal cell pixels and maintains a PTY with real pixel dimensions,
+enabling Codex's Sixel previews in Windows Terminal. Window resizes requery the
+terminal, including font changes when they cause a resize. Pipelines and redirected
+streams run Codex directly everywhere. Only Python's standard library is needed;
+ordinary `codex` remains available.
 
 For the verified Arch Codex 0.169.0 build, `tcodex` also caches a binary copy with
 12×6-cell draft thumbnails (twice the original width and height). The patch checks
