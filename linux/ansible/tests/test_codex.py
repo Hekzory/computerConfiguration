@@ -103,6 +103,7 @@ class Configuration(unittest.TestCase):
         self.assertEqual(config["project_doc_fallback_filenames"], ["CLAUDE.md", "claude.md"])
         self.assertEqual(config["features"], {
             "hooks": True, "shell_snapshot": False, "memories": True,
+            "image_generation_animation": True,
         })
         self.assertEqual(config["memories"], {
             "version": "v2",

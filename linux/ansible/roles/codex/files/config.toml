@@ -24,6 +24,7 @@ network_access = true
 hooks = true
 shell_snapshot = false
 memories = true
+image_generation_animation = true
 
 [memories]
 version = "v2"
