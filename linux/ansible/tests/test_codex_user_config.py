@@ -21,7 +21,7 @@ class UserPolicy(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'config.toml'
         self.original = '''# User comments remain
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 web_search = "live"
 model_reasoning_summary = "detailed"
 [features]
@@ -67,6 +67,21 @@ features = { analytics_plan_history = true, memories = true }
         self.assertEqual(config['features'], {'memories': True})
         self.assertFalse(config['desktop']['ambient-suggestions-enabled'])
         self.assertIn('[looks.like.a.table]', config['desktop']['custom'])
+
+    def test_upgrades_existing_memory_model_overrides(self):
+        original = self.original + '''
+[memories]
+extract_model = "gpt-6.1-sol" # explicit override
+consolidation_model = "gpt-6-astra"
+generate_memories = false
+'''
+        self.path.write_text(original)
+        self.assertTrue(MODULE.configure(self.path, {}, check=True))
+        self.assertEqual(self.path.read_text(), original)
+        self.assertTrue(MODULE.configure(self.path, {}))
+        self.assertEqual(self.path.read_text(), original.replace('gpt-6.1-sol', 'gpt-6.2-sol')
+                         .replace('gpt-6-astra', 'gpt-6.2-astra'))
+        self.assertFalse(MODULE.configure(self.path, {}))
 
     def test_named_skill_disables_preserve_other_rules_and_win_over_paths(self):
         self.path.write_text(self.original + '''

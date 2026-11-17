@@ -8,7 +8,8 @@ import sys
 import tempfile
 
 MODELS_API_URL = 'https://chatgpt.com/backend-api/codex/models'
-MODEL_IDS = ('gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna')
+MODEL_UPGRADES = {'gpt-6.1-sol': 'gpt-6.2-sol', 'gpt-6-astra': 'gpt-6.2-astra'}
+MODEL_IDS = (*MODEL_UPGRADES.values(), 'gpt-6-luna')
 
 
 def ensure_models_api_url(path):
@@ -28,15 +29,26 @@ def ensure_models_api_url(path):
         provider['models_api_url'] = MODELS_API_URL
         changed = True
 
-    if 'models' not in provider:
-        provider['models'] = []
-    models = provider['models']
+    models = provider.get('models', [])
     if not isinstance(models, list) or not all(isinstance(model, str) for model in models):
         raise ValueError('Codex provider models must be a list of strings')
+    updated_models = list(dict.fromkeys(MODEL_UPGRADES.get(model, model) for model in models))
     for model in MODEL_IDS:
-        if model not in models:
-            models.append(model)
-            changed = True
+        if model not in updated_models:
+            updated_models.append(model)
+    if updated_models != models:
+        provider['models'] = updated_models
+        changed = True
+
+    routes = config.get('Router')
+    if isinstance(routes, dict):
+        for route, model in routes.items():
+            if not isinstance(model, str) or not model.startswith('codex,'):
+                continue
+            replacement = MODEL_UPGRADES.get(model.removeprefix('codex,'))
+            if replacement:
+                routes[route] = 'codex,' + replacement
+                changed = True
     if not changed:
         return False
     original_mode = stat.S_IMODE(path.stat().st_mode)

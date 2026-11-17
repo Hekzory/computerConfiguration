@@ -123,16 +123,15 @@
     force: false
     mode: "0600"
 
-# Existing router configs may have credentials and discovered models. Patch only
-# the missing Codex URL; never reset the file to the repository's seed.
-- name: Configure ccodex model discovery URL if missing
+# Existing router configs may have credentials and discovered models.
+- name: Update ccodex model IDs and fill in the discovery URL
   ansible.builtin.command:
     argv:
       - python3
       - "{{ role_path }}/files/ensure_ccodex_models_api.py"
       - "{{ user_home }}/.claude-code-router/config.json"
-  register: claude_ccodex_model_url_migration
-  changed_when: claude_ccodex_model_url_migration.stdout == 'updated'
+  register: claude_ccodex_config_migration
+  changed_when: claude_ccodex_config_migration.stdout == 'updated'
 
 - name: Install ccodex launcher
   become: true

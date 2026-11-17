@@ -47,7 +47,7 @@ class Telemetry(unittest.TestCase):
         self.assertEqual(self.config.read_text(), text)
 
     def test_token_rotation_and_removal(self):
-        original = 'model = "gpt-6-astra"\n'
+        original = 'model = "gpt-6.2-astra"\n'
         self.config.write_text(original)
         self.configure()
         self.token.write_text("rotated-token")
@@ -58,7 +58,7 @@ class Telemetry(unittest.TestCase):
         self.assertEqual(self.config.read_text(), original)
 
     def test_preserves_foreign_tables_interleaved_before_end(self):
-        original = 'model = "gpt-6.1-sol"\n'
+        original = 'model = "gpt-6.2-sol"\n'
         foreign = '''# App-owned values, including a multiline string and quoted key.
 [desktop]
 preventSleepWhileRunning = true
@@ -149,7 +149,7 @@ APP_RUNTIME = "/generated/version/path"
 
     def test_refuses_symlink(self):
         target = self.root / "target"
-        target.write_text('model = "gpt-6-astra"\n')
+        target.write_text('model = "gpt-6.2-astra"\n')
         self.config.symlink_to(target)
         with self.assertRaises(ValueError):
             self.configure()

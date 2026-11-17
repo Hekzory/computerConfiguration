@@ -109,8 +109,8 @@ class Configuration(unittest.TestCase):
             "version": "v2",
             "generate_memories": True,
             "use_memories": True,
-            "extract_model": "gpt-6.1-sol",
-            "consolidation_model": "gpt-6.1-sol",
+            "extract_model": "gpt-6.2-sol",
+            "consolidation_model": "gpt-6.2-sol",
         })
         self.assertEqual(config["tui"]["status_line"], [
             "model-with-reasoning", "context-used", "context-window-size", "current-dir",

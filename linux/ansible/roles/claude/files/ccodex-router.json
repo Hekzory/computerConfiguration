@@ -9,8 +9,8 @@
       "api_base_url": "https://chatgpt.com/backend-api/codex",
       "api_key": "oauth-placeholder",
       "models": [
-        "gpt-6.1-sol",
-        "gpt-6-astra",
+        "gpt-6.2-sol",
+        "gpt-6.2-astra",
         "gpt-6-luna"
       ],
       "transformer": {
@@ -23,9 +23,9 @@
     }
   ],
   "Router": {
-    "default": "codex,gpt-6-astra",
-    "background": "codex,gpt-6.1-sol",
-    "think": "codex,gpt-6.1-sol",
-    "longContext": "codex,gpt-6.1-sol"
+    "default": "codex,gpt-6.2-astra",
+    "background": "codex,gpt-6.2-sol",
+    "think": "codex,gpt-6.2-sol",
+    "longContext": "codex,gpt-6.2-sol"
   }
 }

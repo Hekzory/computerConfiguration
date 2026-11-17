@@ -30,8 +30,8 @@ image_generation_animation = true
 version = "v2"
 generate_memories = true
 use_memories = true
-extract_model = "gpt-6.1-sol"
-consolidation_model = "gpt-6.1-sol"
+extract_model = "gpt-6.2-sol"
+consolidation_model = "gpt-6.2-sol"
 
 [shell_environment_policy]
 experimental_use_profile = false

@@ -221,11 +221,12 @@ and [metrics catalog](https://learn.chatgpt.com/docs/config-file/config-advanced
 
 ## Shared memory and instructions
 
-The system defaults enable local Codex memories with `gpt-6.1-sol` for extraction
-and `gpt-6-astra` for consolidation. Built-in background memory jobs use their own
+The system defaults enable local Codex memories with `gpt-6.2-sol` for extraction
+and consolidation. Built-in background memory jobs use their own
 lower effort levels, an explicitly approved exception to the high-or-higher
-instruction. User-level config can override these defaults, including either
-memory model. These background requests use Codex quota.
+instruction. The role also upgrades existing user memory overrides from GPT-6.1 Sol
+and GPT-6 Astra to their GPT-6.2 equivalents. Other memory model overrides are
+preserved. These background requests use Codex quota.
 
 The role manages a marked block in `~/.codex/AGENTS.md` from
 [`files/AGENTS.md`](files/AGENTS.md), preserving personal instructions outside the

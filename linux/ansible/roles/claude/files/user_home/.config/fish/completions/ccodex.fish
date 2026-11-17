@@ -3,7 +3,7 @@ function __fish_ccodex_models
     python3 -c '
 import json
 from pathlib import Path
-models = ["gpt-6.1-sol", "gpt-6-astra", "gpt-6-luna"]
+models = ["gpt-6.2-sol", "gpt-6.2-astra", "gpt-6-luna"]
 try:
     config = json.loads((Path.home() / ".claude-code-router/config.json").read_text())
     provider = next(item for item in config.get("Providers", []) if item.get("name") == "codex")

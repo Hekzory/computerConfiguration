@@ -7,6 +7,8 @@ import tomllib
 
 import tomlkit
 
+MEMORY_MODEL_UPGRADES = {"gpt-6.1-sol": "gpt-6.2-sol", "gpt-6-astra": "gpt-6.2-astra"}
+
 
 def delete_path(document, path):
     """Delete one owned key and empty parent tables, preserving other values."""
@@ -108,6 +110,13 @@ def configure(path, updates, removals=(), check=False, disabled_skills=()):
             else:
                 target[key] = value
     plain_merge(expected, updates)
+    memories = expected.get("memories")
+    if isinstance(memories, dict):
+        for key in ("extract_model", "consolidation_model"):
+            model = memories.get(key)
+            if isinstance(model, str) and model in MEMORY_MODEL_UPGRADES:
+                memories[key] = MEMORY_MODEL_UPGRADES[model]
+                document["memories"][key] = memories[key]
     disable_skills(document, disabled_skills)
     disable_skills(expected, disabled_skills)
     desired = tomlkit.dumps(document)
